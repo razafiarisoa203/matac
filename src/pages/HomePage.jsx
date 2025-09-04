@@ -11,7 +11,8 @@ const HomePage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow">
+      {/* Ajout d'un padding-top pour compenser la hauteur du header fixe */}
+      <main className="flex-grow pt-28">
         <HeroSection />
         <ServicesSection />
         <ActesUrbanisme />
