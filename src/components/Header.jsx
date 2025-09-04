@@ -7,7 +7,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
       {/* Bandeau vert */}
       <div className="bg-lime-400 text-right px-6 py-2">
         <span className="text-gray-700 text-sm">
@@ -27,22 +27,22 @@ const Header = () => {
             <div className="flex items-center space-x-4">
               <div className="flex space-x-2">
                 <div className="w-8 h-8 bg-white rounded  flex items-center justify-center">
-                  <img 
-                    src="src/assets/logo/MDAT.jpeg" 
+                  <img
+                    src="src/assets/logo/MDAT.jpeg"
                     alt="MDAT"
                     className="w-6 h-6 object-cover  "
                   />
                 </div>
                 <div className="w-8 h-8 bg-white rounded  flex items-center justify-center">
-                  <img 
-                    src="src/assets/logo/REPUBLIQUE.png" 
-                    alt="République"
+                  <img
+                    src="src/assets/logo/REPUBLIQUE.png"
+                    alt="RÃ©publique"
                     className="w-6 h-6 object-cover  "
                   />
                 </div>
                 <div className="w-8 h-8 bg-white  rounded flex items-center justify-center">
-                  <img 
-                    src="src/assets/logo/OATF.jpg" 
+                  <img
+                    src="src/assets/logo/OATF.jpg"
                     alt="OATF"
                     className="w-6 h-6 object-cover  "
                   />
@@ -61,21 +61,21 @@ const Header = () => {
                 </Link>
                 <a
                   href="#acte"
-                  onClick={(e) => handleNavClick(e, 'acte')}
+                  onClick={(e) => handleNavClick(e, "acte")}
                   className="hover:text-lime-400 px-3 py-2 text-sm font-medium cursor-pointer"
                 >
                   Acte d'urbanisme
                 </a>
                 <a
                   href="#services"
-                  onClick={(e) => handleNavClick(e, 'services')}
+                  onClick={(e) => handleNavClick(e, "services")}
                   className="hover:text-lime-400 px-3 py-2 text-sm font-medium cursor-pointer"
                 >
                   Services
                 </a>
                 <a
                   href="#objectifs"
-                  onClick={(e) => handleNavClick(e, 'objectifs')}
+                  onClick={(e) => handleNavClick(e, "objectifs")}
                   className="hover:text-lime-400 px-3 py-2 text-sm font-medium cursor-pointer"
                 >
                   Objectifs
@@ -108,7 +108,7 @@ const Header = () => {
               </button>
             </div>
 
-            {/* Icône bâtiment */}
+            {/* IcÃ´ne bÃ¢timent */}
             <div className="hidden md:block">
               <Building className="w-8 h-8 text-lime-400" />
             </div>
@@ -129,7 +129,7 @@ const Header = () => {
               <a
                 href="#acte"
                 onClick={(e) => {
-                  handleNavClick(e, 'acte');
+                  handleNavClick(e, "acte");
                   setIsMenuOpen(false);
                 }}
                 className="block px-3 py-2 text-base font-medium hover:text-lime-400 cursor-pointer"
@@ -139,7 +139,7 @@ const Header = () => {
               <a
                 href="#services"
                 onClick={(e) => {
-                  handleNavClick(e, 'services');
+                  handleNavClick(e, "services");
                   setIsMenuOpen(false);
                 }}
                 className="block px-3 py-2 text-base font-medium hover:text-lime-400 cursor-pointer"
@@ -149,7 +149,7 @@ const Header = () => {
               <a
                 href="#objectifs"
                 onClick={(e) => {
-                  handleNavClick(e, 'objectifs');
+                  handleNavClick(e, "objectifs");
                   setIsMenuOpen(false);
                 }}
                 className="block px-3 py-2 text-base font-medium hover:text-lime-400 cursor-pointer"

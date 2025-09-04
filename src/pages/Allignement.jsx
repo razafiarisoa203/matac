@@ -6,10 +6,11 @@ import bgConst from "../assets/image/construction-bg.jpeg";
 const API_BASE = import.meta.env.VITE_API_SERVICETERITOIRE;
 const API_BASE_AUTH = import.meta.env.VITE_API_SERVICEAUTH;
 const API_BASE_CITIZEN = import.meta.env.VITE_API_SERVICECITOYEN;
-const API_BASE_ALIGNMENT = import.meta.env.VITE_API_SERVICEALIGNMENT || 'http://localhost:3000';
+const API_BASE_ALIGNMENT =
+  import.meta.env.VITE_API_SERVICEALIGNMENT || "http://localhost:3000";
 
 // ID utilisateur temporaire (en attendant l'implémentation du login)
-const TEMP_USER_ID = '063c91cb-f3e3-4d8a-8737-32304aee41a0';
+const TEMP_USER_ID = "063c91cb-f3e3-4d8a-8737-32304aee41a0";
 
 function Allignement() {
   const navigate = useNavigate();
@@ -107,19 +108,24 @@ function Allignement() {
 
   // Auto-remplissage au chargement si "propriétaire" est déjà sélectionné
   useEffect(() => {
-    if (statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire" && !userDataLoaded) {
+    if (
+      statutProprietaire === "particulier" &&
+      qualiteDemandeur === "proprietaire" &&
+      !userDataLoaded
+    ) {
       loadUserData();
     }
   }, [statutProprietaire, qualiteDemandeur]);
 
   // Auto-populate alignment fields based on form state
   useEffect(() => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       id_mandataire: TEMP_USER_ID,
       status_proprietaire: statutProprietaire,
       qualite_demandeur: qualiteDemandeur,
-      statut_terrain: statutTerrain === "titre" ? 1 : statutTerrain === "cadastre" ? 2 : 3
+      statut_terrain:
+        statutTerrain === "titre" ? 1 : statutTerrain === "cadastre" ? 2 : 3,
     }));
   }, [statutProprietaire, qualiteDemandeur, statutTerrain]);
 
@@ -157,42 +163,47 @@ function Allignement() {
       // For now, we'll simulate file upload by creating a piece-jointe entry
       // In a real implementation, you would upload the file to a storage service first
       const fileUrl = URL.createObjectURL(file);
-      
+
       const pieceJointeData = {
         nom_piece: file.name,
         filename: file.name,
         mimetype: file.type,
         size: file.size,
         url: fileUrl,
-        id_align: alignmentId || 0 // Will be updated after alignment creation
+        id_align: alignmentId || 0, // Will be updated after alignment creation
       };
 
       // If we have an alignment ID, save to backend immediately
       if (alignmentId) {
-        const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/with-file-info`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(pieceJointeData)
-        });
+        const response = await fetch(
+          `${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/with-file-info`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(pieceJointeData),
+          }
+        );
 
         if (!response.ok) {
-          throw new Error('Erreur lors de l\'enregistrement de la pièce jointe');
+          throw new Error("Erreur lors de l'enregistrement de la pièce jointe");
         }
 
         const savedPieceJointe = await response.json();
-        setUploadedPieceJointes(prev => [...prev, savedPieceJointe]);
+        setUploadedPieceJointes((prev) => [...prev, savedPieceJointe]);
       } else {
         // Store temporarily until alignment is created
-        setUploadedPieceJointes(prev => [...prev, pieceJointeData]);
+        setUploadedPieceJointes((prev) => [...prev, pieceJointeData]);
       }
 
       // Add to files for UI display
-      setFiles(prev => [...prev, { name: file.name, url: fileUrl, uploaded: !!alignmentId }]);
-      
+      setFiles((prev) => [
+        ...prev,
+        { name: file.name, url: fileUrl, uploaded: !!alignmentId },
+      ]);
     } catch (error) {
-      console.error('Erreur lors de l\'upload du fichier:', error);
+      console.error("Erreur lors de l'upload du fichier:", error);
       setSubmitMessage(`Erreur lors de l'upload du fichier: ${error.message}`);
     } finally {
       setIsUploadingFile(false);
@@ -201,31 +212,40 @@ function Allignement() {
 
   // Function to save pending piece-jointes after alignment creation
   const savePendingPieceJointes = async (alignmentId) => {
-    const pendingFiles = uploadedPieceJointes.filter(pj => !pj.id_piece);
-    
+    const pendingFiles = uploadedPieceJointes.filter((pj) => !pj.id_piece);
+
     for (const pieceJointe of pendingFiles) {
       try {
         const pieceJointeData = {
           ...pieceJointe,
-          id_align: alignmentId
+          id_align: alignmentId,
         };
 
-        const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/with-file-info`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(pieceJointeData)
-        });
+        const response = await fetch(
+          `${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/with-file-info`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(pieceJointeData),
+          }
+        );
 
         if (!response.ok) {
-          console.error('Erreur lors de l\'enregistrement de la pièce jointe:', pieceJointe.nom_piece);
+          console.error(
+            "Erreur lors de l'enregistrement de la pièce jointe:",
+            pieceJointe.nom_piece
+          );
         } else {
           const savedPieceJointe = await response.json();
-          console.log('Pièce jointe sauvegardée:', savedPieceJointe);
+          console.log("Pièce jointe sauvegardée:", savedPieceJointe);
         }
       } catch (error) {
-        console.error('Erreur lors de l\'enregistrement de la pièce jointe:', error);
+        console.error(
+          "Erreur lors de l'enregistrement de la pièce jointe:",
+          error
+        );
       }
     }
   };
@@ -233,12 +253,16 @@ function Allignement() {
   // Form submission handler
   const handleSubmit = async () => {
     if (!validateAlignmentForm()) {
-      setSubmitMessage("Veuillez remplir tous les champs d'alignement obligatoires.");
+      setSubmitMessage(
+        "Veuillez remplir tous les champs d'alignement obligatoires."
+      );
       return;
     }
-    
+
     if (!validateTerrainForm()) {
-      setSubmitMessage("Veuillez remplir tous les champs de terrain obligatoires.");
+      setSubmitMessage(
+        "Veuillez remplir tous les champs de terrain obligatoires."
+      );
       return;
     }
 
@@ -252,7 +276,7 @@ function Allignement() {
         superficie: parseFloat(formData.superficie),
         longitude: parseFloat(formData.longitude),
         latitude: parseFloat(formData.latitude),
-        statut_terrain: statutTerrain // Send as string, not number
+        statut_terrain: statutTerrain, // Send as string, not number
       };
 
       let terrainData = { ...baseTerrainData };
@@ -269,39 +293,47 @@ function Allignement() {
       } else if (statutTerrain === "cadastre") {
         // For cadastre, we need required fields
         terrainData.num_titre = "CADASTRE-" + Date.now(); // Generate a unique identifier
-        terrainData.nom_proprietaire = formData.nom_proprietaire || "Propriétaire cadastre";
+        terrainData.nom_proprietaire =
+          formData.nom_proprietaire || "Propriétaire cadastre";
         terrainData.num_parcelle = formData.num_parcelle || "";
         terrainData.section_dite = formData.section_dite || "";
         terrainData.canton = formData.canton || "";
       } else if (statutTerrain === "certificat-foncier") {
         // For certificat-foncier, we need required fields
         terrainData.num_titre = "CERT-FONCIER-" + Date.now(); // Generate a unique identifier
-        terrainData.nom_proprietaire = formData.nom_proprietaire || "Propriétaire certificat foncier";
+        terrainData.nom_proprietaire =
+          formData.nom_proprietaire || "Propriétaire certificat foncier";
         terrainData.num_karatany = formData.num_karatany || "";
         terrainData.fokotany = formData.fokotany || "";
         terrainData.canton = formData.canton || "";
-        terrainData.num_parcelle = "CF-" + (formData.num_karatany || Date.now());
+        terrainData.num_parcelle =
+          "CF-" + (formData.num_karatany || Date.now());
         terrainData.section_dite = formData.fokotany || "Section CF";
       }
 
-      console.log('Terrain data being sent:', terrainData);
-      console.log('Statut terrain:', statutTerrain);
+      console.log("Terrain data being sent:", terrainData);
+      console.log("Statut terrain:", statutTerrain);
 
-      const terrainResponse = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/terrain`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(terrainData)
-      });
+      const terrainResponse = await fetch(
+        `${API_BASE_ALIGNMENT}/servicealignement/terrain`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(terrainData),
+        }
+      );
 
       if (!terrainResponse.ok) {
         const errorData = await terrainResponse.json();
-        throw new Error(`Erreur terrain: ${errorData.message || 'Erreur lors de la création du terrain'}`);
+        throw new Error(
+          `Erreur terrain: ${errorData.message || "Erreur lors de la création du terrain"}`
+        );
       }
 
       const terrainResult = await terrainResponse.json();
-      console.log('Terrain créé:', terrainResult);
+      console.log("Terrain créé:", terrainResult);
 
       // Step 2: Create alignment with terrain ID
       const alignmentData = {
@@ -311,32 +343,39 @@ function Allignement() {
         nif: formData.nif,
         id_cert_sit_jur: formData.id_cert_sit_jur,
         id_plan_off: formData.id_plan_off,
-        id_terrain: terrainResult.id_terrain
+        id_terrain: terrainResult.id_terrain,
       };
 
-      const alignmentResponse = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/alignment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(alignmentData)
-      });
+      const alignmentResponse = await fetch(
+        `${API_BASE_ALIGNMENT}/servicealignement/alignment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(alignmentData),
+        }
+      );
 
       if (!alignmentResponse.ok) {
         const errorData = await alignmentResponse.json();
-        throw new Error(`Erreur alignement: ${errorData.message || 'Erreur lors de la création de l\'alignement'}`);
+        throw new Error(
+          `Erreur alignement: ${errorData.message || "Erreur lors de la création de l'alignement"}`
+        );
       }
 
       const alignmentResult = await alignmentResponse.json();
-      
+
       // Save pending piece-jointes with the new alignment ID
       if (uploadedPieceJointes.length > 0) {
         await savePendingPieceJointes(alignmentResult.id_align);
       }
-      
-      setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès!");
-      console.log('Alignement créé:', alignmentResult);
-      
+
+      setSubmitMessage(
+        "Terrain, alignement et pièces jointes créés avec succès!"
+      );
+      console.log("Alignement créé:", alignmentResult);
+
       // Reset form after successful submission
       setTimeout(() => {
         setCurrentStep(1);
@@ -393,9 +432,8 @@ function Allignement() {
         setUploadedPieceJointes([]);
         setSubmitMessage("");
       }, 3000);
-
     } catch (error) {
-      console.error('Erreur lors de la soumission:', error);
+      console.error("Erreur lors de la soumission:", error);
       setSubmitMessage(`Erreur: ${error.message}`);
     } finally {
       setIsSubmitting(false);
@@ -417,10 +455,9 @@ function Allignement() {
   // Validate terrain-specific fields
   const validateTerrainForm = () => {
     // Common required fields for all terrain types
-    const commonFields = (
+    const commonFields =
       formData.adresse.trim() !== "" &&
-      formData.superficie.toString().trim() !== ""
-    );
+      formData.superficie.toString().trim() !== "";
 
     if (statutTerrain === "titre") {
       return (
@@ -452,24 +489,29 @@ function Allignement() {
         formData.latitude.toString().trim() !== ""
       );
     }
-    
+
     return false;
   };
 
   // Fonction pour charger les données utilisateur automatiquement
   const loadUserData = async () => {
     if (isLoadingUserData || userDataLoaded) return;
-    
+
     setIsLoadingUserData(true);
     try {
       // Récupérer les données utilisateur
-      const userResponse = await fetch(`${API_BASE_AUTH}/users/${TEMP_USER_ID}`);
-      if (!userResponse.ok) throw new Error('Erreur lors de la récupération des données utilisateur');
+      const userResponse = await fetch(
+        `${API_BASE_AUTH}/users/${TEMP_USER_ID}`
+      );
+      if (!userResponse.ok)
+        throw new Error(
+          "Erreur lors de la récupération des données utilisateur"
+        );
       const userData = await userResponse.json();
-      
+
       // Vérifier si l'utilisateur a le rôle "Propriétaire"
       const hasOwnerRole = userData.appUserRoles?.some(
-        role => role.role.role_name === "Propriétaire"
+        (role) => role.role.role_name === "Propriétaire"
       );
 
       if (!hasOwnerRole) {
@@ -479,7 +521,9 @@ function Allignement() {
       // Récupérer les données citoyen si disponibles
       let citizenData = null;
       if (userData.id_citizen) {
-        const citizenResponse = await fetch(`${API_BASE_CITIZEN}/citizens/getCitizenById/${userData.id_citizen}`);
+        const citizenResponse = await fetch(
+          `${API_BASE_CITIZEN}/citizens/getCitizenById/${userData.id_citizen}`
+        );
         if (citizenResponse.ok) {
           citizenData = await citizenResponse.json();
         }
@@ -487,23 +531,30 @@ function Allignement() {
 
       // Formater les données pour le formulaire
       const formattedData = {
-        civilite: 'M', // Par défaut
-        nom: citizenData?.citizen_name || userData?.user_pseudo || '',
-        prenoms: citizenData?.citizen_lastname || '',
-        cinPasseport: citizenData?.citizen_national_card_number?.toString() || '',
-        fonction: citizenData?.citizen_work || '',
-        nationalite: 'Malagasy', // Par défaut pour Madagascar
+        civilite: "M", // Par défaut
+        nom: citizenData?.citizen_name || userData?.user_pseudo || "",
+        prenoms: citizenData?.citizen_lastname || "",
+        cinPasseport:
+          citizenData?.citizen_national_card_number?.toString() || "",
+        fonction: citizenData?.citizen_work || "",
+        nationalite: "Malagasy", // Par défaut pour Madagascar
       };
-      
-      setFormData(prev => ({
+
+      setFormData((prev) => ({
         ...prev,
-        ...formattedData
+        ...formattedData,
       }));
-      
+
       setUserDataLoaded(true);
-      console.log('Données utilisateur chargées automatiquement:', formattedData);
+      console.log(
+        "Données utilisateur chargées automatiquement:",
+        formattedData
+      );
     } catch (error) {
-      console.error('Erreur lors du chargement des données utilisateur:', error);
+      console.error(
+        "Erreur lors du chargement des données utilisateur:",
+        error
+      );
       // En cas d'erreur, on continue sans bloquer l'utilisateur
     } finally {
       setIsLoadingUserData(false);
@@ -512,7 +563,7 @@ function Allignement() {
 
   // Fonction pour réinitialiser les données du formulaire
   const resetFormData = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       civilite: "",
       nom: "",
@@ -553,134 +604,27 @@ function Allignement() {
     return (
       <div className="space-y-6">
         {/* Particulier  + propriétaire */}
-        {statutProprietaire === "particulier"  && qualiteDemandeur === "proprietaire" && (
-          <>
-            {isLoadingUserData && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200  -md">
-                <div className="flex items-center">
-                  <div className="animate-spin  -full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  <span className="text-sm text-blue-700">Chargement des informations utilisateur...</span>
-                </div>
-              </div>
-            )}
-            {userDataLoaded && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200  -md">
-                <span className="text-sm text-green-700">✓ Informations utilisateur chargées automatiquement</span>
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
-                Civilité *
-              </label>
-              <div className="flex flex-col space-y-3 bg-transparent">
-                {["M", "Mme"].map((option) => (
-                  <label
-                    key={option}
-                    className="flex items-center cursor-pointer p-2"
-                  >
-                    <input
-                      type="radio"
-                      name="civilite"
-                      value={option}
-                      checked={formData.civilite === option}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
-                    />
-                    <span className="ml-3 text-sm text-gray-700 font-medium">
-                      {option === "M" ? "Monsieur" : option === "Mme" ? "Madame" : "Mademoiselle"}
+        {statutProprietaire === "particulier" &&
+          qualiteDemandeur === "proprietaire" && (
+            <>
+              {isLoadingUserData && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200  -md">
+                  <div className="flex items-center">
+                    <div className="animate-spin  -full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    <span className="text-sm text-blue-700">
+                      Chargement des informations utilisateur...
                     </span>
-                  </label>
-                ))}
-                {formData.civilite === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
-                )}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nom *
-              </label>
-              <input
-                type="text"
-                name="nom"
-                value={formData.nom}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre nom"
-              />
-              {formData.nom === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  </div>
+                </div>
               )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Prénoms *
-              </label>
-              <input
-                type="text"
-                name="prenoms"
-                value={formData.prenoms}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez vos prénoms"
-              />
-              {formData.prenoms === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+              {userDataLoaded && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200  -md">
+                  <span className="text-sm text-green-700">
+                    ✓ Informations utilisateur chargées automatiquement
+                  </span>
+                </div>
               )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                CIN ou Passeport *
-              </label>
-              <input
-                type="text"
-                name="cinPasseport"
-                value={formData.cinPasseport}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Numéro de CIN ou Passeport"
-              />
-              {formData.cinPasseport === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fonction
-              </label>
-              <input
-                type="text"
-                name="fonction"
-                value={formData.fonction}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre fonction (facultatif)"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nationalité *
-              </label>
-              <input
-                type="text"
-                name="nationalite"
-                value={formData.nationalite}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre nationalité"
-              />
-              {formData.nationalite === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
-              )}
-            </div>
-          </>
-        )}
-        {/* Particulier + mandataire */}
-        {statutProprietaire === "particulier"  && qualiteDemandeur === "mandataire" && (
-          <>
-            <div>
-              {/* <h3 className="text-lg font-semibold">VOALOHANY</h3> */}
-                <div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-4">
                   Civilité *
                 </label>
@@ -699,12 +643,18 @@ function Allignement() {
                         className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                       />
                       <span className="ml-3 text-sm text-gray-700 font-medium">
-                        {option === "M" ? "Monsieur" : option === "Mme" ? "Madame" : "Mademoiselle"}
+                        {option === "M"
+                          ? "Monsieur"
+                          : option === "Mme"
+                            ? "Madame"
+                            : "Mademoiselle"}
                       </span>
                     </label>
                   ))}
                   {formData.civilite === "" && (
-                    <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
                   )}
                 </div>
               </div>
@@ -721,7 +671,9 @@ function Allignement() {
                   placeholder="Entrez votre nom"
                 />
                 {formData.nom === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    Ce champ est requis
+                  </p>
                 )}
               </div>
               <div>
@@ -737,7 +689,9 @@ function Allignement() {
                   placeholder="Entrez vos prénoms"
                 />
                 {formData.prenoms === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    Ce champ est requis
+                  </p>
                 )}
               </div>
               <div>
@@ -753,7 +707,9 @@ function Allignement() {
                   placeholder="Numéro de CIN ou Passeport"
                 />
                 {formData.cinPasseport === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    Ce champ est requis
+                  </p>
                 )}
               </div>
               <div>
@@ -782,134 +738,278 @@ function Allignement() {
                   placeholder="Entrez votre nationalité"
                 />
                 {formData.nationalite === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    Ce champ est requis
+                  </p>
                 )}
               </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold">Identité du demandeur Mandataire</h3>
+            </>
+          )}
+        {/* Particulier + mandataire */}
+        {statutProprietaire === "particulier" &&
+          qualiteDemandeur === "mandataire" && (
+            <>
+              <div>
+                {/* <h3 className="text-lg font-semibold">VOALOHANY</h3> */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-4">
                     Civilité *
                   </label>
-                <div className="flex flex-col space-y-3 bg-transparent">
-                  {["M", "Mme"].map((option) => (
-                    <label
-                      key={option}
-                      className="flex items-center cursor-pointer p-2"
-                    >
-                      <input
-                        type="radio"
-                        name="civilite2"
-                        value={option}
-                        checked={formData.civilite2 === option}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
-                      />
-                      <span className="ml-3 text-sm text-gray-700 font-medium">
-                        {option === "M" ? "Monsieur" : option === "Mme" ? "Madame" : "Mademoiselle"}
-                      </span>
-                    </label>
-                  ))}
-                  {formData.civilite2 === "" && (
-                    <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <div className="flex flex-col space-y-3 bg-transparent">
+                    {["M", "Mme"].map((option) => (
+                      <label
+                        key={option}
+                        className="flex items-center cursor-pointer p-2"
+                      >
+                        <input
+                          type="radio"
+                          name="civilite"
+                          value={option}
+                          checked={formData.civilite === option}
+                          onChange={handleInputChange}
+                          className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
+                        />
+                        <span className="ml-3 text-sm text-gray-700 font-medium">
+                          {option === "M"
+                            ? "Monsieur"
+                            : option === "Mme"
+                              ? "Madame"
+                              : "Mademoiselle"}
+                        </span>
+                      </label>
+                    ))}
+                    {formData.civilite === "" && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Ce champ est requis
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom *
+                  </label>
+                  <input
+                    type="text"
+                    name="nom"
+                    value={formData.nom}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez votre nom"
+                  />
+                  {formData.nom === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prénoms *
+                  </label>
+                  <input
+                    type="text"
+                    name="prenoms"
+                    value={formData.prenoms}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez vos prénoms"
+                  />
+                  {formData.prenoms === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    CIN ou Passeport *
+                  </label>
+                  <input
+                    type="text"
+                    name="cinPasseport"
+                    value={formData.cinPasseport}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Numéro de CIN ou Passeport"
+                  />
+                  {formData.cinPasseport === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fonction
+                  </label>
+                  <input
+                    type="text"
+                    name="fonction"
+                    value={formData.fonction}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez votre fonction (facultatif)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nationalité *
+                  </label>
+                  <input
+                    type="text"
+                    name="nationalite"
+                    value={formData.nationalite}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez votre nationalité"
+                  />
+                  {formData.nationalite === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
                   )}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom *
-                </label>
-                <input
-                  type="text"
-                  name="nom2"
-                  value={formData.nom2}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez le nom"
-                />
-                {formData.nom2 === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
-                )}
+                <h3 className="text-lg font-semibold">
+                  Identité du demandeur Mandataire
+                </h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
+                    Civilité *
+                  </label>
+                  <div className="flex flex-col space-y-3 bg-transparent">
+                    {["M", "Mme"].map((option) => (
+                      <label
+                        key={option}
+                        className="flex items-center cursor-pointer p-2"
+                      >
+                        <input
+                          type="radio"
+                          name="civilite2"
+                          value={option}
+                          checked={formData.civilite2 === option}
+                          onChange={handleInputChange}
+                          className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
+                        />
+                        <span className="ml-3 text-sm text-gray-700 font-medium">
+                          {option === "M"
+                            ? "Monsieur"
+                            : option === "Mme"
+                              ? "Madame"
+                              : "Mademoiselle"}
+                        </span>
+                      </label>
+                    ))}
+                    {formData.civilite2 === "" && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Ce champ est requis
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom *
+                  </label>
+                  <input
+                    type="text"
+                    name="nom2"
+                    value={formData.nom2}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez le nom"
+                  />
+                  {formData.nom2 === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prénoms *
+                  </label>
+                  <input
+                    type="text"
+                    name="prenoms2"
+                    value={formData.prenoms2}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez les prénoms"
+                  />
+                  {formData.prenoms2 === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    CIN ou Passeport *
+                  </label>
+                  <input
+                    type="text"
+                    name="cinPasseport2"
+                    value={formData.cinPasseport2}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Numéro de CIN ou Passeport"
+                  />
+                  {formData.cinPasseport2 === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fonction
+                  </label>
+                  <input
+                    type="text"
+                    name="fonction2"
+                    value={formData.fonction2}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez la fonction (facultatif)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nationalité *
+                  </label>
+                  <input
+                    type="text"
+                    name="nationalite2"
+                    value={formData.nationalite2}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez la nationalité"
+                  />
+                  {formData.nationalite2 === "" && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Ce champ est requis
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Age
+                  </label>
+                  <input
+                    type="number"
+                    name="age2"
+                    value={formData.age2}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Entrez l'âge"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prénoms *
-                </label>
-                <input
-                  type="text"
-                  name="prenoms2"
-                  value={formData.prenoms2}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez les prénoms"
-                />
-                {formData.prenoms2 === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CIN ou Passeport *
-                </label>
-                <input
-                  type="text"
-                  name="cinPasseport2"
-                  value={formData.cinPasseport2}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Numéro de CIN ou Passeport"
-                />
-                {formData.cinPasseport2 === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fonction
-                </label>
-                <input
-                  type="text"
-                  name="fonction2"
-                  value={formData.fonction2}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez la fonction (facultatif)"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nationalité *
-                </label>
-                <input
-                  type="text"
-                  name="nationalite2"
-                  value={formData.nationalite2}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez la nationalité"
-                />
-                {formData.nationalite2 === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Age
-                </label>
-                <input
-                  type="number"
-                  name="age2"
-                  value={formData.age2}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez l'âge"
-                />
-              </div>
-            </div>
-          </>
-        )}
-
+            </>
+          )}
 
         {statutProprietaire === "personne-morale" && (
           <>
@@ -981,12 +1081,18 @@ function Allignement() {
                       className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                     />
                     <span className="ml-3 text-sm text-gray-700 font-medium">
-                      {option === "M" ? "Monsieur" : option === "Mme" ? "Madame" : "Mademoiselle"}
+                      {option === "M"
+                        ? "Monsieur"
+                        : option === "Mme"
+                          ? "Madame"
+                          : "Mademoiselle"}
                     </span>
                   </label>
                 ))}
                 {formData.civiliteRepresentant === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    Ce champ est requis
+                  </p>
                 )}
               </div>
             </div>
@@ -1099,22 +1205,30 @@ function Allignement() {
     return false;
   };
 
-  {/* Return to dashborad*/}
+  {
+    /* Return to dashborad*/
+  }
   const handleReturnToDashboard = () => {
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (
-    <div 
-    className="min-h-screen"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${bgConst})`,
-          }}>
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${bgConst})`,
+      }}
+    >
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-white  -lg shadow-sm">
           {/* return to dashboard button like the primary button*/}
           <div>
-            <button onClick={handleReturnToDashboard} className="bg-gray-300 absolute top-5 text-gray-800 font-semibold left-5 px-4 py-2  -md hover:bg-gray-400">Retour au dashboard</button>
+            <button
+              onClick={handleReturnToDashboard}
+              className="bg-gray-300 absolute top-5 text-gray-800 font-semibold left-5 px-4 py-2  -md hover:bg-gray-400"
+            >
+              Retour au dashboard
+            </button>
           </div>
           {/* Main Title */}
           <div className="text-center py-8 border-transparent">
@@ -1162,11 +1276,13 @@ function Allignement() {
               <div className="max-w-md">
                 {/* Success/Error Message */}
                 {submitMessage && (
-                  <div className={`mb-6 p-4  -md ${
-                    submitMessage.includes('succès') 
-                      ? 'bg-green-50 border border-green-200 text-green-700'
-                      : 'bg-red-50 border border-red-200 text-red-700'
-                  }`}>
+                  <div
+                    className={`mb-6 p-4  -md ${
+                      submitMessage.includes("succès")
+                        ? "bg-green-50 border border-green-200 text-green-700"
+                        : "bg-red-50 border border-red-200 text-red-700"
+                    }`}
+                  >
                     {submitMessage}
                   </div>
                 )}
@@ -1194,7 +1310,10 @@ function Allignement() {
                           >
                             <option value="" hidden></option>
                             {regions.map((region) => (
-                              <option key={region.region_id} value={region.region_id}>
+                              <option
+                                key={region.region_id}
+                                value={region.region_id}
+                              >
                                 {region.name}
                               </option>
                             ))}
@@ -1220,7 +1339,10 @@ function Allignement() {
                           >
                             <option value="" hidden></option>
                             {communes.map((commune) => (
-                              <option key={commune.commune_id} value={commune.commune_id}>
+                              <option
+                                key={commune.commune_id}
+                                value={commune.commune_id}
+                              >
                                 {commune.name}
                               </option>
                             ))}
@@ -1250,7 +1372,9 @@ function Allignement() {
                               name="statutProprietaire"
                               value="particulier"
                               checked={statutProprietaire === "particulier"}
-                              onChange={(e) => setStatutProprietaire(e.target.value)}
+                              onChange={(e) =>
+                                setStatutProprietaire(e.target.value)
+                              }
                               className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                             />
                             <span className="ml-3 text-sm text-gray-700 font-medium">
@@ -1263,7 +1387,9 @@ function Allignement() {
                               name="statutProprietaire"
                               value="personne-morale"
                               checked={statutProprietaire === "personne-morale"}
-                              onChange={(e) => setStatutProprietaire(e.target.value)}
+                              onChange={(e) =>
+                                setStatutProprietaire(e.target.value)
+                              }
                               className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                             />
                             <span className="ml-3 text-sm text-gray-700 font-medium">
@@ -1291,20 +1417,29 @@ function Allignement() {
                               checked={qualiteDemandeur === "proprietaire"}
                               onChange={(e) => {
                                 setQualiteDemandeur(e.target.value);
-                                if (e.target.value === "proprietaire" && statutProprietaire === "particulier") {
+                                if (
+                                  e.target.value === "proprietaire" &&
+                                  statutProprietaire === "particulier"
+                                ) {
                                   loadUserData();
                                 } else if (e.target.value === "mandataire") {
                                   resetFormData();
                                 }
                               }}
-                              disabled={statutProprietaire === "personne-morale"}
+                              disabled={
+                                statutProprietaire === "personne-morale"
+                              }
                               className={`w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 ${
-                                statutProprietaire === "personne-morale" ? "opacity-50 cursor-not-allowed" : ""
+                                statutProprietaire === "personne-morale"
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
                               }`}
                             />
                             <span
                               className={`ml-3 text-sm font-medium ${
-                                statutProprietaire === "personne-morale" ? "text-gray-400" : "text-gray-700"
+                                statutProprietaire === "personne-morale"
+                                  ? "text-gray-400"
+                                  : "text-gray-700"
                               }`}
                             >
                               Propriétaire
@@ -1476,7 +1611,9 @@ function Allignement() {
                               placeholder="Numéro du titre"
                             />
                             {formData.num_titre === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1492,7 +1629,9 @@ function Allignement() {
                               placeholder="Indice"
                             />
                             {formData.indice === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1508,7 +1647,9 @@ function Allignement() {
                               placeholder="Nom du propriétaire"
                             />
                             {formData.nom_proprietaire === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1524,7 +1665,9 @@ function Allignement() {
                               placeholder="Adresse du terrain"
                             />
                             {formData.adresse === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1540,7 +1683,9 @@ function Allignement() {
                               placeholder="Numéro de parcelle"
                             />
                             {formData.num_parcelle === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1556,7 +1701,9 @@ function Allignement() {
                               placeholder="Section dite"
                             />
                             {formData.section_dite === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1572,7 +1719,9 @@ function Allignement() {
                               placeholder="Canton"
                             />
                             {formData.canton === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1616,7 +1765,9 @@ function Allignement() {
                                 placeholder="Longitude"
                               />
                               {formData.longitude === "" && (
-                                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                                <p className="text-red-500 text-xs mt-1">
+                                  Ce champ est requis
+                                </p>
                               )}
                             </div>
                             <div>
@@ -1633,7 +1784,9 @@ function Allignement() {
                                 placeholder="Latitude"
                               />
                               {formData.latitude === "" && (
-                                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                                <p className="text-red-500 text-xs mt-1">
+                                  Ce champ est requis
+                                </p>
                               )}
                             </div>
                           </div>
@@ -1650,7 +1803,9 @@ function Allignement() {
                               placeholder="Superficie en mètres carrés"
                             />
                             {formData.superficie === "" && (
-                              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                Ce champ est requis
+                              </p>
                             )}
                           </div>
                           <div>
@@ -1896,7 +2051,7 @@ function Allignement() {
                           placeholder="Entrez l'ID du mandataire"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Statut Propriétaire *
@@ -1938,21 +2093,6 @@ function Allignement() {
                           placeholder="Numéro d'Identification Fiscale"
                         />
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          ID Certificat Situation Juridique *
-                        </label>
-                        <input
-                          type="text"
-                          name="id_cert_sit_jur"
-                          value={formData.id_cert_sit_jur}
-                          onChange={handleInputChange}
-                          className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          placeholder="ID du certificat de situation juridique"
-                        />
-                      </div>
-
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           ID Plan Officiel *
@@ -1975,10 +2115,14 @@ function Allignement() {
                           type="number"
                           name="id_terrain"
                           value={formData.id_terrain || ""}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            id_terrain: e.target.value ? parseInt(e.target.value) : null
-                          }))}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              id_terrain: e.target.value
+                                ? parseInt(e.target.value)
+                                : null,
+                            }))
+                          }
                           className="w-full p-3 border border-gray-300  -md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="ID du terrain associé"
                         />
@@ -2025,10 +2169,15 @@ function Allignement() {
                       </div>
                       <div className="mt-4 space-y-2">
                         {files.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between p-2 bg-gray-50  -md">
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-2 bg-gray-50  -md"
+                          >
                             <div className="flex items-center space-x-2">
                               <div className="w-2 h-2  -full bg-green-500"></div>
-                              <span className="text-sm text-gray-700">{file.name}</span>
+                              <span className="text-sm text-gray-700">
+                                {file.name}
+                              </span>
                               {file.uploaded && (
                                 <span className="text-xs text-green-600 bg-green-100 px-2 py-1  ">
                                   Enregistré
@@ -2046,8 +2195,12 @@ function Allignement() {
                               </a>
                               <button
                                 onClick={() => {
-                                  setFiles(prev => prev.filter((_, i) => i !== index));
-                                  setUploadedPieceJointes(prev => prev.filter((_, i) => i !== index));
+                                  setFiles((prev) =>
+                                    prev.filter((_, i) => i !== index)
+                                  );
+                                  setUploadedPieceJointes((prev) =>
+                                    prev.filter((_, i) => i !== index)
+                                  );
                                 }}
                                 className="text-red-500 text-sm hover:text-red-700"
                               >
@@ -2058,7 +2211,8 @@ function Allignement() {
                         ))}
                         {files.length === 0 && (
                           <p className="text-gray-500 text-sm italic">
-                            Aucun document ajouté. Cliquez sur le bouton "+" pour ajouter des pièces justificatives.
+                            Aucun document ajouté. Cliquez sur le bouton "+"
+                            pour ajouter des pièces justificatives.
                           </p>
                         )}
                       </div>
@@ -2079,9 +2233,15 @@ function Allignement() {
                   {currentStep < 5 && (
                     <button
                       onClick={handleNext}
-                      disabled={currentStep === 1 && (!selectedRegion || !selectedCommune)}
+                      disabled={
+                        currentStep === 1 &&
+                        (!selectedRegion || !selectedCommune)
+                      }
                       className={`py-3 px-6  -md font-medium text-white transition-colors ml-auto ${
-                        (currentStep === 1 && selectedRegion && selectedCommune) || currentStep > 1
+                        (currentStep === 1 &&
+                          selectedRegion &&
+                          selectedCommune) ||
+                        currentStep > 1
                           ? "bg-green-500 hover:bg-green-600"
                           : "bg-gray-300 cursor-not-allowed"
                       }`}
@@ -2102,8 +2262,8 @@ function Allignement() {
                       onClick={handleSubmit}
                       disabled={isSubmitting}
                       className={`py-3 px-6  -md font-medium text-white transition-colors ml-auto ${
-                        isSubmitting 
-                          ? "bg-gray-400 cursor-not-allowed" 
+                        isSubmitting
+                          ? "bg-gray-400 cursor-not-allowed"
                           : "bg-green-500 hover:bg-green-600"
                       }`}
                     >

@@ -11,11 +11,14 @@ const LandingPage = () => {
     <div className="bg-gray-50">
       <Header />
       <NavigationBar />
-      <HeroSection />
-      <ActeUrbanismeSection />
-      <ServicesSection />
-      <ObjectifsSection />
-      <Footer />
+      {/* Ajout d'un padding-top pour compenser la hauteur des éléments fixes */}
+      <div className="pt-32">
+        <HeroSection />
+        <ActeUrbanismeSection />
+        <ServicesSection />
+        <ObjectifsSection />
+        <Footer />
+      </div>
     </div>
   );
 };

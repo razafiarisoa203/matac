@@ -11,7 +11,7 @@ const NavigationBar = ({ scrollToSection, isOverlay = false }) => {
   };
 
   return (
-    <nav className={`py-12 relative ${isOverlay ? 'mt-0' : 'mt-0'}`}>
+    <nav className={`fixed top-24 left-0 right-0 py-12 z-40 bg-black bg-opacity-50 backdrop-blur-sm ${isOverlay ? 'mt-0' : 'mt-0'}`}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between">
           <div className="flex justify-center flex-1">

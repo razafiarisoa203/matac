@@ -2,24 +2,28 @@ const ServicesSection = () => {
   const services = [
     {
       title: "Déposez votre dossier en ligne",
-      description: "Grâce à un fenêtre de système vous permettra de déposer et rester votre demande de permis de construire dans un délai très court.",
-      image: "/dossiers.png"
+      description:
+        "Grâce à notre interface intuitive, déposez votre demande de permis de construire en quelques minutes seulement.",
+      image: "src/assets/image/dossiers.jpeg",
     },
     {
       title: "Suivez l'évolution de votre demande",
-      description: "Pour vous permettre de suivre votre demande vous recevrez des alertes et notification par email vous nous allons également l'envoyer pour vous aider.",
-      image: "/demander-de-laide.png"
+      description:
+        "Recevez des notifications en temps réel sur l'avancement de votre dossier et soyez alerté de toute action requise.",
+      image: "src/assets/image/demander-de-laide.jpeg",
     },
     {
       title: "Votre dossier sera traité en ligne",
-      description: "Votre permis est géré en sécurité et vous pouvez y avoir accès en tout moment.",
-      image: "/immeuble-de-bureaux.png"
+      description:
+        "Notre équipe d'experts traite votre demande avec célérité tout en garantissant une analyse minutieuse.",
+      image: "src/assets/image/traiter.jpeg",
     },
     {
-      title: "Votre demande est archivée et en sécurité",
-      description: "Votre permis est géré en sécurité et vous pouvez y avoir accès en tout moment.",
-      image: "/verifier.png"
-    }
+      title: "Obtenez une réponse rapide",
+      description:
+        "Bénéficiez d'un traitement accéléré de votre demande avec des délais réduits grâce à notre plateforme digitale.",
+      image: "src/assets/image/relax.jpeg",
+    },
   ];
 
   return (
@@ -39,47 +43,32 @@ const ServicesSection = () => {
         <div className="w-full max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 h-full">
             {services.map((service, index) => (
-              <div 
+              <div
                 key={index}
-                className="bg-white border-2 border-gray-200 overflow-hidden shadow-lg hover:shadow-xl transition-shadow flex flex-col"
+                className="bg-white border-2 border-gray-200 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-105 flex flex-col group cursor-pointer hover:border-[#9BC53D]"
               >
-                <div className="h-64 bg-gray-100 flex items-center justify-center">
-                  <img 
-                    src={service.image} 
+                {/* Conteneur d'image modifié pour remplir l'espace */}
+                <div className="h-64 bg-gray-100 overflow-hidden relative">
+                  <img
+                    src={service.image}
                     alt={service.title}
-                    className="w-32 h-32 object-contain"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
+                  {/* Overlay avec effet au survol */}
+                  <div className="absolute inset-0 bg-[#9BC53D] opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
                 </div>
-                <div className="p-8 flex-1 flex flex-col">
-                  <h3 className="text-[#9BC53D] text-xl font-bold mb-4">
+                <div className="p-8 flex-1 flex flex-col transition-all duration-300 group-hover:bg-gray-50">
+                  <h3 className="text-[#9BC53D] text-xl font-bold mb-4 transition-all duration-300 group-hover:text-green-600 group-hover:scale-105">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600 text-base leading-relaxed flex-1">
+                  <p className="text-gray-600 text-base leading-relaxed flex-1 transition-colors duration-300 group-hover:text-gray-700">
                     {service.description}
                   </p>
+                  {/* Indicateur de survol */}
+                  <div className="mt-4 w-0 h-1 bg-[#9BC53D] transition-all duration-500 group-hover:w-full"></div>
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer MATAC */}
-      <div className="mt-auto">
-        <div className="bg-[#9BC53D] py-20">
-          <div className="max-w-7xl mx-auto px-8">
-            <div className="text-left">
-              <h3 className="text-white text-7xl font-bold mb-6">MATAC</h3>
-              <p className="text-white text-xl mb-10 max-w-lg">
-                Ministère en charge de l'Aménagement du Territoire<br/>
-                Autorisation de Construire
-              </p>
-              <div className="flex space-x-6">
-                <div className="w-5 h-5 bg-white  -full"></div>
-                <div className="w-5 h-5 bg-white  -full opacity-50"></div>
-                <div className="w-5 h-5 bg-white  -full opacity-50"></div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
