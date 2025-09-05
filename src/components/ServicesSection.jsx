@@ -1,4 +1,3 @@
-import { Bell, check, Settings, Upload } from "lucide-react";
 import React from "react";
 
 const ServicesSection = () => {
@@ -8,7 +7,6 @@ const ServicesSection = () => {
       description:
         "Grâce à notre interface intuitive, déposez votre demande de permis de construire en quelques minutes seulement.",
       image: "src/assets/image/dossiers.jpeg",
-      icon: Upload,
       color: "bg-lime-900",
       step: "01"
     },
@@ -17,7 +15,6 @@ const ServicesSection = () => {
       description:
         "Recevez des notifications en temps réel sur l'avancement de votre dossier et soyez alerté de toute action requise.",
       image: "src/assets/image/demander-de-laide.jpeg",
-      icon: Bell,
       color: "bg-lime-900",
       step: "02"
     },
@@ -26,7 +23,6 @@ const ServicesSection = () => {
       description:
         "Notre équipe d'experts traite votre demande avec célérité tout en garantissant une analyse minutieuse.",
       image: "src/assets/image/traiter.jpeg",
-      icon: Settings,
       color: "bg-lime-900",
       step: "03"
     },
@@ -35,7 +31,6 @@ const ServicesSection = () => {
       description:
         "Bénéficiez d'un traitement accéléré de votre demande avec des délais réduits grâce à notre plateforme digitale.",
       image: "src/assets/image/relax.jpeg",
-      icon: check,
       color: "bg-lime-900",
       step: "04"
     },
@@ -70,7 +65,7 @@ const ServicesSection = () => {
         <div className="w-full max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 h-full">
             {services.map((service, index) => {
-              const IconComponent = service.icon;
+              
               return (
                 <div
                   key={index}
@@ -86,13 +81,6 @@ const ServicesSection = () => {
                     />
                     {/* Overlay avec dégradé */}
                     <div className={`absolute inset-0 bg-gradient-to-t ${service.color} opacity-0 group-hover:opacity-30 transition-opacity duration-500`}></div>
-                    
-                    {/* Icône qui apparaît au survol */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform scale-75 group-hover:scale-100">
-                      <div className="w-16 h-16 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl">
-                        <IconComponent className={`w-8 h-8 bg-gradient-to-br ${service.color} bg-clip-text text-transparent`} />
-                      </div>
-                    </div>
                   </div>
 
                   <div className="p-8 flex-1 flex flex-col transition-all duration-300 group-hover:bg-gradient-to-b group-hover:from-gray-50 group-hover:to-white">

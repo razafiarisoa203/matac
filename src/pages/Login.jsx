@@ -1,6 +1,6 @@
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { User, Lock, Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 
@@ -38,7 +38,7 @@ const Login = () => {
       <Header />
       <NavigationBar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mt-30 mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-md mx-auto bg-white  -xl shadow-md overflow-hidden md:max-w-2xl">
           <div className="md:flex">
             <div className="p-8 w-full">
