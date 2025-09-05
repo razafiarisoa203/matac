@@ -72,27 +72,6 @@ const ServicesSection = () => {
           </div>
         </div>
       </div>
-
-      {/* Footer MATAC */}
-      <div className="mt-auto">
-        <div className="bg-[#9BC53D] py-20">
-          <div className="max-w-7xl mx-auto px-8">
-            <div className="text-left">
-              <h3 className="text-white text-7xl font-bold mb-6">MATAC</h3>
-              <p className="text-white text-xl mb-10 max-w-lg">
-                Ministère en charge de l'Aménagement du Territoire
-                <br />
-                Autorisation de Construire
-              </p>
-              <div className="flex space-x-6">
-                <div className="w-5 h-5 bg-white rounded-full"></div>
-                <div className="w-5 h-5 bg-white rounded-full opacity-50"></div>
-                <div className="w-5 h-5 bg-white rounded-full opacity-50"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
