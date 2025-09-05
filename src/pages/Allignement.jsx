@@ -1136,14 +1136,14 @@ function Allignement() {
                       key={step.number}
                       onClick={() => handleStepClick(step.number)}
                       className={`w-full flex items-center space-x-3 p-3  -lg transition-colors text-left ${step.number === currentStep
-                          ? "bg-green-500 text-white"
-                          : "text-gray-600 hover:bg-gray-100"
+                        ? "bg-green-500 text-white"
+                        : "text-gray-600 hover:bg-gray-100"
                         }`}
                     >
                       <div
                         className={`w-8 h-8  rounded-full flex items-center justify-center text-sm font-medium ${step.number === currentStep
-                            ? "bg-white text-green-500"
-                            : "bg-gray-200 text-gray-600"
+                          ? "bg-white text-green-500"
+                          : "bg-gray-200 text-gray-600"
                           }`}
                       >
                         {step.number}
@@ -1161,8 +1161,8 @@ function Allignement() {
                 {/* Success/Error Message */}
                 {submitMessage && (
                   <div className={`mb-6 p-4  -md ${submitMessage.includes('succès')
-                      ? 'bg-green-50 border border-green-200 text-green-700'
-                      : 'bg-red-50 border border-red-200 text-red-700'
+                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    : 'bg-red-50 border border-red-200 text-red-700'
                     }`}>
                     {submitMessage}
                   </div>
@@ -1276,8 +1276,8 @@ function Allignement() {
                         <div className="space-y-3">
                           <label
                             className={`flex items-center p-2   transition-colors ${statutProprietaire === "personne-morale"
-                                ? "cursor-not-allowed bg-gray-50"
-                                : "cursor-pointer hover:bg-gray-50"
+                              ? "cursor-not-allowed bg-gray-50"
+                              : "cursor-pointer hover:bg-gray-50"
                               }`}
                           >
                             <input
@@ -2075,11 +2075,11 @@ function Allignement() {
                       onClick={handleNext}
                       disabled={currentStep === 1 && (!selectedRegion || !selectedCommune)}
                       className={`py-3 px-6  -md font-medium text-white transition-colors ml-auto ${(currentStep === 1 && selectedRegion && selectedCommune) || currentStep > 1
-                          ? "bg-green-500 hover:bg-green-600"
-                          : "bg-gray-300 cursor-not-allowed"
+                        ? "bg-green-500 hover:bg-green-600"
+                        : "bg-gray-300 cursor-not-allowed"
                         }`}
                     >
-                      SUIVANTE
+                      SUIVANT
                     </button>
                   )}
                   {currentStep === 5 && (
@@ -2087,7 +2087,7 @@ function Allignement() {
                       onClick={handleNext}
                       className="py-3 px-6  -md font-medium text-white bg-green-500 hover:bg-green-600 transition-colors ml-auto"
                     >
-                      SUIVANTE
+                      SUIVANT
                     </button>
                   )}
                   {currentStep === 6 && (
@@ -2095,8 +2095,8 @@ function Allignement() {
                       onClick={handleSubmit}
                       disabled={isSubmitting}
                       className={`py-3 px-6  -md font-medium text-white transition-colors ml-auto ${isSubmitting
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-green-500 hover:bg-green-600"
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-green-500 hover:bg-green-600"
                         }`}
                     >
                       {isSubmitting ? "SOUMISSION..." : "SOUMETTRE"}
