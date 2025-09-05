@@ -8,7 +8,7 @@ const ActesUrbanismeSection = () => {
           <h2 className="text-4xl font-bold text-gray-800 mb-4">
             ACTE D'URBANISME
           </h2>
-          <div className="w-24 h-1 bg-lime-400 mx-auto"></div>
+          <div className="w-24 h-1 bg-lime-300 mx-auto"></div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -32,7 +32,7 @@ const ActesUrbanismeSection = () => {
               intérieure des bâtiments et des sanitaires.
             </p>
             <div className="mt-8">
-              <button className="bg-lime-400 text-gray-800 px-6 py-3  -lg hover:bg-lime-500 font-medium transition-colors duration-200">
+              <button className="bg-lime-300 text-gray-800 px-6 py-3  -lg hover:bg-lime-500 font-medium transition-colors duration-200">
                 En savoir plus
               </button>
             </div>
@@ -67,7 +67,7 @@ const ActesUrbanismeSection = () => {
           {[1, 2, 3, 4].map((dot) => (
             <div
               key={dot}
-              className={`w-3 h-3  -full ${dot === 2 ? 'bg-lime-400' : 'bg-gray-300'}`}
+              className={`w-3 h-3  -full ${dot === 2 ? 'bg-lime-300' : 'bg-gray-300'}`}
             ></div>
           ))}
         </div>

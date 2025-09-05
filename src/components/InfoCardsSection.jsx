@@ -1,5 +1,4 @@
-import { Link } from "react-router-dom";
-import { Target, MapPin, FileText } from "lucide-react";
+import { FileText, MapPin, Target } from "lucide-react";
 
 const InfoCardsSection = () => {
   return (
@@ -9,7 +8,7 @@ const InfoCardsSection = () => {
           {/* Carte Indicateur */}
           <div className="bg-white p-6  -lg shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-lime-400   flex items-center justify-center mr-3">
+              <div className="w-8 h-8 bg-lime-300   flex items-center justify-center mr-3">
                 <Target className="w-5 h-5 text-gray-800" />
               </div>
               <h3 className="text-lg font-semibold text-lime-600">
@@ -25,7 +24,7 @@ const InfoCardsSection = () => {
           {/* Carte Cartographie */}
           <div className="bg-white p-6  -lg shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-lime-400   flex items-center justify-center mr-3">
+              <div className="w-8 h-8 bg-lime-300   flex items-center justify-center mr-3">
                 <MapPin className="w-5 h-5 text-gray-800" />
               </div>
               <h3 className="text-lg font-semibold text-lime-600">
@@ -41,7 +40,7 @@ const InfoCardsSection = () => {
           {/* Carte Documentation */}
           <div className="bg-white p-6  -lg shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-lime-400   flex items-center justify-center mr-3">
+              <div className="w-8 h-8 bg-lime-300   flex items-center justify-center mr-3">
                 <FileText className="w-5 h-5 text-gray-800" />
               </div>
               <h3 className="text-lg font-semibold text-lime-600">
