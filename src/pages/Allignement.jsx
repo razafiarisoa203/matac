@@ -1,28 +1,24 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronDown, User, ArrowBigLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import bgConst from "../assets/image/construction-bg.jpeg";
-
-const API_BASE = import.meta.env.VITE_API_SERVICETERITOIRE;
-const API_BASE_AUTH = import.meta.env.VITE_API_SERVICEAUTH;
-const API_BASE_CITIZEN = import.meta.env.VITE_API_SERVICECITOYEN;
-const API_BASE_ALIGNMENT = import.meta.env.VITE_API_SERVICEALIGNMENT || 'http://localhost:3000';
-
-// ID utilisateur temporaire (en attendant l'implémentation du login)
-const TEMP_USER_ID = '063c91cb-f3e3-4d8a-8737-32304aee41a0';
+import { useFormData } from "../hooks/useFormData";
+import { useFileUpload } from "../hooks/useFileUpload";
+import { useRegionsCommunes } from "../hooks/useRegionsCommunes";
+import { authService, alignmentService, TEMP_USER_ID } from "../services/api";
+import { validateTerrainForm, validateAlignmentForm } from "../utils/validation";
 
 function Allignement() {
   const navigate = useNavigate();
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [selectedCommune, setSelectedCommune] = useState("");
+  const { regions, communes, selectedRegion, selectedCommune, setSelectedRegion, setSelectedCommune } = useRegionsCommunes();
+  const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
+  
   const [statutTerrain, setStatutTerrain] = useState("titre");
   const [currentStep, setCurrentStep] = useState(1);
-  const [files, setFiles] = useState([]);
-  const [uploadedPieceJointes, setUploadedPieceJointes] = useState([]);
-  const fileInputRef = useRef(null);
   const [statutProprietaire, setStatutProprietaire] = useState("particulier");
   const [qualiteDemandeur, setQualiteDemandeur] = useState("proprietaire");
-  const [formData, setFormData] = useState({
+  
+  const { formData, setFormData, handleInputChange, updateFormData } = useFormData({
     id_mandataire: "",
     status_proprietaire: "",
     qualite_demandeur: "",
@@ -77,63 +73,90 @@ function Allignement() {
     nationalite2: "",
     age2: "",
   });
+  
   const [isLoadingUserData, setIsLoadingUserData] = useState(false);
   const [userDataLoaded, setUserDataLoaded] = useState(false);
-  const [regions, setRegions] = useState([]);
-  const [communes, setCommunes] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
-  // Fetch regions au chargement
-  useEffect(() => {
-    fetch(`${API_BASE}/regions`)
-      .then((res) => res.json())
-      .then((data) => setRegions(data))
-      .catch(() => setRegions([]));
-  }, []);
 
-  // Fetch communes quand une région est sélectionnée
-  useEffect(() => {
-    if (selectedRegion) {
-      fetch(`${API_BASE}/communes?region=${selectedRegion}`)
-        .then((res) => res.json())
-        .then((data) => setCommunes(data))
-        .catch(() => setCommunes([]));
-    } else {
-      setCommunes([]);
+  // Fonction pour charger les données utilisateur automatiquement
+  const loadUserData = useCallback(async () => {
+    if (isLoadingUserData || userDataLoaded) return;
+
+    setIsLoadingUserData(true);
+    try {
+      const userData = await authService.getUserData(TEMP_USER_ID);
+      
+      // Formater les données pour le formulaire
+      const formattedData = {
+        civilite: 'M', // Par défaut
+        nom: userData?.citizen_name || userData?.user_pseudo || '',
+        prenoms: userData?.citizen_lastname || '',
+        cinPasseport: userData?.citizen_national_card_number?.toString() || '',
+        fonction: userData?.citizen_work || '',
+        nationalite: 'Malagasy', // Par défaut pour Madagascar
+      };
+
+      updateFormData(formattedData);
+      setUserDataLoaded(true);
+      console.log('Données utilisateur chargées automatiquement:', formattedData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données utilisateur:', error);
+      // En cas d'erreur, on continue sans bloquer l'utilisateur
+    } finally {
+      setIsLoadingUserData(false);
     }
-  }, [selectedRegion]);
+  }, [isLoadingUserData, userDataLoaded, updateFormData]);
 
   // Auto-remplissage au chargement si "propriétaire" est déjà sélectionné
   useEffect(() => {
     if (statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire" && !userDataLoaded) {
       loadUserData();
     }
-  }, [statutProprietaire, qualiteDemandeur]);
+  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, loadUserData]);
 
   // Auto-populate alignment fields based on form state
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
+    updateFormData({
       id_mandataire: TEMP_USER_ID,
       status_proprietaire: statutProprietaire,
       qualite_demandeur: qualiteDemandeur,
       statut_terrain: statutTerrain === "titre" ? 1 : statutTerrain === "cadastre" ? 2 : 3
-    }));
-  }, [statutProprietaire, qualiteDemandeur, statutTerrain]);
+    });
+  }, [statutProprietaire, qualiteDemandeur, statutTerrain, updateFormData]);
+
+  // Validate personal form data
+  const validatePersonalForm = useCallback(() => {
+    if (statutProprietaire === "particulier") {
+      if (qualiteDemandeur === "proprietaire") {
+        return formData.civilite && formData.nom && formData.prenoms && 
+               formData.cinPasseport && formData.nationalite;
+      } else if (qualiteDemandeur === "mandataire") {
+        return formData.civilite && formData.nom && formData.prenoms && 
+               formData.cinPasseport && formData.nationalite &&
+               formData.civilite2 && formData.nom2 && formData.prenoms2 && 
+               formData.cinPasseport2 && formData.nationalite2;
+      }
+    } else if (statutProprietaire === "personne_morale") {
+      return formData.raisonSociale && formData.carteStatistique &&
+             formData.civiliteRepresentant && formData.nomRepresentant && 
+             formData.prenomsRepresentant && formData.cinPasseportRepresentant;
+    }
+    return false;
+  }, [statutProprietaire, qualiteDemandeur, formData]);
 
   const handleNext = () => {
     if (currentStep === 1 && selectedRegion && selectedCommune) {
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 2 && validateForm()) {
+    } else if (currentStep === 2 && validatePersonalForm()) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 3) {
       // Step 3 has no required validation, just move to next step
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 4 && validateTerrainForm()) {
+    } else if (currentStep === 4 && validateTerrainForm(formData, statutTerrain)) {
       setCurrentStep(currentStep + 1);
-    } else if (currentStep === 5 && validateAlignmentForm()) {
+    } else if (currentStep === 5 && validateAlignmentForm(formData)) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 6) {
       // Documents step, no validation needed to proceed
@@ -145,99 +168,27 @@ function Allignement() {
     setCurrentStep(stepNumber);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
   // Function to handle file upload to backend
-  const handleFileUpload = async (file, alignmentId = null) => {
-    setIsUploadingFile(true);
+  const handleFileUpload = async (file) => {
     try {
-      // For now, we'll simulate file upload by creating a piece-jointe entry
-      // In a real implementation, you would upload the file to a storage service first
-      const fileUrl = URL.createObjectURL(file);
-
-      const pieceJointeData = {
-        nom_piece: file.name,
-        filename: file.name,
-        mimetype: file.type,
-        size: file.size,
-        url: fileUrl,
-        id_align: alignmentId || 0 // Will be updated after alignment creation
-      };
-
-      // If we have an alignment ID, save to backend immediately
-      if (alignmentId) {
-        const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/with-file-info`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(pieceJointeData)
-        });
-
-        if (!response.ok) {
-          throw new Error('Erreur lors de l\'enregistrement de la pièce jointe');
-        }
-
-        const savedPieceJointe = await response.json();
-        setUploadedPieceJointes(prev => [...prev, savedPieceJointe]);
-      } else {
-        // Store temporarily until alignment is created
-        setUploadedPieceJointes(prev => [...prev, pieceJointeData]);
-      }
-
-      // Add to files for UI display
-      setFiles(prev => [...prev, { name: file.name, url: fileUrl, uploaded: !!alignmentId }]);
-
+      const result = await uploadFile(file);
+      return result;
     } catch (error) {
-      console.error('Erreur lors de l\'upload du fichier:', error);
       setSubmitMessage(`Erreur lors de l'upload du fichier: ${error.message}`);
-    } finally {
-      setIsUploadingFile(false);
+      throw error;
     }
   };
 
-  // Function to save pending piece-jointes after alignment creation
-  const savePendingPieceJointes = async (alignmentId) => {
-    const pendingFiles = uploadedPieceJointes.filter(pj => !pj.id_piece);
-
-    for (const pieceJointe of pendingFiles) {
-      try {
-        const pieceJointeData = {
-          ...pieceJointe,
-          id_align: alignmentId
-        };
-
-        const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/with-file-info`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(pieceJointeData)
-        });
-
-        if (!response.ok) {
-          console.error('Erreur lors de l\'enregistrement de la pièce jointe:', pieceJointe.nom_piece);
-        } else {
-          const savedPieceJointe = await response.json();
-          console.log('Pièce jointe sauvegardée:', savedPieceJointe);
-        }
-      } catch (error) {
-        console.error('Erreur lors de l\'enregistrement de la pièce jointe:', error);
-      }
-    }
-  };
 
   // Form submission handler
   const handleSubmit = async () => {
-    if (!validateAlignmentForm()) {
+    if (!validateAlignmentForm(formData)) {
       setSubmitMessage("Veuillez remplir tous les champs d'alignement obligatoires.");
       return;
     }
 
-    if (!validateTerrainForm()) {
+    if (!validateTerrainForm(formData, statutTerrain)) {
       setSubmitMessage("Veuillez remplir tous les champs de terrain obligatoires.");
       return;
     }
@@ -287,20 +238,7 @@ function Allignement() {
       console.log('Terrain data being sent:', terrainData);
       console.log('Statut terrain:', statutTerrain);
 
-      const terrainResponse = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/terrain`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(terrainData)
-      });
-
-      if (!terrainResponse.ok) {
-        const errorData = await terrainResponse.json();
-        throw new Error(`Erreur terrain: ${errorData.message || 'Erreur lors de la création du terrain'}`);
-      }
-
-      const terrainResult = await terrainResponse.json();
+      const terrainResult = await alignmentService.createTerrain(terrainData);
       console.log('Terrain créé:', terrainResult);
 
       // Step 2: Create alignment with terrain ID
@@ -314,25 +252,7 @@ function Allignement() {
         id_terrain: terrainResult.id_terrain
       };
 
-      const alignmentResponse = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/alignment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(alignmentData)
-      });
-
-      if (!alignmentResponse.ok) {
-        const errorData = await alignmentResponse.json();
-        throw new Error(`Erreur alignement: ${errorData.message || 'Erreur lors de la création de l\'alignement'}`);
-      }
-
-      const alignmentResult = await alignmentResponse.json();
-
-      // Save pending piece-jointes with the new alignment ID
-      if (uploadedPieceJointes.length > 0) {
-        await savePendingPieceJointes(alignmentResult.id_align);
-      }
+      const alignmentResult = await alignmentService.createAlignment(alignmentData);
 
       setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès!");
       console.log('Alignement créé:', alignmentResult);
@@ -340,57 +260,7 @@ function Allignement() {
       // Reset form after successful submission
       setTimeout(() => {
         setCurrentStep(1);
-        setFormData({
-          id_mandataire: "",
-          status_proprietaire: "",
-          qualite_demandeur: "",
-          nif: "",
-          id_cert_sit_jur: "",
-          id_plan_off: "",
-          id_terrain: null,
-          num_titre: "",
-          indice: "",
-          nom_proprietaire: "",
-          adresse: "",
-          superficie: "",
-          num_parcelle: "",
-          section_dite: "",
-          canton: "",
-          num_karatany: "",
-          fokotany: "",
-          longitude: "",
-          latitude: "",
-          statut_terrain: 1,
-          civilite: "",
-          nom: "",
-          prenoms: "",
-          cinPasseport: "",
-          fonction: "",
-          nationalite: "",
-          raisonSociale: "",
-          carteStatistique: "",
-          civiliteRepresentant: "",
-          nomRepresentant: "",
-          prenomsRepresentant: "",
-          adresseRepresentant: "",
-          cinPasseportRepresentant: "",
-          adresse_proprietaire: "",
-          contact_proprietaire: "",
-          email_proprietaire: "",
-          age: "",
-          xv_laborde: "",
-          yv_laborde: "",
-          yv_laborde_cadastre: "",
-          civilite2: "",
-          nom2: "",
-          prenoms2: "",
-          cinPasseport2: "",
-          fonction2: "",
-          nationalite2: "",
-          age2: "",
-        });
-        setFiles([]);
-        setUploadedPieceJointes([]);
+        clearFiles();
         setSubmitMessage("");
       }, 3000);
 
@@ -402,118 +272,9 @@ function Allignement() {
     }
   };
 
-  // Validate alignment-specific fields
-  const validateAlignmentForm = () => {
-    return (
-      formData.id_mandataire.trim() !== "" &&
-      formData.status_proprietaire.trim() !== "" &&
-      formData.qualite_demandeur.trim() !== "" &&
-      formData.nif.trim() !== "" &&
-      formData.id_cert_sit_jur.trim() !== "" &&
-      formData.id_plan_off.trim() !== ""
-    );
-  };
-
-  // Validate terrain-specific fields
-  const validateTerrainForm = () => {
-    // Common required fields for all terrain types
-    const commonFields = (
-      formData.adresse.trim() !== "" &&
-      formData.superficie.toString().trim() !== ""
-    );
-
-    if (statutTerrain === "titre") {
-      return (
-        commonFields &&
-        formData.num_titre.trim() !== "" &&
-        formData.nom_proprietaire.trim() !== "" &&
-        formData.num_parcelle.trim() !== "" &&
-        formData.section_dite.trim() !== "" &&
-        formData.canton.trim() !== "" &&
-        formData.longitude.toString().trim() !== "" &&
-        formData.latitude.toString().trim() !== ""
-      );
-    } else if (statutTerrain === "cadastre") {
-      return (
-        commonFields &&
-        formData.num_parcelle.trim() !== "" &&
-        formData.section_dite.trim() !== "" &&
-        formData.canton.trim() !== "" &&
-        formData.longitude.toString().trim() !== "" &&
-        formData.latitude.toString().trim() !== ""
-      );
-    } else if (statutTerrain === "certificat-foncier") {
-      return (
-        commonFields &&
-        formData.num_karatany.trim() !== "" &&
-        formData.fokotany.trim() !== "" &&
-        formData.canton.trim() !== "" &&
-        formData.longitude.toString().trim() !== "" &&
-        formData.latitude.toString().trim() !== ""
-      );
-    }
-
-    return false;
-  };
-
-  // Fonction pour charger les données utilisateur automatiquement
-  const loadUserData = async () => {
-    if (isLoadingUserData || userDataLoaded) return;
-
-    setIsLoadingUserData(true);
-    try {
-      // Récupérer les données utilisateur
-      const userResponse = await fetch(`${API_BASE_AUTH}/users/${TEMP_USER_ID}`);
-      if (!userResponse.ok) throw new Error('Erreur lors de la récupération des données utilisateur');
-      const userData = await userResponse.json();
-
-      // Vérifier si l'utilisateur a le rôle "Propriétaire"
-      const hasOwnerRole = userData.appUserRoles?.some(
-        role => role.role.role_name === "Propriétaire"
-      );
-
-      if (!hasOwnerRole) {
-        throw new Error("L'utilisateur n'a pas le rôle de propriétaire");
-      }
-
-      // Récupérer les données citoyen si disponibles
-      let citizenData = null;
-      if (userData.id_citizen) {
-        const citizenResponse = await fetch(`${API_BASE_CITIZEN}/citizens/getCitizenById/${userData.id_citizen}`);
-        if (citizenResponse.ok) {
-          citizenData = await citizenResponse.json();
-        }
-      }
-
-      // Formater les données pour le formulaire
-      const formattedData = {
-        civilite: 'M', // Par défaut
-        nom: citizenData?.citizen_name || userData?.user_pseudo || '',
-        prenoms: citizenData?.citizen_lastname || '',
-        cinPasseport: citizenData?.citizen_national_card_number?.toString() || '',
-        fonction: citizenData?.citizen_work || '',
-        nationalite: 'Malagasy', // Par défaut pour Madagascar
-      };
-
-      setFormData(prev => ({
-        ...prev,
-        ...formattedData
-      }));
-
-      setUserDataLoaded(true);
-      console.log('Données utilisateur chargées automatiquement:', formattedData);
-    } catch (error) {
-      console.error('Erreur lors du chargement des données utilisateur:', error);
-      // En cas d'erreur, on continue sans bloquer l'utilisateur
-    } finally {
-      setIsLoadingUserData(false);
-    }
-  };
-
   // Fonction pour réinitialiser les données du formulaire
   const resetFormData = () => {
-    setFormData(prev => ({
-      ...prev,
+    updateFormData({
       civilite: "",
       nom: "",
       prenoms: "",
@@ -536,7 +297,7 @@ function Allignement() {
       nationalite2: "",
       age: "",
       age2: "",
-    }));
+    });
     setUserDataLoaded(false);
   };
 
@@ -1060,44 +821,6 @@ function Allignement() {
     );
   };
 
-  const validateForm = () => {
-    if (statutProprietaire === "particulier") {
-      if (qualiteDemandeur === "proprietaire") {
-        return (
-          formData.civilite !== "" &&
-          formData.nom !== "" &&
-          formData.prenoms !== "" &&
-          formData.cinPasseport !== "" &&
-          formData.nationalite !== ""
-        );
-      } else if (qualiteDemandeur === "mandataire") {
-        return (
-          formData.civilite !== "" &&
-          formData.nom !== "" &&
-          formData.prenoms !== "" &&
-          formData.cinPasseport !== "" &&
-          formData.nationalite !== "" &&
-          formData.civilite2 !== "" &&
-          formData.nom2 !== "" &&
-          formData.prenoms2 !== "" &&
-          formData.cinPasseport2 !== "" &&
-          formData.nationalite2 !== ""
-        );
-      }
-    } else if (statutProprietaire === "personne-morale") {
-      return (
-        formData.raisonSociale !== "" &&
-        formData.carteStatistique !== "" &&
-        formData.nif !== "" &&
-        formData.civiliteRepresentant !== "" &&
-        formData.nomRepresentant !== "" &&
-        formData.prenomsRepresentant !== "" &&
-        formData.adresseRepresentant !== "" &&
-        formData.cinPasseportRepresentant !== ""
-      );
-    }
-    return false;
-  };
 
   {/* Return to dashborad*/ }
   const handleReturnToDashboard = () => {
@@ -2041,7 +1764,6 @@ function Allignement() {
                               <button
                                 onClick={() => {
                                   setFiles(prev => prev.filter((_, i) => i !== index));
-                                  setUploadedPieceJointes(prev => prev.filter((_, i) => i !== index));
                                 }}
                                 className="text-red-500 text-sm hover:text-red-700"
                               >

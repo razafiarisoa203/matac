@@ -6,12 +6,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Clock,
-  Eye,
   MapPin,
   Search,
   User
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 
@@ -23,61 +22,66 @@ const ActionsDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortField, setSortField] = useState('dateSubmission');
   const [sortDirection, setSortDirection] = useState('desc');
-  // const [viewMode, setViewMode] = useState('list');
   const [selectedActions, setSelectedActions] = useState(new Set());
-  
+
   const itemsPerPage = 10;
 
   // Données d'exemple étendues
-  const allActions = [
+  const allActions = useMemo(() => [
     {
-      dossier: "55DAL-43030-5-2025",
-      proprietaire: "Angélot",
-      dateSubmission: "2025-09-03 15:59:33",
-      etape: "Commune",
-      etat: "en attente soumission",
+      dossier: "56DAL-43023-05-2025",
+      proprietaire: "Ruffin",
+      commune: "Antananarivo",
+      region: "Analamanga",
+      dateSubmission: "2024-01-15",
       status: "pending",
-      ref: "",
-      dateDelivrance: ""
+      statusText: "En cours"
     },
     {
-      dossier: "55DAL-43030-5-2025", 
-      proprietaire: "Angélot",
-      dateSubmission: "2025-09-03 15:59:33",
-      etape: "Commune",
-      etat: "en attente traitement",
-      status: "pending",
-      ref: "",
-      dateDelivrance: ""
-    },
-    {
-      dossier: "55DAL-43030-5-2025",
-      proprietaire: "Angélot", 
-      dateSubmission: "2025-09-03 15:59:33",
-      etape: "Commune",
-      etat: "traitée",
+      dossier: "57DAL-43024-05-2025",
+      proprietaire: "Marie Dupont",
+      commune: "Fianarantsoa",
+      region: "Haute Matsiatra",
+      dateSubmission: "2024-01-20",
       status: "completed",
-      ref: "XXXX-15",
-      dateDelivrance: "2025-09-03 15:59:33"
+      statusText: "Terminé"
     },
     {
-      dossier: "55DAL-43030-5-2025",
-      proprietaire: "Angélot",
-      dateSubmission: "2025-09-03 15:59:33", 
-      etape: "Commune",
-      etat: "en attente de régularisation",
-      status: "error",
-      ref: "",
-      dateDelivrance: ""
+      dossier: "58DAL-43025-05-2025",
+      proprietaire: "Jean Martin",
+      commune: "Toamasina",
+      region: "Atsinanana",
+      dateSubmission: "2024-01-25",
+      status: "rejected",
+      statusText: "Rejeté"
+    },
+    {
+      dossier: "59DAL-43026-05-2025",
+      proprietaire: "Sophie Rakoto",
+      commune: "Mahajanga",
+      region: "Boeny",
+      dateSubmission: "2024-02-01",
+      status: "pending",
+      statusText: "En cours"
+    },
+    {
+      dossier: "60DAL-43027-05-2025",
+      proprietaire: "Paul Andry",
+      commune: "Antsiranana",
+      region: "Diana",
+      dateSubmission: "2024-02-05",
+      status: "completed",
+      statusText: "Terminé"
     }
-  ];
+  ], []);
+
   // Fonction de filtrage et tri
   const filteredAndSortedActions = useMemo(() => {
     let filtered = allActions;
 
     // Filtrage par terme de recherche
     if (searchTerm) {
-      filtered = filtered.filter(action => 
+      filtered = filtered.filter(action =>
         action.dossier.toLowerCase().includes(searchTerm.toLowerCase()) ||
         action.proprietaire.toLowerCase().includes(searchTerm.toLowerCase()) ||
         action.etat.toLowerCase().includes(searchTerm.toLowerCase())
@@ -93,19 +97,19 @@ const ActionsDashboard = () => {
     filtered.sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
-      
+
       if (sortField === 'dateSubmission' || sortField === 'dateDelivrance') {
         aVal = new Date(aVal || '1970-01-01');
         bVal = new Date(bVal || '1970-01-01');
       }
-      
+
       if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
 
     return filtered;
-  }, [searchTerm, statusFilter, sortField, sortDirection]);
+  }, [allActions, searchTerm, statusFilter, sortField, sortDirection]);
 
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedActions.length / itemsPerPage);
@@ -122,10 +126,10 @@ const ActionsDashboard = () => {
       completed: allActions.filter(a => a.status === 'completed').length,
       rejected: allActions.filter(a => a.status === 'rejected' || a.status === 'error').length
     };
-  }, []);
+  }, [allActions]);
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'completed':
@@ -168,22 +172,11 @@ const ActionsDashboard = () => {
   const handlePageChange = (page) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
-
-  // const handleViewDetails = (actionId) => {
-  //   console.log(`Voir détails de l'action ${actionId}`);
-  //   // Ici vous pouvez naviguer vers une page de détails
-  // };
-
-  // const handlePrint = (actionId) => {
-  //   console.log(`Imprimer l'action ${actionId}`);
-  //   // Ici vous pouvez implémenter la fonction d'impression
-  // };
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar Placeholder */}
       <Sidebar />
-      
+
       {/* Main Content */}
       <div className="ml-40 flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto p-6">
@@ -207,35 +200,35 @@ const ActionsDashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div 
+              <div
                 onClick={() => setStatusFilter('all')}
                 className={`bg-white shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 ${statusFilter === 'all' ? 'border-lime-500 bg-lime-50' : 'border-lime-500'}`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-lime-100 rounded-lg text-lime-600">
                     <span className="text-xl">
-                    <MapPin className="w-6 h-6" />
+                      <MapPin className="w-6 h-6" />
                     </span>
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-500">Tous les alignements</div>
+                    <div className="text-sm font-medium text-gray-500">Tous les actions</div>
                     <div className="text-2xl font-bold text-gray-800">{stats.total}</div>
                   </div>
                 </div>
                 <span className="text-gray-400">→</span>
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setStatusFilter('pending')}
                 className={`bg-white shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 ${statusFilter === 'pending' ? 'border-blue-500 bg-blue-50' : 'border-blue-500'}`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-blue-100 rounded-lg text-blue-600">
                     <span className="text-xl">
-                    <Clock className="w-6 h-6" />
+                      <Clock className="w-6 h-6" />
                     </span>
                   </div>
                   <div>
@@ -245,15 +238,15 @@ const ActionsDashboard = () => {
                 </div>
                 <span className="text-gray-400">→</span>
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setStatusFilter('completed')}
                 className={`bg-white shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 ${statusFilter === 'completed' ? 'border-green-500 bg-green-50' : 'border-green-500'}`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-green-100 rounded-lg text-green-600">
                     <span className="text-xl">
-                    <CheckCircle2 className="w-6 h-6" />
+                      <CheckCircle2 className="w-6 h-6" />
                     </span>
                   </div>
                   <div>
@@ -263,15 +256,15 @@ const ActionsDashboard = () => {
                 </div>
                 <span className="text-gray-400">→</span>
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setStatusFilter('rejected')}
                 className={`bg-white shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 ${statusFilter === 'rejected' ? 'border-red-500 bg-red-50' : 'border-red-500'}`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-red-100 rounded-lg text-red-600">
                     <span className="text-xl">
-                    <AlertCircle className="w-6 h-6" />
+                      <AlertCircle className="w-6 h-6" />
                     </span>
                   </div>
                   <div>
@@ -287,7 +280,7 @@ const ActionsDashboard = () => {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Rechercher un dossier..."
@@ -297,8 +290,8 @@ const ActionsDashboard = () => {
                   />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <select 
-                    value={statusFilter} 
+                  <select
+                    value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="p-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                   >
@@ -324,8 +317,8 @@ const ActionsDashboard = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={selectedActions.size === currentActions.length && currentActions.length > 0}
                           onChange={handleSelectAll}
                           className="rounded border-gray-300 text-lime-600 focus:ring-lime-500"
@@ -340,7 +333,7 @@ const ActionsDashboard = () => {
                         { key: 'ref', label: 'Réf. Délivrance' },
                         { key: 'dateDelivrance', label: 'Date de délivrance' }
                       ].map(({ key, label }) => (
-                        <th 
+                        <th
                           key={key}
                           onClick={() => handleSort(key)}
                           className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
@@ -356,17 +349,15 @@ const ActionsDashboard = () => {
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Client
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {currentActions.map((action) => (
-                      <tr key={action.id} className="hover:bg-gray-50 transition-colors">
+                    {currentActions.map((action, index) => (
+                      <tr key={action.dossier || index} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={selectedActions.has(action.id)}
                             onChange={() => handleSelectAction(action.id)}
                             className="rounded border-gray-300 text-lime-600 focus:ring-lime-500"
@@ -409,32 +400,15 @@ const ActionsDashboard = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <button className="text-gray-400 hover:text-lime-600 transition-colors">
-                           <User className="w-4 h-4" />
+                            <User className="w-4 h-4" />
                           </button>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex justify-end space-x-2">
-                            <button 
-                              onClick={() => navigate(`/alignment-details/${action.id}`)}
-                              className="text-gray-400 hover:text-lime-600 transition-colors p-1 hover:bg-lime-50 rounded"
-                              title="Voir détails"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            {/* <button
-  onClick={() => navigate(`/alignements/${action.id}`)}
-  className="text-gray-400 hover:text-lime-600 transition-colors p-1 hover:bg-lime-50 rounded"
-  title="Voir détails"
->
-  <Eye className="w-4 h-4" />
-</button> */}
-                          </div>
-                        </td>
+
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                
+
                 {/* Pagination */}
                 <div className="bg-white px-6 py-4 flex items-center justify-between border-t border-gray-200 rounded-b-xl">
                   <div className="flex-1 flex justify-between sm:hidden">
@@ -484,11 +458,10 @@ const ActionsDashboard = () => {
                             <button
                               key={page}
                               onClick={() => handlePageChange(page)}
-                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
-                                currentPage === page
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${currentPage === page
                                   ? 'z-10 bg-lime-600 border-lime-600 text-white hover:bg-lime-700'
                                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                              }`}
+                                }`}
                             >
                               {page}
                             </button>
@@ -528,7 +501,7 @@ const ActionsDashboard = () => {
                     <button className="px-3 py-1.5 text-sm bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors">
                       Exporter
                     </button>
-                    <button 
+                    <button
                       onClick={() => setSelectedActions(new Set())}
                       className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                     >

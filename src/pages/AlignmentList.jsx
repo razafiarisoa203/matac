@@ -17,14 +17,12 @@ import {
   User,
   Download,
   Printer,
+  Eye,
   FileText
 } from "lucide-react";
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import NavigationBar from '../components/NavigationBar';
-
-const API_BASE_ALIGNMENT = import.meta.env.VITE_API_SERVICEALIGNMENT || 'http://localhost:3000';
-
 const AlignmentList = () => {
   const [alignments, setAlignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,14 +39,9 @@ const AlignmentList = () => {
   const fetchAlignments = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/alignment`);
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des alignements');
-      }
-      
-      const data = await response.json();
-      setAlignments(data);
+      // Using mock data for now - replace with actual API call when backend is ready
+      const mockData = [];
+      setAlignments(mockData);
     } catch (err) {
       setError(err.message);
       console.error('Erreur:', err);
@@ -150,7 +143,7 @@ const AlignmentList = () => {
       <Sidebar />
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="ml-40 flex-1 flex flex-col overflow-hidden">
         {/* <Header />
         <NavigationBar /> */}
         
@@ -387,14 +380,9 @@ const AlignmentList = () => {
                                 className="text-gray-400 hover:text-lime-600 transition-colors"
                                 title="Voir détails"
                               >
-                                <Download className="w-4 h-4" />
+                                <Eye className="w-4 h-4" />
                               </button>
-                              <button className="text-gray-400 hover:text-lime-600 transition-colors">
-                                <Printer className="w-4 h-4" />
-                              </button>
-                              <button className="text-gray-400 hover:text-lime-600 transition-colors">
-                                <MoreVertical className="w-4 h-4" />
-                              </button>
+
                             </div>
                           </td>
                         </tr>

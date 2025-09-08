@@ -1,5 +1,5 @@
 import { Building2, Clock, FileText, Zap } from "lucide-react";
-import React from "react";
+import React, { useCallback } from "react";
 
 const ActeUrbanismeCard = () => {
   // Données avec icônes améliorées
@@ -41,12 +41,12 @@ const ActeUrbanismeCard = () => {
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [isAnimating, setIsAnimating] = React.useState(false);
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     if (isAnimating) return;
     setIsAnimating(true);
     setCurrentSlide((prev) => (prev + 1) % actes.length);
     setTimeout(() => setIsAnimating(false), 500);
-  };
+  }, [isAnimating, actes.length]);
 
 
   const goToSlide = (index) => {
@@ -64,7 +64,7 @@ const ActeUrbanismeCard = () => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [isAnimating]);
+  }, [isAnimating, nextSlide]);
 
   const currentActe = actes[currentSlide];
   const IconComponent = currentActe.icon;

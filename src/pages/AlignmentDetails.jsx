@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, User, Calendar, FileText, Download, Eye } from "lucide-react";
 
@@ -17,25 +17,27 @@ const AlignmentDetails = () => {
       fetchAlignmentDetails();
       fetchPieceJointes();
     }
-  }, [id]);
+  }, [id, fetchAlignmentDetails, fetchPieceJointes]);
 
-  const fetchAlignmentDetails = async () => {
+  const fetchAlignmentDetails = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/alignment/${id}`);
-      
+
       if (!response.ok) {
         throw new Error('Alignement non trouvé');
       }
-      
+
       const data = await response.json();
       setAlignment(data);
     } catch (err) {
       setError(err.message);
       console.error('Erreur:', err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchPieceJointes = async () => {
+  const fetchPieceJointes = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/alignment/${id}`);
       
@@ -44,11 +46,9 @@ const AlignmentDetails = () => {
         setPieceJointes(data);
       }
     } catch (err) {
-      console.error('Erreur lors du chargement des pièces jointes:', err);
-    } finally {
-      setLoading(false);
+      console.error('Erreur lors de la récupération des pièces jointes:', err);
     }
-  };
+  }, [id]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -57,9 +57,9 @@ const AlignmentDetails = () => {
       'rejete': { color: 'bg-red-100 text-red-800', text: 'Rejeté' },
       'en_attente': { color: 'bg-blue-100 text-blue-800', text: 'En attente' }
     };
-    
+
     const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', text: status || 'En attente' };
-    
+
     return (
       <span className={`inline-flex items-center px-3 py-1  -full text-sm font-medium ${config.color}`}>
         {config.text}
@@ -142,14 +142,14 @@ const AlignmentDetails = () => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Informations principales */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* Informations du demandeur */}
               <div className="bg-white overflow-hidden shadow  -lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <h3 className="text-lg text-green-600 font-medium text-gray-900 mb-4 flex items-center">
                     <User className="h-5 w-5 mr-2" />
                     Informations du Demandeur
                   </h3>
@@ -178,7 +178,7 @@ const AlignmentDetails = () => {
               {alignment?.terrain && (
                 <div className="bg-white overflow-hidden shadow  -lg">
                   <div className="px-4 py-5 sm:p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <h3 className="text-lg text-green-600 font-medium text-gray-900 mb-4 flex items-center">
                       <MapPin className="h-5 w-5 mr-2" />
                       Informations du Terrain
                     </h3>
@@ -221,7 +221,7 @@ const AlignmentDetails = () => {
               {/* Documents administratifs */}
               <div className="bg-white overflow-hidden shadow  -lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <h3 className="text-lg text-green-600 font-medium text-gray-900 mb-4 flex items-center">
                     <FileText className="h-5 w-5 mr-2" />
                     Documents Administratifs
                   </h3>
@@ -262,11 +262,11 @@ const AlignmentDetails = () => {
 
             {/* Sidebar - Informations complémentaires */}
             <div className="space-y-6">
-              
+
               {/* Résumé */}
               <div className="bg-white overflow-hidden shadow  -lg">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Résumé</h3>
+                  <h3 className="text-lg text-green-600 font-medium text-gray-900 mb-4">Résumé</h3>
                   <dl className="space-y-3">
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Date de création</dt>
@@ -287,27 +287,6 @@ const AlignmentDetails = () => {
                       <dd className="mt-1 text-sm text-gray-900">{pieceJointes.length}</dd>
                     </div>
                   </dl>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="bg-white overflow-hidden shadow  -lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Actions</h3>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => navigate('/alignement')}
-                      className="w-full bg-green-600 text-white px-4 py-2  -md hover:bg-green-700 transition-colors"
-                    >
-                      Nouvel Alignement
-                    </button>
-                    <button
-                      onClick={() => navigate('/alignment-list')}
-                      className="w-full bg-gray-600 text-white px-4 py-2  -md hover:bg-gray-700 transition-colors"
-                    >
-                      Retour à la liste
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
