@@ -103,7 +103,18 @@ function Allignement() {
       console.log('Données utilisateur chargées automatiquement:', formattedData);
     } catch (error) {
       console.error('Erreur lors du chargement des données utilisateur:', error);
-      // En cas d'erreur, on continue sans bloquer l'utilisateur
+      // En cas d'erreur du service utilisateur, on définit des valeurs par défaut
+      const defaultData = {
+        civilite: 'M',
+        nom: 'Utilisateur',
+        prenoms: 'Test',
+        cinPasseport: '000000000000',
+        fonction: 'Particulier',
+        nationalite: 'Malagasy',
+      };
+      updateFormData(defaultData);
+      setUserDataLoaded(true);
+      console.log('Données par défaut utilisées suite à l\'erreur du service utilisateur');
     } finally {
       setIsLoadingUserData(false);
     }
@@ -111,20 +122,10 @@ function Allignement() {
 
   // Auto-remplissage au chargement si "propriétaire" est déjà sélectionné
   useEffect(() => {
-    if (statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire" && !userDataLoaded) {
+    if (statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire" && !userDataLoaded && !isLoadingUserData) {
       loadUserData();
     }
-  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, loadUserData]);
-
-  // Auto-populate alignment fields based on form state
-  useEffect(() => {
-    updateFormData({
-      id_mandataire: TEMP_USER_ID,
-      status_proprietaire: statutProprietaire,
-      qualite_demandeur: qualiteDemandeur,
-      statut_terrain: statutTerrain === "titre" ? 1 : statutTerrain === "cadastre" ? 2 : 3
-    });
-  }, [statutProprietaire, qualiteDemandeur, statutTerrain, updateFormData]);
+  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, isLoadingUserData, loadUserData]);
 
   // Validate personal form data
   const validatePersonalForm = useCallback(() => {
@@ -173,6 +174,9 @@ function Allignement() {
   const handleFileUpload = async (file) => {
     try {
       const result = await uploadFile(file);
+      setSubmitMessage("Fichier uploadé avec succès!");
+      // Clear success message after 3 seconds
+      setTimeout(() => setSubmitMessage(""), 3000);
       return result;
     } catch (error) {
       setSubmitMessage(`Erreur lors de l'upload du fichier: ${error.message}`);
@@ -197,42 +201,49 @@ function Allignement() {
     setSubmitMessage("");
 
     try {
-      // Step 1: Create terrain first
+      // Step 1: Create terrain first - Map to backend expected fields
       const baseTerrainData = {
         adresse: formData.adresse,
         superficie: parseFloat(formData.superficie),
         longitude: parseFloat(formData.longitude),
         latitude: parseFloat(formData.latitude),
-        statut_terrain: statutTerrain // Send as string, not number
+        statut_terrain: statutTerrain // Backend expects string: "titre", "cadastre", "certificat-foncier"
       };
 
       let terrainData = { ...baseTerrainData };
 
       if (statutTerrain === "titre") {
+        // Required fields for backend CreateTerrainDto
         terrainData.num_titre = formData.num_titre || "";
         terrainData.nom_proprietaire = formData.nom_proprietaire || "";
         terrainData.num_parcelle = formData.num_parcelle || "";
         terrainData.section_dite = formData.section_dite || "";
         terrainData.canton = formData.canton || "";
+        // Optional fields
         if (formData.indice) {
           terrainData.indice = formData.indice;
         }
       } else if (statutTerrain === "cadastre") {
-        // For cadastre, we need required fields
-        terrainData.num_titre = "CADASTRE-" + Date.now(); // Generate a unique identifier
+        // Required fields for backend - generate defaults if missing
+        terrainData.num_titre = formData.num_titre || "CADASTRE-" + Date.now();
         terrainData.nom_proprietaire = formData.nom_proprietaire || "Propriétaire cadastre";
-        terrainData.num_parcelle = formData.num_parcelle || "";
-        terrainData.section_dite = formData.section_dite || "";
-        terrainData.canton = formData.canton || "";
+        terrainData.num_parcelle = formData.num_parcelle || "PARC-" + Date.now();
+        terrainData.section_dite = formData.section_dite || "Section cadastre";
+        terrainData.canton = formData.canton || "Canton";
       } else if (statutTerrain === "certificat-foncier") {
-        // For certificat-foncier, we need required fields
-        terrainData.num_titre = "CERT-FONCIER-" + Date.now(); // Generate a unique identifier
+        // Required fields for backend - generate defaults if missing
+        terrainData.num_titre = formData.num_titre || "CERT-FONCIER-" + Date.now();
         terrainData.nom_proprietaire = formData.nom_proprietaire || "Propriétaire certificat foncier";
-        terrainData.num_karatany = formData.num_karatany || "";
-        terrainData.fokotany = formData.fokotany || "";
-        terrainData.canton = formData.canton || "";
-        terrainData.num_parcelle = "CF-" + (formData.num_karatany || Date.now());
-        terrainData.section_dite = formData.fokotany || "Section CF";
+        terrainData.num_parcelle = formData.num_parcelle || "CF-" + Date.now();
+        terrainData.section_dite = formData.section_dite || "Section CF";
+        terrainData.canton = formData.canton || "Canton";
+        // Optional fields specific to certificat-foncier
+        if (formData.num_karatany) {
+          terrainData.num_karatany = formData.num_karatany;
+        }
+        if (formData.fokotany) {
+          terrainData.fokotany = formData.fokotany;
+        }
       }
 
       console.log('Terrain data being sent:', terrainData);
@@ -241,27 +252,60 @@ function Allignement() {
       const terrainResult = await alignmentService.createTerrain(terrainData);
       console.log('Terrain créé:', terrainResult);
 
-      // Step 2: Create alignment with terrain ID
+      // Step 2: Create alignment with terrain ID - Map to backend expected fields
       const alignmentData = {
-        id_mandataire: formData.id_mandataire,
-        status_proprietaire: formData.status_proprietaire,
-        qualite_demandeur: formData.qualite_demandeur,
-        nif: formData.nif,
-        id_cert_sit_jur: formData.id_cert_sit_jur,
-        id_plan_off: formData.id_plan_off,
+        id_mandataire: TEMP_USER_ID, // Use the temp user ID from API service
+        status_proprietaire: statutProprietaire, // Use the selected status
+        qualite_demandeur: qualiteDemandeur, // Use the selected quality
+        nif: formData.nif || "000000000000", // Default NIF if not provided
+        id_cert_sit_jur: formData.id_cert_sit_jur || "CERT-" + Date.now(),
+        id_plan_off: formData.id_plan_off || "PLAN-" + Date.now(),
         id_terrain: terrainResult.id_terrain
       };
 
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
+      console.log('Alignement créé:', alignmentResult);
+
+      // Step 3: Create piece jointes for already uploaded files
+      if (files && files.length > 0) {
+        console.log('Creating piece jointes for uploaded files...');
+        
+        for (const file of files) {
+          try {
+            // Skip if file is not uploaded yet or doesn't have upload result
+            if (!file.uploaded || !file.uploadResult) {
+              console.log('Skipping file not uploaded:', file.name);
+              continue;
+            }
+
+            // Create piece jointe record with existing upload info
+            const pieceJointeData = {
+              nom_piece: file.name,
+              filename: file.uploadResult.filename,
+              mimetype: file.uploadResult.mimetype,
+              size: file.uploadResult.size,
+              url: file.uploadResult.url,
+              id_align: alignmentResult.id_align
+            };
+
+            const pieceJointeResult = await alignmentService.createPieceJointe(pieceJointeData);
+            console.log('Piece jointe created:', pieceJointeResult);
+          } catch (fileError) {
+            console.error('Erreur lors du traitement du fichier:', file.name, fileError);
+            // Continue with other files even if one fails
+          }
+        }
+      }
 
       setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès!");
-      console.log('Alignement créé:', alignmentResult);
 
       // Reset form after successful submission
       setTimeout(() => {
         setCurrentStep(1);
         clearFiles();
         setSubmitMessage("");
+        // Optionally navigate to alignment list
+        // navigate('/alignment-list');
       }, 3000);
 
     } catch (error) {

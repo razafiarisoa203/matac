@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, User, Calendar, FileText, Download, Eye } from "lucide-react";
-
-const API_BASE_ALIGNMENT = import.meta.env.VITE_API_SERVICEALIGNMENT || 'http://localhost:3000';
+import { alignmentService } from "../services/api";
 
 const AlignmentDetails = () => {
   const { id } = useParams();
@@ -12,22 +11,9 @@ const AlignmentDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (id) {
-      fetchAlignmentDetails();
-      fetchPieceJointes();
-    }
-  }, [id, fetchAlignmentDetails, fetchPieceJointes]);
-
   const fetchAlignmentDetails = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/alignment/${id}`);
-
-      if (!response.ok) {
-        throw new Error('Alignement non trouvé');
-      }
-
-      const data = await response.json();
+      const data = await alignmentService.getAlignment(id);
       setAlignment(data);
     } catch (err) {
       setError(err.message);
@@ -39,16 +25,19 @@ const AlignmentDetails = () => {
 
   const fetchPieceJointes = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/alignment/${id}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setPieceJointes(data);
-      }
+      const data = await alignmentService.getPieceJointes(id);
+      setPieceJointes(data);
     } catch (err) {
       console.error('Erreur lors de la récupération des pièces jointes:', err);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchAlignmentDetails();
+      fetchPieceJointes();
+    }
+  }, [id, fetchAlignmentDetails, fetchPieceJointes]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {

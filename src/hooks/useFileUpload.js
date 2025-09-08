@@ -17,6 +17,17 @@ export const useFileUpload = () => {
     setIsUploadingFile(true);
     try {
       const result = await alignmentService.uploadFile(file);
+      // Ajouter le fichier à la liste avec les informations d'upload
+      const fileWithUploadInfo = {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploaded: true,
+        url: result.url,
+        filename: result.filename,
+        uploadResult: result
+      };
+      setFiles(prev => [...prev, fileWithUploadInfo]);
       setUploadedPieceJointes(prev => [...prev, result]);
       return result;
     } catch (error) {
