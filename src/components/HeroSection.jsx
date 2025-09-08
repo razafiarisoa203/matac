@@ -38,7 +38,7 @@ const HeroSection = () => {
           to="/login"
           className="inline-flex items-center justify-center bg-lime-300 text-gray-900 px-20 py-4 hover:bg-lime-500 text-lg font-semibold shadow-lg transition duration-300"
         >
-          <span className="material-icons">Apartment</span>
+          
           <p>Découvrir</p>
         </Link>
       </div>

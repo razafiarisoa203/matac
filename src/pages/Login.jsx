@@ -3,20 +3,16 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
+import { useFormData } from "../hooks/useFormData";
 
 const Login = () => {
-  const [formData, setFormData] = useState({
+  const { formData, handleInputChange } = useFormData({
     email: "",
     password: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -38,7 +34,7 @@ const Login = () => {
       <Header />
       <NavigationBar />
       
-      <div className="max-w-7xl mt-30 mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mt-40 mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-md mx-auto bg-white  -xl shadow-md overflow-hidden md:max-w-2xl">
           <div className="md:flex">
             <div className="p-8 w-full">
