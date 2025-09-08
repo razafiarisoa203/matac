@@ -39,9 +39,12 @@ const AlignmentList = () => {
   const fetchAlignments = async () => {
     try {
       setLoading(true);
-      // Using mock data for now - replace with actual API call when backend is ready
-      const mockData = [];
-      setAlignments(mockData);
+      // Import alignmentService
+      const { alignmentService, TEMP_USER_ID } = await import('../services/api');
+      
+      // Fetch alignments from backend
+      const data = await alignmentService.getAlignments(TEMP_USER_ID);
+      setAlignments(data);
     } catch (err) {
       setError(err.message);
       console.error('Erreur:', err);
