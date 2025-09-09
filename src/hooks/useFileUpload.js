@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { alignmentService } from '../services/api';
+import { uploadFile as uploadFileService } from '../services/api/uploadService';
 
 // Hook personnalisé pour gérer l'upload de fichiers
 export const useFileUpload = () => {
@@ -15,21 +15,24 @@ export const useFileUpload = () => {
 
   const uploadFile = async (file) => {
     setIsUploadingFile(true);
+    
     try {
-      const result = await alignmentService.uploadFile(file);
+      const result = await uploadFileService(file);
+      
       // Ajouter le fichier à la liste avec les informations d'upload
       const fileWithUploadInfo = {
         name: file.name,
         size: file.size,
         type: file.type,
         uploaded: true,
-        url: result.url,
-        filename: result.filename,
+        url: result.url || URL.createObjectURL(file),
+        filename: result.filename || file.name,
         uploadResult: result
       };
+      
       setFiles(prev => [...prev, fileWithUploadInfo]);
       setUploadedPieceJointes(prev => [...prev, result]);
-      return result;
+      return fileWithUploadInfo;
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
       throw error;

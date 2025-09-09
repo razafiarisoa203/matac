@@ -1,0 +1,146 @@
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import usePageTitle from "../hooks/usePageTitle";
+import CINVerificationStep from "../components/CINVerificationStep";
+import RegistrationForm from "../components/RegistrationForm";
+import { citoyenService } from "../services/api";
+import Header from "../components/Header";
+import NavigationBar from "../components/NavigationBar";
+import "react-toastify/dist/ReactToastify.css";
+import bgImage from "../assets/image/construction-bg.jpeg";
+import mdatLogo from "../assets/logo/MDAT.jpeg";
+import { useDispatch } from "react-redux";
+import { setGlobalCIN } from "../services/store/userSlice";
+
+
+export default function Register() {
+  usePageTitle("Création de compte utilisateur");
+  const navigate = useNavigate();
+  const [step, setStep] = useState("verification");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState("");
+  const dispatch = useDispatch()
+
+  const handleVerifyCIN = async (cin) => {
+    console.log('handleVerifyCIN appelé avec CIN:', cin);
+    try {
+      setIsVerifying(true);
+      setError("");
+      
+      // Vérifier d'abord si le CIN est valide
+      if (!cin || cin.trim() === '') {
+        console.log('CIN vide ou invalide');
+        setError("Veuillez saisir un numéro CIN valide");
+        return;
+      }
+
+      try {
+        console.log('Appel à checkCIN avec CIN:', cin);
+        const verificationResult = await citoyenService.checkCIN(cin);
+        console.log('Réponse de checkCIN:', verificationResult);
+        
+        if (verificationResult.exists) {
+          console.log('CIN existe déjà, redirection vers /login');
+          toast.info("Ce numéro CIN est déjà enregistré. Veuillez vous connecter.");
+          navigate("/login");
+        } else {
+          console.log('CIN disponible, passage à l\'étape d\'inscription');
+          setStep("registration");
+          dispatch(setGlobalCIN({cin}))
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification du CIN:', error);
+        if (error.response && error.response.status === 404) {
+          // CIN non trouvé, on peut continuer avec l'inscription
+          console.log('CIN non trouvé (404), passage à l\'inscription');
+          setStep("registration");
+        } else {
+          console.error("Erreur lors de la vérification du CIN:", error);
+          setError("Une erreur est survenue lors de la vérification du CIN. Veuillez réessayer.");
+        }
+      }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  return (
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed flex flex-col"
+      style={{
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url(${bgImage})`,
+      }}
+    >
+      <Header />
+      <NavigationBar />
+
+      {/* Conteneur central */}
+      <div className="flex-1 flex items-center justify-center mt-40 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="w-max max-w-7xl">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+            <div className="px-8 py-10">
+              {/* Logo MDAT en haut */}
+              <div className="flex justify-center mb-6">
+                <img
+                  src={mdatLogo}
+                  alt="Logo MDAT"
+                  className="h-20 w-auto object-contain"
+                />
+              </div>
+
+              {/* Message d'erreur */}
+              {error && (
+                <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              {/* Contenu de l'étape actuelle */}
+              {step === "verification" ? (
+                <CINVerificationStep 
+                  onVerify={handleVerifyCIN} 
+                  isVerifying={isVerifying}
+                  error={error}
+                />
+              ) : (
+                <RegistrationForm />
+              )}
+
+              {/* Lien de connexion */}
+              <div className="text-center text-sm text-gray-600 mt-6">
+                Vous avez déjà un compte ?{" "}
+                <Link
+                  to="/login"
+                  className="font-medium text-green-600 hover:text-green-700"
+                >
+                  Se connecter
+                </Link>
+              </div>
+
+              {/* Retour accueil */}
+              <div className="text-center mt-4">
+                <button
+                  onClick={() => navigate("/")}
+                  className="inline-flex items-center text-sm text-green-600 hover:text-green-500"
+                >
+                  <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Retour à l'accueil
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast notifications */}
+      <ToastContainer
+        position="top-center"
+        autoClose={4000}
+        hideProgressBar={false}
+      />
+    </div>
+  );
+}

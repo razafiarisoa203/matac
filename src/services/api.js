@@ -1,273 +1,145 @@
-// Configuration des APIs
-const API_BASE = import.meta.env.VITE_API_SERVICETERITOIRE;
-const API_BASE_AUTH = import.meta.env.VITE_API_SERVICEAUTH;
-const API_BASE_CITIZEN = import.meta.env.VITE_API_SERVICECITOYEN;
-const API_BASE_ALIGNMENT = import.meta.env.VITE_API_SERVICEALIGNMENT || 'http://localhost:3000';
+import axios from 'axios';
 
-// ID utilisateur temporaire (en attendant l'implémentation du login)
-const TEMP_USER_ID = '063c91cb-f3e3-4d8a-8737-32304aee41a0';
+const API_BASE_URL = 'https://gateway.tsirylab.com';
 
-// Services pour les régions et communes
-export const territoireService = {
-  // Récupérer toutes les régions
-  getRegions: async () => {
-    try {
-      const response = await fetch(`${API_BASE}/regions`);
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération des régions:', error);
-      return [];
-    }
+// Constante temporaire pour les tests - à remplacer par l'ID utilisateur réel en production
+export const TEMP_USER_ID = 'temp_user_id_123';
+
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+
   },
+});
 
-  // Récupérer les communes d'une région
-  getCommunes: async (regionId) => {
-    try {
-      const response = await fetch(`${API_BASE}/communes?region=${regionId}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération des communes:', error);
-      return [];
+// Add a request interceptor to include auth token if available
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-};
+);
 
-// Services pour l'authentification
-export const authService = {
-  // Récupérer les données utilisateur
-  getUserData: async (userId = TEMP_USER_ID) => {
+// Service Citoyen API
+export const citoyenService = {
+  // Vérifier si un CIN existe
+  async checkCIN(cin) {
     try {
-      const response = await fetch(`${API_BASE_CITIZEN}/citoyens/${userId}`);
-      if (!response.ok) {
-        throw new Error('Service utilisateur indisponible');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données utilisateur:', error);
-      // Retourner des données par défaut au lieu de lancer une erreur
+      const response = await api.get(`/servicecitoyen/citizens/${cin}`);
       return {
-        citizen_name: 'Utilisateur',
-        citizen_lastname: 'Test',
-        citizen_national_card_number: '000000000000',
-        citizen_work: 'Particulier'
+        exists: true,
+        data: response.data
       };
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return { exists: false };
+      }
+      throw error;
     }
+  },
+
+  
+  
+  // Créer un nouveau citoyen
+  async createCitizen(citizenData) {
+    const response = await api.post('/serviceauth/users/register-with-citizen-short', citizenData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
   }
 };
 
-// Services pour les alignements
+// Service Upload API
+export const uploadService = {
+  async uploadCitizenPhoto(photoFile) {
+    const formData = new FormData();
+    formData.append('file', photoFile);
+    
+    const response = await api.post('/serviceupload/api/upload/citizen-photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  }
+};
+
+// Service Territoire API
+export const territoireService = {
+  // Récupérer la liste des communes
+  async getCommunes() {
+    const response = await api.get('/serviceterritoire/communes');
+    console.log(response.data)
+    return response.data;
+  },
+  
+  // Récupérer la liste des fokontany par commune
+  async getFokotanys(communeId) {
+    const response = await api.get(`/serviceterritoire/api/fokotanys/commune/${communeId}`);
+    return response.data;
+  }
+};
+
+export const loginService = {
+  async login(loginData) {
+    // Utilise l'endpoint le plus probable pour un backend NestJS
+    const response = await api.post('/serviceauth/auth/login', loginData);
+    return response.data;
+  }
+};
+
+// Service Auth API
+export const authService = {
+  // Demander la réinitialisation du mot de passe
+  async forgotPassword(user_email) {
+    const response = await api.post('/serviceauth/auth/forgot-password', { user_email });
+    return response.data;
+  }
+};
+
+// Service pour les opérations d'alignement
 export const alignmentService = {
-  // Créer un nouveau terrain
-  createTerrain: async (terrainData) => {
-    try {
-      const formData = new URLSearchParams();
-      Object.keys(terrainData).forEach(key => {
-        if (terrainData[key] !== null && terrainData[key] !== undefined) {
-          formData.append(key, terrainData[key]);
-        }
-      });
-
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/terrain`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur lors de la création du terrain: ${errorText}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la création du terrain:', error);
-      throw error;
-    }
-  },
-
-  // Créer une nouvelle demande d'alignement
+  // Créer un nouvel alignement
   createAlignment: async (alignmentData) => {
-    try {
-      const formData = new URLSearchParams();
-      Object.keys(alignmentData).forEach(key => {
-        if (alignmentData[key] !== null && alignmentData[key] !== undefined) {
-          formData.append(key, alignmentData[key]);
-        }
-      });
-
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/alignment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur lors de la création de l'alignement: ${errorText}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la création de l\'alignement:', error);
-      throw error;
-    }
+    return api.post('/alignments', alignmentData);
   },
-
-  // Récupérer tous les alignements
-  getAlignments: async (mandataire = null) => {
-    try {
-      let url = `${API_BASE_ALIGNMENT}/servicealignement/alignment`;
-      if (mandataire) {
-        url += `?mandataire=${encodeURIComponent(mandataire)}`;
-      }
-
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des alignements');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération des alignements:', error);
-      throw error;
-    }
-  },
-
-  // Récupérer un alignement par ID
+  
+  // Récupérer un alignement par son ID
   getAlignment: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/alignment/${id}`);
-      
-      if (!response.ok) {
-        throw new Error('Alignement non trouvé');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération de l\'alignement:', error);
-      throw error;
-    }
+    return api.get(`/alignments/${id}`);
   },
-
-  // Récupérer les pièces jointes d'un alignement
-  getPieceJointes: async (alignmentId) => {
-    try {
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/alignment/${alignmentId}`);
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des pièces jointes');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération des pièces jointes:', error);
-      throw error;
-    }
+  
+  // Mettre à jour un alignement
+  updateAlignment: async (id, alignmentData) => {
+    return api.put(`/alignments/${id}`, alignmentData);
   },
-
-  // Créer une pièce jointe avec informations de fichier
-  createPieceJointe: async (pieceJointeData) => {
-    try {
-      const formData = new URLSearchParams();
-      Object.keys(pieceJointeData).forEach(key => {
-        if (pieceJointeData[key] !== null && pieceJointeData[key] !== undefined) {
-          formData.append(key, pieceJointeData[key]);
-        }
-      });
-
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/piece-jointe/with-file-info`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur lors de la création de la pièce jointe: ${errorText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la création de la pièce jointe:', error);
-      throw error;
-    }
+  
+  // Supprimer un alignement
+  deleteAlignment: async (id) => {
+    return api.delete(`/alignments/${id}`);
   },
-
-  // Récupérer tous les terrains
-  getTerrains: async (filters = {}) => {
-    try {
-      let url = `${API_BASE_ALIGNMENT}/servicealignement/terrain`;
-      const params = new URLSearchParams();
-      
-      if (filters.numTitre) {
-        params.append('numTitre', filters.numTitre);
-      }
-      if (filters.proprietaire) {
-        params.append('proprietaire', filters.proprietaire);
-      }
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des terrains');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération des terrains:', error);
-      throw error;
-    }
-  },
-
-  // Récupérer un terrain par ID
-  getTerrain: async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_ALIGNMENT}/servicealignement/terrain/${id}`);
-      
-      if (!response.ok) {
-        throw new Error('Terrain non trouvé');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de la récupération du terrain:', error);
-      throw error;
-    }
-  },
-
-  // Uploader un fichier
+  
+  // Télécharger un fichier pour un alignement
   uploadFile: async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch(`http://localhost:3000/upload`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur lors de l'upload du fichier: ${errorText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur lors de l\'upload:', error);
-      throw error;
-    }
-  }
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/alignments/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
-export { TEMP_USER_ID };
+export default api;
