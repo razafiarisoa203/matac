@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { territoireService } from "../services/api";
+import { territoireService } from "../../services/api";
 import { useSelector } from "react-redux";
-import {citoyenService} from '../services/api'
+import {citoyenService} from '../../services/api'
 
 export default function RegistrationForm() {
   const userCin = useSelector((state) => state.user.cin);

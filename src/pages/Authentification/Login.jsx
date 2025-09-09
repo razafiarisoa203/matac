@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import Header from "../components/Header";
-import NavigationBar from "../components/NavigationBar";
-import bgImage from "../assets/image/construction-bg.jpeg";
-import { loginService } from "../services/api";
+import Header from "../../components/Header";
+import NavigationBar from "../../components/NavigationBar";
+import bgImage from "../../assets/image/construction-bg.jpeg";
+import { loginService } from "../../services/api";
 import axios from "axios";
 const API_BASE_AUTH = import.meta.env.VITE_API_SERVICEAUTH;
 const API_BASE_CITIZEN = import.meta.env.VITE_API_SERVICECITOYEN;
 import { useDispatch } from "react-redux";
-import { setUser } from "../store/userSlice";
+import { setUser } from "../../store/userSlice";
 import {jwtDecode} from "jwt-decode";
 
 const Login = () => {
@@ -54,10 +54,8 @@ const Login = () => {
       localStorage.setItem("token", JSON.stringify(data));
       if (!data) {
         throw new Error(data.message || "Échec de l'authentification");
-      }
-      
+      }      
       if (data) {
-        console.log(decodedUser)
         const citizenResponse = await axios(
           `${API_BASE_CITIZEN}/citizens/getCitizenById/${decodedUser.id_citizen}`
         );

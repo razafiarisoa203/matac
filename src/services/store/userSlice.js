@@ -12,6 +12,7 @@ const userSlice = createSlice({
   reducers: {
     setUser(state, action) {
       state.user = action.payload.user;
+      console.log(action.payload)
       state.token = action.payload.token;
     },
     clearUser(state) {
@@ -21,7 +22,7 @@ const userSlice = createSlice({
     setGlobalCIN(state,action) {
         state.cin = action.payload.cin
         console.log(action)
-    }
+    },
   },
 });
 

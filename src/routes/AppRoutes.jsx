@@ -1,12 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "../pages/LandingPage";
-import Login from "../pages/Login";
-import UserRegisterPage from '../pages/Register';
+import Login from "../pages/Authentification/Login";
+import UserRegisterPage from '../pages/Authentification/Register';
 import Dashboard from "../pages/Dashboard";
 import Allignement from "../pages/Allignement";
 import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
-import ForgotPassword from "../pages/ForgotPassword";
+import ForgotPassword from "../pages/Authentification/ForgotPassword";
 
 function App() {
   return (

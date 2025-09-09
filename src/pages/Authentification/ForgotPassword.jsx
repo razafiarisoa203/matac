@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { authService } from "../services/api";
-import bgImage from "../assets/image/construction-bg.jpeg";
+import { authService } from "../../services/api";
+import bgImage from "../../assets/image/construction-bg.jpeg";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

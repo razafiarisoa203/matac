@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import usePageTitle from "../hooks/usePageTitle";
-import CINVerificationStep from "../components/CINVerificationStep";
-import RegistrationForm from "../components/RegistrationForm";
-import { citoyenService } from "../services/api";
-import Header from "../components/Header";
-import NavigationBar from "../components/NavigationBar";
+import usePageTitle from "../../hooks/usePageTitle";
+import CINVerificationStep from "../../components/Authentification/CINVerificationStep";
+import RegistrationForm from "../../components/Authentification/RegistrationForm";
+import { citoyenService } from "../../services/api";
+import Header from "../../components/Header";
+import NavigationBar from "../../components/NavigationBar";
 import "react-toastify/dist/ReactToastify.css";
-import bgImage from "../assets/image/construction-bg.jpeg";
-import mdatLogo from "../assets/logo/MDAT.jpeg";
+import bgImage from "../../assets/image/construction-bg.jpeg";
+import mdatLogo from "../../assets/logo/MDAT.jpeg";
 import { useDispatch } from "react-redux";
-import { setGlobalCIN } from "../services/store/userSlice";
+import { setGlobalCIN } from "../../services/store/userSlice";
 
 
 export default function Register() {

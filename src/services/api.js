@@ -83,6 +83,12 @@ export const territoireService = {
     console.log(response.data)
     return response.data;
   },
+
+  async getRegions() {
+    const response = await api.get('/serviceterritoire/regions');
+    console.log(response.data)
+    return response.data;
+  },
   
   // Récupérer la liste des fokontany par commune
   async getFokotanys(communeId) {
@@ -105,7 +111,10 @@ export const authService = {
   async forgotPassword(user_email) {
     const response = await api.post('/serviceauth/auth/forgot-password', { user_email });
     return response.data;
-  }
+  },
+  async getUserData(user_id) {
+    console.log(user_id)
+  } 
 };
 
 // Service pour les opérations d'alignement
