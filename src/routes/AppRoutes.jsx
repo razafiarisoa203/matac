@@ -5,12 +5,14 @@ import Dashboard from "../pages/Dashboard";
 import Allignement from "../pages/Allignement";
 import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
+import HomePage from "../pages/HomePage";
 
 function AppRoutes() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/HomePage" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/alignement" element={<Allignement />} />

@@ -1,7 +1,9 @@
 const ActesUrbanisme = () => {
-
   return (
-    <div id="actes-urbanisme" className="bg-white pt-48 pb-32 relative min-h-screen">
+    <div
+      id="actes-urbanisme"
+      className="bg-white pt-48 pb-32 relative min-h-screen"
+    >
       <div className="max-w-7xl mx-auto px-4">
         {/* Titre centré */}
         <div className="text-center mb-20">
@@ -9,16 +11,27 @@ const ActesUrbanisme = () => {
             ACTE D'URBANISME
           </h2>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
           {/* Section texte */}
           <div className="space-y-8">
             <div className="space-y-6 text-gray-700 leading-relaxed text-lg mt-8">
               <p>
-                Quiconque désire entreprendre une construction, doit, au préalable, obtenir un permis de construire. Cette obligation s'impose aux services publics et concerne uniquement les services publics, comme aux personnes privées.
+                Quiconque désire entreprendre une construction, doit, au
+                préalable, obtenir un permis de construire. Cette obligation
+                s'impose aux services publics et concerne uniquement les
+                services publics, comme aux personnes privées.
               </p>
               <p>
-                De même, quiconque désire entreprendre des travaux d'extension, de transformation, de réparation ou de démolition de plan d'urbanisme doit au préalable obtenir une autorisation délivrée par les autorités compétentes. Le même permis est exigé pour les clôtures, les modifications extérieures apportées aux constructions existantes, les changements de destination et d'usage de toute ou partie de construction existante, ainsi que pour les travaux entrainant une modification de la distribution intérieure des bâtiments et des similaires.
+                De même, quiconque désire entreprendre des travaux d'extension,
+                de transformation, de réparation ou de démolition de plan
+                d'urbanisme doit au préalable obtenir une autorisation délivrée
+                par les autorités compétentes. Le même permis est exigé pour les
+                clôtures, les modifications extérieures apportées aux
+                constructions existantes, les changements de destination et
+                d'usage de toute ou partie de construction existante, ainsi que
+                pour les travaux entrainant une modification de la distribution
+                intérieure des bâtiments et des similaires.
               </p>
             </div>
           </div>
@@ -31,9 +44,9 @@ const ActesUrbanisme = () => {
                   PERMIS DE CONSTRUIRE
                 </h3>
                 <div className="mt-6 mb-6">
-                  <img 
-                    src="/api/placeholder/300/200" 
-                    alt="Consultation urbanisme" 
+                  <img
+                    src="/api/placeholder/300/200"
+                    alt="Consultation urbanisme"
                     className=" -lg w-full h-48 object-cover"
                   />
                 </div>

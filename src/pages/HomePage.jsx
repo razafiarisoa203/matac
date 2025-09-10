@@ -1,23 +1,21 @@
 import React from "react";
-import HeroSection from "../components/HeroSection";
 import ServicesSection from "../components/ServicesSection";
 import ObjectifsSection from "../components/ObjectifsSection";
 import ActesUrbanisme from "../components/ActesUrbanisme";
 import Indicateurs from "../components/Indicateurs";
-import Header from "../components/Header";
 import Footer from "../components/Footer";
+import NavigationBar from "../components/NavigationBar";
 
 const HomePage = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       {/* Ajout d'un padding-top pour compenser la hauteur du header fixe */}
-      <main className="flex-grow pt-28">
-        <HeroSection />
-        <ServicesSection />
-        <ActesUrbanisme />
-        <ObjectifsSection />
+      <main className="flex-grow pt-16">
+        <NavigationBar />
         <Indicateurs />
+        <ActesUrbanisme />
+        <ServicesSection />
+        <ObjectifsSection />
       </main>
       <Footer />
     </div>

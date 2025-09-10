@@ -1,25 +1,27 @@
-import ActeUrbanismeSection from "../components/ActeUrbanismeSection";
-import Footer from "../components/Footer";
+import AnimatedIcons from "../components/AnimatedIcons";
+import MainContent from "../components/MainContent";
+import DiscoverButton from "../components/DiscoverButton";
 import Header from "../components/Header";
-import HeroSection from "../components/HeroSection";
-import NavigationBar from "../components/NavigationBar";
-import ObjectifsSection from "../components/ObjectifsSection";
-import ServicesSection from "../components/ServicesSection";
 
 const LandingPage = () => {
   return (
-    <div className="bg-gray-50">
+    <section
+      id="accueil"
+      className="relative min-h-screen bg-black overflow-hidden"
+      style={{
+        backgroundImage: `url('/construction-bg.jpeg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       <Header />
-      <NavigationBar />
-      {/* Ajout d'un padding-top pour compenser la hauteur des éléments fixes */}
-      <div className="pt-32">
-        <HeroSection />
-        <ActeUrbanismeSection />
-        <ObjectifsSection />
-        <ServicesSection />
-        <Footer />
+      <MainContent />
+
+      <div className="absolute bottom-40 left-1/2 transform -translate-x-1/2 z-20">
+        <DiscoverButton to="/HomePage" className="mb-0" />
       </div>
-    </div>
+    </section>
   );
 };
 

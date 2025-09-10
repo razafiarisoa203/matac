@@ -1,11 +1,18 @@
 const Indicateurs = () => {
   return (
-    <div className="bg-white py-12">
+    <div className="bg-white py-8">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-center items-center gap-20">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-8">
           {/* INDICATEUR */}
-          <div className="bg-white  -lg shadow-md p-8 border border-gray-200 w-80">
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 w-80">
             <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <img
+                  src="/Indicateur.png"
+                  alt="Indicateur"
+                  className="w-8 h-8"
+                />
+              </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   INDICATEUR
@@ -19,8 +26,15 @@ const Indicateurs = () => {
           </div>
 
           {/* CARTOGRAPHIE */}
-          <div className="bg-white  -lg shadow-md p-8 border border-gray-200 w-80">
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 w-80">
             <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <img
+                  src="/Cartographie.png"
+                  alt="Cartographie"
+                  className="w-8 h-8"
+                />
+              </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   CARTOGRAPHIE
@@ -34,8 +48,15 @@ const Indicateurs = () => {
           </div>
 
           {/* DOCUMENTATION */}
-          <div className="bg-white  -lg shadow-md p-8 border border-gray-200 w-80">
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 w-80">
             <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <img
+                  src="/Documentation.png"
+                  alt="Documentation"
+                  className="w-8 h-8"
+                />
+              </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   DOCUMENTATION
