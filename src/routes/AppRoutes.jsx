@@ -1,16 +1,17 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import LandingPage from "../pages/LandingPage";
+
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Allignement from "../pages/Allignement";
 import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
+import HomePage from "../pages/HomePage";
 
 function AppRoutes() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/alignement" element={<Allignement />} />

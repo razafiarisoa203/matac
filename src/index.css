@@ -6,3 +6,6 @@ body {
   font-style: normal;
   scroll-behavior: smooth;
 }
+html {
+  scroll-behavior: smooth;
+}
