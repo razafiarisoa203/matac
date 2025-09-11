@@ -1,13 +1,13 @@
-// import ApartmentIcon from '@mui/icons-material/Apartment';
-import { Menu, User, X } from "lucide-react";
+import { Menu, User, X, ChevronDown } from "lucide-react";
 
+// Header Component
 const Header = () => {
   return (
-    <header className="w-full fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
+  <header className="w-full bg-white shadow-sm z-50">
       {/* Bandeau supérieur avec logo + texte vert */}
-      <div className="w-full flex items-center justify-between">
+      <div className="w-full flex items-center justify-between bg-white">
         {/* Logos à gauche */}
-        <div className="flex justify-around px-4 bg-white w-[30%]">
+        <div className="flex justify-around px-4 w-[30%]">
           <div className="w-12 h-20 flex items-center justify-center">
             <img
               src="src/assets/logo/MDAT.jpeg"
@@ -45,17 +45,9 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Bande verte à droite */}
-        <div className="flex-1 bg-white-300 text-right py-5 px-6">
-          <span className="block text-gray-700 text-lg">
-            <span className="text-[#098E00]">M</span>inistère en charge de l'
-            <span className="text-[#098E00]">A</span>ménagement du{" "}
-            <span className="text-[#098E00]">T</span>erritoire
-          </span>
-          <span className="block text-gray-700 text-lg">
-            <span className="text-[#098E00]">A</span>utorisation de{" "}
-            <span className="text-[#098E00]">C</span>onstruire
-          </span>
+        {/* Bande verte à droite avec nouveau code couleur */}
+        <div className="flex-1 text-right py-4 px-6">
+          <h3 className="text-3xl font-bold text-[#269745] mb-1">MATAC</h3>
         </div>
       </div>
     </header>
