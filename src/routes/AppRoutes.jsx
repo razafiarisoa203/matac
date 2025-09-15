@@ -1,27 +1,30 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
-import Login from "../pages/Login";
+import LandingPage from "../pages/LandingPage";
+import Login from "../pages/Authentification/Login";
+import UserRegisterPage from '../pages/Authentification/Register';
 import Dashboard from "../pages/Dashboard";
 import Allignement from "../pages/Allignement";
 import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
-import HomePage from "../pages/HomePage";
+import ForgotPassword from "../pages/Authentification/ForgotPassword";
 
-function AppRoutes() {
+function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<UserRegisterPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/alignement" element={<Allignement />} />
         <Route path="/alignements" element={<AlignmentList />} />
         <Route path="/alignment-list" element={<AlignmentList />} />
         <Route path="/alignements/:id" element={<AlignmentDetails />} />
         <Route path="/alignment-details/:id" element={<AlignmentDetails />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </Router>
   );
 }
 
-export default AppRoutes;
+export default App;
