@@ -7,19 +7,11 @@ import { useFileUpload } from "../hooks/useFileUpload";
 import { useRegionsCommunes } from "../hooks/useRegionsCommunes";
 import { authService, alignmentService, TEMP_USER_ID } from "../services/api";
 import { validateTerrainForm, validateAlignmentForm } from "../utils/validation";
-import { useSelector } from "react-redux";
 
 function Allignement() {
   const navigate = useNavigate();
   const { regions, communes, selectedRegion, selectedCommune, setSelectedRegion, setSelectedCommune } = useRegionsCommunes();
   const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
-  const user = useSelector((state)=> state.user.user);
-
-  const [u, setU] = useState();
-
-  useEffect(()=>{
-    setU(user)
-  },[])
   
   const [statutTerrain, setStatutTerrain] = useState("titre");
   const [currentStep, setCurrentStep] = useState(1);
@@ -91,9 +83,10 @@ function Allignement() {
   // Fonction pour charger les données utilisateur automatiquement
   const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
+
     setIsLoadingUserData(true);
     try {
-      const userData = await authService.getUserData(user.user.user_id);
+      const userData = await authService.getUserData(TEMP_USER_ID);
       
       // Formater les données pour le formulaire
       const formattedData = {
@@ -113,7 +106,7 @@ function Allignement() {
       // En cas d'erreur du service utilisateur, on définit des valeurs par défaut
       const defaultData = {
         civilite: 'M',
-        nom: u.citizens.citizen_name || 'Utilisateur',
+        nom: 'Utilisateur',
         prenoms: 'Test',
         cinPasseport: '000000000000',
         fonction: 'Particulier',
@@ -129,7 +122,6 @@ function Allignement() {
 
   // Auto-remplissage au chargement si "propriétaire" est déjà sélectionné
   useEffect(() => {
-
     if (statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire" && !userDataLoaded && !isLoadingUserData) {
       loadUserData();
     }
