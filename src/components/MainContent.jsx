@@ -83,7 +83,7 @@ const MainContent = () => {
           <img
             src="/Image droite.png"
             alt="Illustration de l'urbanisme"
-            className="w-full max-w-lg h-auto rounded-lg shadow-lg"
+            className="w-full max-w-lg h-auto rounded-lg"
           />
         </div>
       </div>

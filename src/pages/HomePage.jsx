@@ -27,27 +27,18 @@ const HomePage = () => {
           {/* Semi-transparent overlay for readability */}
           <div className="absolute inset-0 bg-white bg-opacity-75"></div>
           <div className="relative z-10">
-            {/* Ajout de l'ID accueil pour la navigation */}
             <div id="accueil">
               <MainContent />
             </div>
-
             <div className=""></div>
-
             <Indicateurs />
-
             <div className="my-32"></div>
-
             <ActesUrbanisme />
           </div>
         </div>
-
         <div className="my-16"></div>
-
         <ObjectifsSection />
-
         <div className="my-16"></div>
-
         <ServicesSection />
       </main>
       <Footer />

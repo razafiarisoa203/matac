@@ -130,9 +130,6 @@ const ObjectifsSection = () => {
             </div>
           </div>
         </div>
-
-        {/* Ligne de connexion verticale subtile (optionnelle, ajustée pour grille) */}
-        <div className="absolute left-1/2 top-32 bottom-32 w-0.5 bg-gradient-to-b from-transparent via-gray-200 to-transparent hidden lg:block transform -translate-x-1/2"></div>
       </div>
     </section>
   );
