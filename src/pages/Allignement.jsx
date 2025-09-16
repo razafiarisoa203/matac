@@ -12,12 +12,12 @@ function Allignement() {
   const navigate = useNavigate();
   const { regions, communes, selectedRegion, selectedCommune, setSelectedRegion, setSelectedCommune } = useRegionsCommunes();
   const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
-  
+
   const [statutTerrain, setStatutTerrain] = useState("titre");
   const [currentStep, setCurrentStep] = useState(1);
   const [statutProprietaire, setStatutProprietaire] = useState("particulier");
   const [qualiteDemandeur, setQualiteDemandeur] = useState("proprietaire");
-  
+
   const { formData, setFormData, handleInputChange, updateFormData } = useFormData({
     id_mandataire: "",
     status_proprietaire: "",
@@ -73,76 +73,136 @@ function Allignement() {
     nationalite2: "",
     age2: "",
   });
-  
+
   const [isLoadingUserData, setIsLoadingUserData] = useState(false);
   const [userDataLoaded, setUserDataLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
-
-  // Fonction pour charger les données utilisateur automatiquement
+  // Enhanced loadUserData function with all required fields
+  // Fixed loadUserData function that correctly maps the localStorage data
   const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
 
     setIsLoadingUserData(true);
     try {
-      const userData = await authService.getUserData(TEMP_USER_ID);
-      
-      // Formater les données pour le formulaire
+      // Get user data from localStorage that was set during login
+      const userData = JSON.parse(localStorage.getItem('userData'));
+
+      if (!userData) {
+        console.log('No user data found in localStorage');
+        return;
+      }
+
+      console.log('User data from localStorage:', userData);
+
+      // Extract user and citizen data from the stored structure
+      const userInfo = userData.user || {};
+      const citizenData = userData.citizen || {};
+
+      // Format the data for the form - mapping to the correct field names
       const formattedData = {
-        civilite: 'M', // Par défaut
-        nom: userData?.citizen_name || userData?.user_pseudo || '',
-        prenoms: userData?.citizen_lastname || '',
-        cinPasseport: userData?.citizen_national_card_number?.toString() || '',
-        fonction: userData?.citizen_work || '',
-        nationalite: 'Malagasy', // Par défaut pour Madagascar
+        civilite: 'M', // Default to 'M' since we don't have gender in the data
+        nom: citizenData.citizen_lastname || '', // "Fitia"
+        prenoms: citizenData.citizen_name || '', // "Manitra"
+        cinPasseport: String(citizenData.citizen_national_card_number || ''), // Convert number to string: "101212356897"
+        fonction: citizenData.citizen_work || 'Particulier', // null becomes 'Particulier'
+        nationalite: 'Malagasy', // Default value since not in the data
+        adresse: citizenData.citizen_adress || '', // "RDI Tanambao"
+        email: userInfo.user_email || '', // Not used in this form but available
+        telephone: '', // Not in the provided data
+
+        // Additional fields for step 3 that can be pre-filled
+        adresse_proprietaire: citizenData.citizen_adress || '', // "RDI Tanambao"
+        contact_proprietaire: '', // Not in the provided data
+        email_proprietaire: userInfo.user_email || '', // "mariella12004@gmail.com"
+
+        // Keep other fields as they were
+        age: formData.age || '',
       };
 
-      updateFormData(formattedData);
+      console.log('Formatted user data for form:', formattedData);
+
+      // Update the form data with user information using setFormData directly
+      setFormData(prev => ({
+        ...prev,
+        ...formattedData
+      }));
+
       setUserDataLoaded(true);
-      console.log('Données utilisateur chargées automatiquement:', formattedData);
+      console.log('User data loaded successfully');
+      console.log('Updated formData will have:', formattedData);
     } catch (error) {
-      console.error('Erreur lors du chargement des données utilisateur:', error);
-      // En cas d'erreur du service utilisateur, on définit des valeurs par défaut
-      const defaultData = {
+      console.error('Error loading user data:', error);
+      // Fallback to required empty values if there's an error
+      const fallbackData = {
         civilite: 'M',
-        nom: 'Utilisateur',
-        prenoms: 'Test',
-        cinPasseport: '000000000000',
+        nom: '',
+        prenoms: '',
+        cinPasseport: '',
         fonction: 'Particulier',
         nationalite: 'Malagasy',
+        adresse: '',
+        telephone: '',
+        adresse_proprietaire: '',
+        contact_proprietaire: '',
+        email_proprietaire: ''
       };
-      updateFormData(defaultData);
+
+      setFormData(prev => ({
+        ...prev,
+        ...fallbackData
+      }));
       setUserDataLoaded(true);
-      console.log('Données par défaut utilisées suite à l\'erreur du service utilisateur');
     } finally {
       setIsLoadingUserData(false);
     }
-  }, [isLoadingUserData, userDataLoaded, updateFormData]);
-
-  // Auto-remplissage au chargement si "propriétaire" est déjà sélectionné
+  }, [isLoadingUserData, userDataLoaded, setFormData, formData.age]);
+  // Replace the existing useEffect with this improved version
+  // Replace your existing useEffect with this corrected version
   useEffect(() => {
-    if (statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire" && !userDataLoaded && !isLoadingUserData) {
+    const shouldAutoFill = statutProprietaire === "particulier" &&
+      qualiteDemandeur === "proprietaire" &&
+      !userDataLoaded &&
+      !isLoadingUserData;
+
+    console.log('useEffect triggered:', {
+      statutProprietaire,
+      qualiteDemandeur,
+      userDataLoaded,
+      isLoadingUserData,
+      shouldAutoFill
+    });
+
+    if (shouldAutoFill) {
+      console.log('Calling loadUserData...');
       loadUserData();
     }
-  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, isLoadingUserData, loadUserData]);
+  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, isLoadingUserData]);
+
+  // Remove loadUserData from the dependency array to prevent infinite loops
+  // Also add a manual trigger button for debugging (optional)
+  const handleManualLoad = () => {
+    setUserDataLoaded(false); // Reset the flag
+    loadUserData();
+  };
 
   // Validate personal form data
   const validatePersonalForm = useCallback(() => {
     if (statutProprietaire === "particulier") {
       if (qualiteDemandeur === "proprietaire") {
-        return formData.civilite && formData.nom && formData.prenoms && 
-               formData.cinPasseport && formData.nationalite;
+        return formData.civilite && formData.nom && formData.prenoms &&
+          formData.cinPasseport && formData.nationalite;
       } else if (qualiteDemandeur === "mandataire") {
-        return formData.civilite && formData.nom && formData.prenoms && 
-               formData.cinPasseport && formData.nationalite &&
-               formData.civilite2 && formData.nom2 && formData.prenoms2 && 
-               formData.cinPasseport2 && formData.nationalite2;
+        return formData.civilite && formData.nom && formData.prenoms &&
+          formData.cinPasseport && formData.nationalite &&
+          formData.civilite2 && formData.nom2 && formData.prenoms2 &&
+          formData.cinPasseport2 && formData.nationalite2;
       }
     } else if (statutProprietaire === "personne_morale") {
       return formData.raisonSociale && formData.carteStatistique &&
-             formData.civiliteRepresentant && formData.nomRepresentant && 
-             formData.prenomsRepresentant && formData.cinPasseportRepresentant;
+        formData.civiliteRepresentant && formData.nomRepresentant &&
+        formData.prenomsRepresentant && formData.cinPasseportRepresentant;
     }
     return false;
   }, [statutProprietaire, qualiteDemandeur, formData]);
@@ -269,7 +329,7 @@ function Allignement() {
       // Step 3: Create piece jointes for already uploaded files
       if (files && files.length > 0) {
         console.log('Creating piece jointes for uploaded files...');
-        
+
         for (const file of files) {
           try {
             // Skip if file is not uploaded yet or doesn't have upload result
@@ -316,33 +376,51 @@ function Allignement() {
     }
   };
 
-  // Fonction pour réinitialiser les données du formulaire
+  // Improved resetFormData function that preserves auto-filled data when appropriate
   const resetFormData = () => {
-    updateFormData({
-      civilite: "",
-      nom: "",
-      prenoms: "",
-      cinPasseport: "",
-      fonction: "",
-      nationalite: "",
-      raisonSociale: "",
-      carteStatistique: "",
-      nif: "",
-      civiliteRepresentant: "",
-      nomRepresentant: "",
-      prenomsRepresentant: "",
-      adresseRepresentant: "",
-      cinPasseportRepresentant: "",
-      civilite2: "",
-      nom2: "",
-      prenoms2: "",
-      cinPasseport2: "",
-      fonction2: "",
-      nationalite2: "",
-      age: "",
-      age2: "",
-    });
-    setUserDataLoaded(false);
+    // Only reset if switching away from proprietaire mode
+    const shouldPreserveData = statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire";
+
+    if (!shouldPreserveData) {
+      updateFormData({
+        civilite: "",
+        nom: "",
+        prenoms: "",
+        cinPasseport: "",
+        fonction: "",
+        nationalite: "",
+        raisonSociale: "",
+        carteStatistique: "",
+        nif: "",
+        civiliteRepresentant: "",
+        nomRepresentant: "",
+        prenomsRepresentant: "",
+        adresseRepresentant: "",
+        cinPasseportRepresentant: "",
+        civilite2: "",
+        nom2: "",
+        prenoms2: "",
+        cinPasseport2: "",
+        fonction2: "",
+        nationalite2: "",
+        age: "",
+        age2: "",
+      });
+      setUserDataLoaded(false);
+    }
+  };
+
+  // Update the qualiteDemandeur onChange handler
+  const handleQualiteDemandeurChange = (e) => {
+    const newValue = e.target.value;
+    setQualiteDemandeur(newValue);
+
+    if (newValue === "proprietaire" && statutProprietaire === "particulier") {
+      // Don't reset, let the useEffect handle loading
+      setUserDataLoaded(false); // This will trigger the useEffect to load data
+    } else if (newValue === "mandataire") {
+      resetFormData();
+    }
   };
 
   const steps = [
@@ -1100,6 +1178,7 @@ function Allignement() {
                     {renderFormContent()}
                   </div>
                 )}
+
 
                 {/* Step 3: Coordonnées du propriétaire */}
                 {currentStep === 3 && (

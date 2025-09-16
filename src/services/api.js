@@ -113,7 +113,13 @@ export const authService = {
     return response.data;
   },
   async getUserData(user_id) {
-    console.log(user_id)
+    const response = await api.get(`/serviceauth/auth/user/${user_id}`);
+    return response.data;
+  },
+  async getConnectedUser() {
+    const response = await api.get('/serviceauth/auth/profile');
+    return response.data;
+
   } 
 };
 
