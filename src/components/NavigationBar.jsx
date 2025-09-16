@@ -9,7 +9,7 @@ function NavigationBar() {
 
   return (
     // Barre de navigation en haut sans fond
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-cover bg-center bg-no-repeat">
+    <nav className="px-10 bg-cover bg-center bg-no-repeat bg-white">
       <div className="flex items-center justify-between h-16">
         {/* Navigation desktop */}
         <div className="hidden md:flex items-center space-x-8">

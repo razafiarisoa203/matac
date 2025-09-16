@@ -80,7 +80,6 @@ function Allignement() {
   const [submitMessage, setSubmitMessage] = useState("");
 
   // Enhanced loadUserData function with all required fields
-  // Fixed loadUserData function that correctly maps the localStorage data
   const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
 
@@ -102,20 +101,20 @@ function Allignement() {
 
       // Format the data for the form - mapping to the correct field names
       const formattedData = {
-        civilite: 'M', // Default to 'M' since we don't have gender in the data
-        nom: citizenData.citizen_lastname || '', // "Fitia"
-        prenoms: citizenData.citizen_name || '', // "Manitra"
-        cinPasseport: String(citizenData.citizen_national_card_number || ''), // Convert number to string: "101212356897"
-        fonction: citizenData.citizen_work || 'Particulier', // null becomes 'Particulier'
-        nationalite: 'Malagasy', // Default value since not in the data
-        adresse: citizenData.citizen_adress || '', // "RDI Tanambao"
-        email: userInfo.user_email || '', // Not used in this form but available
-        telephone: '', // Not in the provided data
+        civilite: 'M', 
+        nom: citizenData.citizen_lastname || '', 
+        prenoms: citizenData.citizen_name || '',
+        cinPasseport: String(citizenData.citizen_national_card_number || ''),
+        fonction: citizenData.citizen_work || 'Particulier',
+        nationalite: 'Malagasy', 
+        adresse: citizenData.citizen_adress || '', 
+        email: userInfo.user_email || '',
+        telephone: '', 
 
         // Additional fields for step 3 that can be pre-filled
-        adresse_proprietaire: citizenData.citizen_adress || '', // "RDI Tanambao"
-        contact_proprietaire: '', // Not in the provided data
-        email_proprietaire: userInfo.user_email || '', // "mariella12004@gmail.com"
+        adresse_proprietaire: citizenData.citizen_adress || '',
+        contact_proprietaire: '',
+        email_proprietaire: userInfo.user_email || '', 
 
         // Keep other fields as they were
         age: formData.age || '',

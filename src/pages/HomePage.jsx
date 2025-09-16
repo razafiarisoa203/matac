@@ -13,12 +13,16 @@ const HomePage = () => {
     <div className="min-h-screen flex flex-col">
       {/* Conteneur fixe pour Header puis NavigationBar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white">
-        <Header />
-        <NavigationBar />
+        <div>
+          <Header />
+        </div>
+        <div>
+          <NavigationBar />
+        </div>
       </div>
 
       {/* Contenu principal avec padding réduit pour compenser la hauteur du Header et de la NavigationBar */}
-      <main className="flex-grow pt-6">
+      <main className="flex-grow p-20 py-30">
         <div>
           {/* Semi-transparent overlay for readability */}
           <div className="absolute inset-0 bg-white bg-opacity-75"></div>
