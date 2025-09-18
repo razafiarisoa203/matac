@@ -8,6 +8,7 @@ import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
 import ForgotPassword from "../pages/Authentification/ForgotPassword";
 import HomePage from "../pages/HomePage";
+import PermisConstruction from "../components/PermisConstruction";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/alignements/:id" element={<AlignmentDetails />} />
         <Route path="/alignment-details/:id" element={<AlignmentDetails />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/permis" element={<PermisConstruction />} />
       </Routes>
     </Router>
   );

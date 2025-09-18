@@ -122,6 +122,41 @@ export const authService = {
   },
 };
 
+export const constructionService = {
+  // Récupérer toutes les constructions
+  getConstruction: async () => {
+    try {
+      const response = await fetch(`${API_BASE_CONSTRUCTION}/serviceconstruction/construction`);
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur lors de la récupération des constructions:', error);
+      return [];
+    }
+  },
+
+  // Créer une nouvelle construction
+  createConstruction: async (constructionData) => {
+    try {
+      const response = await fetch(`${API_BASE_CONSTRUCTION}/serviceconstruction/construction`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(constructionData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la création de la construction');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur lors de la création de la construction:', error);
+      throw error;
+    }
+  },
+};
+
 // Service Alignement
 export const alignmentService = {
   createAlignment: async (alignmentData) => {
