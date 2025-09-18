@@ -79,7 +79,8 @@ function Allignement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
-  // Enhanced loadUserData function with all required fields
+  // In your Allignement.jsx file, fix the loadUserData function:
+
   const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
 
@@ -101,23 +102,23 @@ function Allignement() {
 
       // Format the data for the form - mapping to the correct field names
       const formattedData = {
-        civilite: 'M', 
-        nom: citizenData.citizen_lastname || '', 
+        civilite: 'M',
+        nom: citizenData.citizen_lastname || '',
         prenoms: citizenData.citizen_name || '',
         cinPasseport: String(citizenData.citizen_national_card_number || ''),
         fonction: citizenData.citizen_work || 'Particulier',
-        nationalite: 'Malagasy', 
-        adresse: citizenData.citizen_adress || '', 
+        nationalite: 'Malagasy',
+        adresse: citizenData.citizen_adress || '',
         email: userInfo.user_email || '',
-        telephone: '', 
+        telephone: '',
 
         // Additional fields for step 3 that can be pre-filled
         adresse_proprietaire: citizenData.citizen_adress || '',
         contact_proprietaire: '',
-        email_proprietaire: userInfo.user_email || '', 
+        email_proprietaire: userInfo.user_email || '',
 
-        // Keep other fields as they were
-        age: formData.age || '',
+        // Keep other fields as they were - but don't reference formData.age here
+        age: '',
       };
 
       console.log('Formatted user data for form:', formattedData);
@@ -145,7 +146,8 @@ function Allignement() {
         telephone: '',
         adresse_proprietaire: '',
         contact_proprietaire: '',
-        email_proprietaire: ''
+        email_proprietaire: '',
+        age: ''
       };
 
       setFormData(prev => ({
@@ -156,9 +158,9 @@ function Allignement() {
     } finally {
       setIsLoadingUserData(false);
     }
-  }, [isLoadingUserData, userDataLoaded, setFormData, formData.age]);
-  // Replace the existing useEffect with this improved version
-  // Replace your existing useEffect with this corrected version
+  }, [isLoadingUserData, userDataLoaded, setFormData]); // Removed formData.age from dependencies
+
+  // Also fix the useEffect:
   useEffect(() => {
     const shouldAutoFill = statutProprietaire === "particulier" &&
       qualiteDemandeur === "proprietaire" &&
@@ -177,7 +179,7 @@ function Allignement() {
       console.log('Calling loadUserData...');
       loadUserData();
     }
-  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, isLoadingUserData]);
+  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, isLoadingUserData, loadUserData]);
 
   // Remove loadUserData from the dependency array to prevent infinite loops
   // Also add a manual trigger button for debugging (optional)
@@ -313,9 +315,9 @@ function Allignement() {
 
       // Step 2: Create alignment with terrain ID - Map to backend expected fields
       const alignmentData = {
-        id_mandataire: citizenData.id_citizen || TEMP_USER_ID, 
+        id_mandataire: citizenData.id_citizen || TEMP_USER_ID,
         status_proprietaire: statutProprietaire,
-        qualite_demandeur: qualiteDemandeur, 
+        qualite_demandeur: qualiteDemandeur,
         nif: formData.nif || "000000000000",
         id_cert_sit_jur: formData.id_cert_sit_jur || "CERT-" + Date.now(),
         id_plan_off: formData.id_plan_off || "PLAN-" + Date.now(),

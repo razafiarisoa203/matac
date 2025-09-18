@@ -10,7 +10,7 @@ const API_BASE_AUTH = import.meta.env.VITE_API_SERVICEAUTH;
 const API_BASE_CITIZEN = import.meta.env.VITE_API_SERVICECITOYEN;
 import { useDispatch } from "react-redux";
 import { setUser } from "../../store/userSlice";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -48,21 +48,35 @@ const Login = () => {
     setError("");
 
     try {
-      const response = loginService.login({user_email: formData.user, user_password: formData.password});
+      const response = loginService.login({ user_email: formData.user, user_password: formData.password });
       const data = await response;
       const decodedUser = jwtDecode(data.access_token);
+
+      // Store the token
       localStorage.setItem("token", JSON.stringify(data));
+
       if (!data) {
         throw new Error(data.message || "Échec de l'authentification");
-      }      
+      }
+
       if (data) {
         const citizenResponse = await axios(
           `${API_BASE_CITIZEN}/citizens/getCitizenById/${decodedUser.id_citizen}`
         );
+
         if (citizenResponse) {
           const citizenData = await citizenResponse.data;
-          dispatch(setUser({user: decodedUser, citizens: citizenData}));
-          console.log({user: decodedUser, citizens: citizenData})
+
+          // Store both user and citizen data in localStorage for the Allignement component
+          const userDataForStorage = {
+            user: decodedUser,
+            citizen: citizenData // Note: using 'citizen' not 'citizens'
+          };
+          localStorage.setItem("userData", JSON.stringify(userDataForStorage));
+
+          // Also dispatch to Redux
+          dispatch(setUser({ user: decodedUser, citizens: citizenData }));
+          console.log({ user: decodedUser, citizens: citizenData })
           navigate("/dashboard");
         } else {
           navigate("/dashboard");
@@ -76,7 +90,6 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed flex flex-col"
