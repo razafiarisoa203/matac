@@ -1,43 +1,54 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://gateway.tsirylab.com';
-
 // Constante temporaire pour les tests - à remplacer par l'ID utilisateur réel en production
 export const TEMP_USER_ID = 'temp_user_id_123';
 
-// Create axios instance with base URL
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
+// Récupération des URLs depuis le .env
+const servicesApi = {
+  territoire: import.meta.env.VITE_API_SERVICETERITOIRE,
+  auth: import.meta.env.VITE_API_SERVICEAUTH,
+  citoyen: import.meta.env.VITE_API_SERVICECITOYEN,
+  upload: import.meta.env.VITE_API_SERVICEUPLOAD,
+  alignement: import.meta.env.VITE_API_SERVICEALIGNEMENT,
+};
 
-  },
-});
+// Factory pour créer une instance Axios par service
+const createApi = (baseURL) =>
+  axios.create({
+    baseURL,
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-// Add a request interceptor to include auth token if available
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Ajout d’intercepteur pour le token
+const addInterceptor = (instance) => {
+  instance.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+  return instance;
+};
 
-// Service Citoyen API
+// Instances axios par service
+const territoireApi = addInterceptor(createApi(servicesApi.territoire));
+const authApi = addInterceptor(createApi(servicesApi.auth));
+const citoyenApi = addInterceptor(createApi(servicesApi.citoyen));
+const uploadApi = addInterceptor(createApi(servicesApi.upload));
+const alignementApi = addInterceptor(createApi(servicesApi.alignement));
+
+// ===================== Services =====================
+
+// Service Citoyen
 export const citoyenService = {
-  // Vérifier si un CIN existe
   async checkCIN(cin) {
     try {
-      const response = await api.get(`/servicecitoyen/citizens/${cin}`);
-      return {
-        exists: true,
-        data: response.data
-      };
+      const response = await citoyenApi.get(`/citizens/${cin}`);
+      return { exists: true, data: response.data };
     } catch (error) {
       if (error.response && error.response.status === 404) {
         return { exists: false };
@@ -46,115 +57,93 @@ export const citoyenService = {
     }
   },
 
-  
-  
-  // Créer un nouveau citoyen
   async createCitizen(citizenData) {
-    const response = await api.post('/serviceauth/users/register-with-citizen-short', citizenData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await authApi.post(
+      '/users/register-with-citizen-short',
+      citizenData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
     return response.data;
-  }
+  },
 };
 
-// Service Upload API
+// Service Upload
 export const uploadService = {
   async uploadCitizenPhoto(photoFile) {
     const formData = new FormData();
     formData.append('file', photoFile);
-    
-    const response = await api.post('/serviceupload/api/upload/citizen-photo', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
+
+    const response = await uploadApi.post(
+      '/api/upload/citizen-photo',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
     return response.data;
-  }
+  },
 };
 
-// Service Territoire API
+// Service Territoire
 export const territoireService = {
-  // Récupérer la liste des communes
   async getCommunes() {
-    const response = await api.get('/serviceterritoire/communes');
-    console.log(response.data)
+    const response = await territoireApi.get('/communes');
     return response.data;
   },
-
   async getRegions() {
-    const response = await api.get('/serviceterritoire/regions');
-    console.log(response.data)
+    const response = await territoireApi.get('/regions');
     return response.data;
   },
-  
-  // Récupérer la liste des fokontany par commune
   async getFokotanys(communeId) {
-    const response = await api.get(`/serviceterritoire/api/fokotanys/commune/${communeId}`);
+    const response = await territoireApi.get(`/api/fokotanys/commune/${communeId}`);
     return response.data;
-  }
+  },
 };
 
+// Service Login
 export const loginService = {
   async login(loginData) {
-    // Utilise l'endpoint le plus probable pour un backend NestJS
-    const response = await api.post('/serviceauth/auth/login', loginData);
+    const response = await authApi.post('/auth/login', loginData);
     return response.data;
-  }
+  },
 };
 
-// Service Auth API
+// Service Auth
 export const authService = {
-  // Demander la réinitialisation du mot de passe
   async forgotPassword(user_email) {
-    const response = await api.post('/serviceauth/auth/forgot-password', { user_email });
+    const response = await authApi.post('/auth/forgot-password', { user_email });
     return response.data;
   },
   async getUserData(user_id) {
-    const response = await api.get(`/serviceauth/auth/user/${user_id}`);
+    const response = await authApi.get(`/auth/user/${user_id}`);
     return response.data;
   },
   async getConnectedUser() {
-    const response = await api.get('/serviceauth/auth/profile');
+    const response = await authApi.get('/auth/profile');
     return response.data;
-
-  } 
+  },
 };
 
-// Service pour les opérations d'alignement
+// Service Alignement
 export const alignmentService = {
-  // Créer un nouvel alignement
   createAlignment: async (alignmentData) => {
-    return api.post('/alignments', alignmentData);
+    return alignementApi.post('/alignment', alignmentData);
   },
-  
-  // Récupérer un alignement par son ID
   getAlignment: async (id) => {
-    return api.get(`/alignments/${id}`);
+    return alignementApi.get(`/alignment/${id}`);
   },
-  
-  // Mettre à jour un alignement
   updateAlignment: async (id, alignmentData) => {
-    return api.put(`/alignments/${id}`, alignmentData);
+    return alignementApi.put(`/alignment/${id}`, alignmentData);
   },
-  
-  // Supprimer un alignement
   deleteAlignment: async (id) => {
-    return api.delete(`/alignments/${id}`);
+    return alignementApi.delete(`/alignment/${id}`);
   },
-  
-  // Télécharger un fichier pour un alignement
   uploadFile: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post('/alignments/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    return alignementApi.post('/alignments/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  createTerrain: async (terrainData) => {
+    return alignementApi.post('/terrain', terrainData);
+  },
 };
-
-export default api;
