@@ -313,10 +313,10 @@ function Allignement() {
 
       // Step 2: Create alignment with terrain ID - Map to backend expected fields
       const alignmentData = {
-        id_mandataire: TEMP_USER_ID, // Use the temp user ID from API service
-        status_proprietaire: statutProprietaire, // Use the selected status
-        qualite_demandeur: qualiteDemandeur, // Use the selected quality
-        nif: formData.nif || "000000000000", // Default NIF if not provided
+        id_mandataire: citizenData.id_citizen || TEMP_USER_ID, 
+        status_proprietaire: statutProprietaire,
+        qualite_demandeur: qualiteDemandeur, 
+        nif: formData.nif || "000000000000",
         id_cert_sit_jur: formData.id_cert_sit_jur || "CERT-" + Date.now(),
         id_plan_off: formData.id_plan_off || "PLAN-" + Date.now(),
         id_terrain: terrainResult.id_terrain
