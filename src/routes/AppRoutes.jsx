@@ -1,31 +1,131 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-// import LandingPage from "../pages/LandingPage";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+
+// Auth
 import Login from "../pages/Authentification/Login";
-import UserRegisterPage from '../pages/Authentification/Register';
-import Dashboard from "../pages/Dashboard";
+import UserRegisterPage from "../pages/Authentification/Register";
+import ForgotPassword from "../pages/Authentification/ForgotPassword";
+
+// Pages principales
+import HomePage from "../pages/HomePage";
+import Dashboard from "../pages/DashboardClient";
+import DashboardClient from "../pages/DashboardClient";
+
+// Alignement
 import Allignement from "../pages/Allignement";
 import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
-import ForgotPassword from "../pages/Authentification/ForgotPassword";
-import HomePage from "../pages/HomePage";
+
+// Autres
 import PermisConstruction from "../components/PermisConstruction";
-import DashboardClient from "../pages/DashboardClient";
+
+// Admin & Profile
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import UsersList from "../pages/Admin/UsersList";
+import RegistrationForm from "../pages/Admin/RegistrationForm";
+import RoleManagement from "../pages/RoleAppli/Role";
+
+// 🔒 Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { user } = useSelector((state) => ({
+    user: state.user?.user || null,
+  }));
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<UserRegisterPage />} />
-        <Route path="/dashboard" element={<DashboardClient/>} />
-        <Route path="/alignement" element={<Allignement />} />
-        <Route path="/alignements" element={<AlignmentList />} />
-        <Route path="/alignment-list" element={<AlignmentList />} />
-        <Route path="/alignements/:id" element={<AlignmentDetails />} />
-        <Route path="/alignment-details/:id" element={<AlignmentDetails />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/permis" element={<PermisConstruction />} />
+
+        {/* Protected */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard-client"
+          element={
+            <ProtectedRoute>
+              <DashboardClient />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Alignement */}
+        <Route
+          path="/alignement"
+          element={
+            <ProtectedRoute>
+              <Allignement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/alignements"
+          element={
+            <ProtectedRoute>
+              <AlignmentList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/alignements/:id"
+          element={
+            <ProtectedRoute>
+              <AlignmentDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <UsersList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users/new"
+          element={
+            <ProtectedRoute>
+              <RegistrationForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/role-management"
+          element={
+            <ProtectedRoute>
+              <RoleManagement />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );
