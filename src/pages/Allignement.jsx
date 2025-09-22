@@ -39,7 +39,7 @@ function Allignement() {
     fokotany: "",
     longitude: "",
     latitude: "",
-    statut_terrain: 1, // Default to "titre"
+    statut_terrain: 1, 
     // Keep personal info for UI display but separate from backend submission
     civilite: "",
     nom: "",
@@ -79,14 +79,11 @@ function Allignement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
-  // In your Allignement.jsx file, fix the loadUserData function:
-
   const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
 
     setIsLoadingUserData(true);
     try {
-      // Get user data from localStorage that was set during login
       const userData = JSON.parse(localStorage.getItem('userData'));
 
       if (!userData) {
@@ -94,13 +91,9 @@ function Allignement() {
         return;
       }
 
-      console.log('User data from localStorage:', userData);
-
-      // Extract user and citizen data from the stored structure
       const userInfo = userData.user || {};
       const citizenData = userData.citizen || {};
 
-      // Format the data for the form - mapping to the correct field names
       const formattedData = {
         civilite: 'M',
         nom: citizenData.citizen_lastname || '',
@@ -158,9 +151,8 @@ function Allignement() {
     } finally {
       setIsLoadingUserData(false);
     }
-  }, [isLoadingUserData, userDataLoaded, setFormData]); // Removed formData.age from dependencies
+  }, [isLoadingUserData, userDataLoaded, setFormData]);
 
-  // Also fix the useEffect:
   useEffect(() => {
     const shouldAutoFill = statutProprietaire === "particulier" &&
       qualiteDemandeur === "proprietaire" &&
@@ -181,10 +173,8 @@ function Allignement() {
     }
   }, [statutProprietaire, qualiteDemandeur, userDataLoaded, isLoadingUserData, loadUserData]);
 
-  // Remove loadUserData from the dependency array to prevent infinite loops
-  // Also add a manual trigger button for debugging (optional)
   const handleManualLoad = () => {
-    setUserDataLoaded(false); // Reset the flag
+    setUserDataLoaded(false);
     loadUserData();
   };
 
@@ -208,20 +198,19 @@ function Allignement() {
     return false;
   }, [statutProprietaire, qualiteDemandeur, formData]);
 
+  // Fonction pour passer au nex step
   const handleNext = () => {
     if (currentStep === 1 && selectedRegion && selectedCommune) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 2 && validatePersonalForm()) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 3) {
-      // Step 3 has no required validation, just move to next step
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 4 && validateTerrainForm(formData, statutTerrain)) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 5 && validateAlignmentForm(formData)) {
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 6) {
-      // Documents step, no validation needed to proceed
       setCurrentStep(currentStep + 1);
     }
   };
@@ -231,12 +220,11 @@ function Allignement() {
   };
 
 
-  // Function to handle file upload to backend
+  // Uploader fichier
   const handleFileUpload = async (file) => {
     try {
       const result = await uploadFile(file);
       setSubmitMessage("Fichier uploadé avec succès!");
-      // Clear success message after 3 seconds
       setTimeout(() => setSubmitMessage(""), 3000);
       return result;
     } catch (error) {
@@ -244,7 +232,6 @@ function Allignement() {
       throw error;
     }
   };
-
 
   // Form submission handler
   const handleSubmit = async () => {
@@ -268,37 +255,32 @@ function Allignement() {
         superficie: parseFloat(formData.superficie),
         longitude: parseFloat(formData.longitude),
         latitude: parseFloat(formData.latitude),
-        statut_terrain: statutTerrain // Backend expects string: "titre", "cadastre", "certificat-foncier"
+        statut_terrain: statutTerrain 
       };
 
       let terrainData = { ...baseTerrainData };
 
       if (statutTerrain === "titre") {
-        // Required fields for backend CreateTerrainDto
         terrainData.num_titre = formData.num_titre || "";
         terrainData.nom_proprietaire = formData.nom_proprietaire || "";
         terrainData.num_parcelle = formData.num_parcelle || "";
         terrainData.section_dite = formData.section_dite || "";
         terrainData.canton = formData.canton || "";
-        // Optional fields
         if (formData.indice) {
           terrainData.indice = formData.indice;
         }
       } else if (statutTerrain === "cadastre") {
-        // Required fields for backend - generate defaults if missing
         terrainData.num_titre = formData.num_titre || "CADASTRE-" + Date.now();
         terrainData.nom_proprietaire = formData.nom_proprietaire || "Propriétaire cadastre";
         terrainData.num_parcelle = formData.num_parcelle || "PARC-" + Date.now();
         terrainData.section_dite = formData.section_dite || "Section cadastre";
         terrainData.canton = formData.canton || "Canton";
       } else if (statutTerrain === "certificat-foncier") {
-        // Required fields for backend - generate defaults if missing
         terrainData.num_titre = formData.num_titre || "CERT-FONCIER-" + Date.now();
         terrainData.nom_proprietaire = formData.nom_proprietaire || "Propriétaire certificat foncier";
         terrainData.num_parcelle = formData.num_parcelle || "CF-" + Date.now();
         terrainData.section_dite = formData.section_dite || "Section CF";
         terrainData.canton = formData.canton || "Canton";
-        // Optional fields specific to certificat-foncier
         if (formData.num_karatany) {
           terrainData.num_karatany = formData.num_karatany;
         }
@@ -307,11 +289,8 @@ function Allignement() {
         }
       }
 
-      console.log('Terrain data being sent:', terrainData);
-      console.log('Statut terrain:', statutTerrain);
-
       const terrainResult = await alignmentService.createTerrain(terrainData);
-      console.log('Terrain créé:', terrainResult);
+      // console.log('Terrain créé:', terrainResult);
 
       // Step 2: Create alignment with terrain ID - Map to backend expected fields
       const alignmentData = {
@@ -325,7 +304,7 @@ function Allignement() {
       };
 
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
-      console.log('Alignement créé:', alignmentResult);
+      // console.log('Alignement créé:', alignmentResult);
 
       // Step 3: Create piece jointes for already uploaded files
       if (files && files.length > 0) {
@@ -366,7 +345,7 @@ function Allignement() {
         clearFiles();
         setSubmitMessage("");
         // Optionally navigate to alignment list
-        // navigate('/alignment-list');
+        navigate('/dashboard');
       }, 3000);
 
     } catch (error) {
@@ -793,8 +772,6 @@ function Allignement() {
             </div>
           </>
         )}
-
-
         {statutProprietaire === "personne-morale" && (
           <>
             <h1>Personne morale</h1>
@@ -952,10 +929,7 @@ function Allignement() {
 
   return (
     <div
-      className="min-h-screen"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${bgConst})`,
-      }}>
+      className="min-h-screen">
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-white  -lg shadow-sm">
           {/* return to dashboard button like the primary button*/}

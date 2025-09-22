@@ -193,7 +193,7 @@ const ActionsDashboard = () => {
                     <span className="text-lg">+</span>
                     <span>Nouvel alignement</span>
                   </button>
-                  <button className="bg-lime-600 hover:bg-lime-700 text-white px-6 py-2.5 flex items-center space-x-2 transition-colors shadow-sm">
+                  <button onClick={() => navigate('/permis')} className="bg-lime-600 hover:bg-lime-700 text-white px-6 py-2.5 flex items-center space-x-2 transition-colors shadow-sm">
                     <span className="text-lg">+</span>
                     <span>Demande de permis</span>
                   </button>
