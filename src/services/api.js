@@ -182,3 +182,57 @@ export const alignmentService = {
     return alignementApi.post('/terrain', terrainData);
   },
 };
+
+// Service Notification
+export const notificationService = {
+  
+
+  async getAllNotifications() {
+    try {
+      const response = await api.get('/servicenotification/notifications');
+      console.log('All notifications retrieved:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des notifications:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  async markAsRead(notificationId) {
+    try {
+      const response = await api.patch(`/servicenotification/notifications/${notificationId}/read`);
+      console.log('Notification marked as read:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors du marquage comme lu:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  async deleteNotification(notificationId) {
+    try {
+      const response = await api.delete(`/servicenotification/notifications/${notificationId}`);
+      console.log('Notification deleted successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la notification:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  async broadcastNotification(notificationData) {
+    try {
+      const response = await api.post('/servicenotification/notifications/broadcast', notificationData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Broadcast notification posted successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la création de la notification de diffusion:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+};
+

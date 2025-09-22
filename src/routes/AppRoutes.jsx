@@ -9,6 +9,7 @@ import AlignmentDetails from "../pages/AlignmentDetails";
 import ForgotPassword from "../pages/Authentification/ForgotPassword";
 import HomePage from "../pages/HomePage";
 import PermisConstruction from "../components/PermisConstruction";
+import DashboardClient from "../pages/DashboardClient";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<UserRegisterPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<DashboardClient/>} />
         <Route path="/alignement" element={<Allignement />} />
         <Route path="/alignements" element={<AlignmentList />} />
         <Route path="/alignment-list" element={<AlignmentList />} />

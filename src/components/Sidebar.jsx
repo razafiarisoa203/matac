@@ -1,129 +1,88 @@
+// src/components/Sidebar.jsx
 import {
-  AlertTriangle,
-  Building,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  FileCheck,
   FileText,
-  LayoutDashboard,
-  LogOut,
+  User as UserIcon,
   Settings,
-  User
+  TrendingUp,
+  Building2,
+  Globe,
+  AlignJustify,
 } from 'lucide-react';
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-//hello
-const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+
+const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const menuItems = [
-    { 
-      title: 'Mes actions', 
-      icon: <LayoutDashboard className="w-5 h-5" />, 
-      path: '/dashboard' 
+    {
+      title: 'Mes actions',
+      icon: <TrendingUp className="w-5 h-5" />,
+      path: '/alignment-list',
     },
-    { 
-      title: 'Tous les alignements', 
-      icon: <FileText className="w-5 h-5" />, 
-      path: '/alignements' 
+    {
+      title: 'Alignement',
+      icon: <AlignJustify className="w-5 h-5" />,
+      path: '/alignement'
     },
-    { 
-      title: 'Mes dossiers', 
-      icon: <FileCheck className="w-5 h-5" />, 
-      path: '/dossiers' 
+    {
+      title: 'Permis de construire',
+      icon: <Building2 className="w-5 h-5" />,
+      path: '/permis-contruire'
     },
-    { 
-      title: 'En attente', 
-      icon: <Clock className="w-5 h-5" />, 
-      path: '/en-attente',
-      count: 5
-    },
-    { 
-      title: 'Problèmes', 
-      icon: <AlertTriangle className="w-5 h-5" />, 
-      path: '/problemes',
-      count: 2
-    },
-    { 
-      title: 'Mon compte', 
-      icon: <User className="w-5 h-5" />, 
-      path: '/mon-compte' 
-    },
-    { 
-      title: 'Administration', 
-      icon: <Settings className="w-5 h-5" />, 
-      path: '/admin',
-      adminOnly: true
+    {
+      title: 'Permis de remblai',
+      icon: <Globe className="w-5 h-5" />,
+      path: '/permis-remblai'
     },
   ];
 
   return (
-    <div className={`fixed left-0 top-0 h-full bg-gray-800 text-white flex flex-col transition-all duration-300 z-50 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      {/* Header avec logo et bouton collapse */}
-      <div className="p-4 flex items-center justify-between border-b border-gray-700 flex-shrink-0">
-        {!isCollapsed && (
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
-            <Building className="w-8 h-8 text-lime-400" />
-            <span className="text-xl font-bold">MATAC</span>
-          </div>
-        )}
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 rounded-full hover:bg-gray-700 transition-colors"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-5 h-5 text-gray-300" />
-          ) : (
-            <ChevronLeft className="w-5 h-5 text-gray-300" />
-          )}
-        </button>
+    <div
+      className={`
+        fixed left-0 top-16 h-full bg-white shadow-md rounded-tr-3xl flex flex-col transition-all duration-300 z-40 w-64 border-r border-gray-200
+        ${isMobile ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-full') : ''}
+      `}
+    >
+      {/* Header avec avatar et icônes */}
+      <div className="p-4 flex flex-col items-center space-y-3">
+        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-700">
+          TA
+        </div>
+        <div className="flex space-x-3">
+          <button className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-green-600 hover:bg-gray-300 transition-colors">
+            <UserIcon className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-green-600 hover:bg-gray-300 transition-colors">
+            <Settings className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-green-600 hover:bg-gray-300 transition-colors">
+            <FileText className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Navigation principale - scrollable */}
-      <div className="flex-1 overflow-y-auto py-4">
-        <nav>
-          <ul className="space-y-1 px-2">
-            {menuItems.map((item, index) => (
-              <li key={index}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-                    location.pathname === item.path
-                      ? 'bg-lime-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  <span className="flex-shrink-0">{item.icon}</span>
-                  {!isCollapsed && (
-                    <>
-                      <span className="ml-3 truncate">{item.title}</span>
-                      {item.count && (
-                        <span className="ml-auto bg-lime-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                          {item.count}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-
-      {/* Footer avec déconnexion */}
-      <div className="p-4 border-t border-gray-700 flex-shrink-0">
-        <Link
-          to="/"
-          className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-lg transition-colors w-full"
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!isCollapsed && <span className="ml-3">Déconnexion</span>}
-        </Link>
-      </div>
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-2 overflow-y-auto">
+        <ul className="space-y-1">
+          {menuItems.map((item, index) => (
+            <li key={index}>
+              <Link
+                to={item.path}
+                onClick={() => isMobile && toggleSidebar()}
+                className={`flex items-center px-4 py-3 transition-colors border-l-4 ${
+                  location.pathname === item.path
+                    ? 'bg-green-400 text-white border-bg-green-400'
+                    : 'text-gray-700 hover:bg-green-100 border-transparent'
+                }`}
+              >
+                <span className="flex-shrink-0 mr-3">{item.icon}</span>
+                <span className="font-medium text-sm">{item.title}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 };
