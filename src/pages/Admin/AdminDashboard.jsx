@@ -345,28 +345,11 @@ const AdminDashboard = () => {
 
         {/* Section récente activité */}
         <div className="mt-8 bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Activité récente</h3>
-          </div>
-          <div className="px-4 py-5 sm:p-6">
-            <p className="text-sm text-gray-500">
-              Aucune activité récente pour le moment.
-            </p>
-          </div>
+         
         </div>
 
         {/* Section utilisateurs récents */}
         <div className="mt-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2 sm:mb-0">Utilisateurs récents</h2>
-            <Link 
-              to="/users" 
-              className="text-sm font-medium text-blue-600 hover:text-blue-500"
-            >
-              Voir tout les utilisateurs →
-            </Link>
-          </div>
-          
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             {users.length === 0 ? (
               <div className="px-4 py-12 text-center">
