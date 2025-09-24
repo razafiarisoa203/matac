@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
@@ -17,7 +17,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [_error, setError] = useState(null); // Préfixé avec _ car non utilisé
 
   // Effet pour charger le token au montage
   useEffect(() => {
@@ -48,28 +48,25 @@ const AdminDashboard = () => {
       
       const rolesData = Array.isArray(rolesResponse?.data) ? rolesResponse.data : [];
       
-      // Mise à jour des états
-      setUsers(usersData || []);
+      // Mettre à jour l'état avec les données
+      setUsers(usersData);
       setRoles(rolesData);
       
-      // Mise en cache des données
-      if (usersData) {
-        localStorage.setItem('cachedUsers', JSON.stringify(usersData));
-      }
-      
-      console.log(`Données chargées: ${usersData?.length || 0} utilisateurs, ${rolesData.length} rôles`);
+      // Mettre en cache les données
+      localStorage.setItem('cachedUsers', JSON.stringify(usersData));
+      localStorage.setItem('cachedRoles', JSON.stringify(rolesData));
       
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       setError('Erreur lors du chargement des données');
       
-      // Essayer de charger depuis le cache en cas d'erreur
+      // Essayer de charger les données en cache en cas d'erreur
       try {
-        const cachedData = localStorage.getItem('cachedUsers');
-        if (cachedData) {
-          const parsedData = JSON.parse(cachedData);
-          setUsers(parsedData);
-        }
+        const cachedUsers = localStorage.getItem('cachedUsers');
+        const cachedRoles = localStorage.getItem('cachedRoles');
+        
+        if (cachedUsers) setUsers(JSON.parse(cachedUsers));
+        if (cachedRoles) setRoles(JSON.parse(cachedRoles));
       } catch (cacheError) {
         console.error('Erreur lors du chargement du cache:', cacheError);
       }
@@ -78,66 +75,124 @@ const AdminDashboard = () => {
     }
   }, [token]);
   
-  // Compter les utilisateurs par rôle pour l'application 13635
+  // Compter les utilisateurs par rôle et statut
   const countUsersByRole = useCallback(() => {
-    console.log('=== DEBUT DU COMPTAGE UTILISATEURS PAR ROLE ===');
-    console.log('Liste des rôles:', roles);
+    console.log('=== DÉBUT DU COMPTAGE DES RÔLES ===');
     console.log('Nombre total d\'utilisateurs:', users.length);
     
-    // Initialiser les compteurs pour les rôles spécifiques
-    const roleCounts = {
-      93: 0,  // Client
-      94: 0,  // Admin
-      100: 0  // Commune
+    const stats = {
+      admin: 0,
+      client: 0,
+      commune: 0,
+      active: 0,
+      inactive: 0,
+      total: 3 // On a toujours 3 rôles : admin, client et commune
     };
     
-    // Compter les utilisateurs par rôle pour l'application 13635
-    users.forEach((userItem) => {
-      const user = userItem.user || userItem;
+    // Compter les utilisateurs par rôle et statut
+    users.forEach(user => {
+      // Compter les utilisateurs actifs/inactifs
+      if (user.isActive !== false) stats.active++;
+      else stats.inactive++;
       
-      console.log(`\nUtilisateur:`, {
-        id: user.id,
-        email: user.email,
-        appUserRoles: user.appUserRoles?.map(r => ({
-          role_id: r.role_id || r.role?.role_id,
-          role_name: r.role?.name,
-          app_id: r.application_id
-        }))
-      });
-      
-      if (user.appUserRoles && user.appUserRoles.length > 0) {
-        user.appUserRoles.forEach(userRole => {
-          const roleId = userRole.role_id || userRole.role?.role_id;
-          const appId = userRole.application_id;
-          
-          // Vérifier si le rôle est pour l'application 13635
-          if (appId === 13635 && roleId) {
-            console.log(`- Rôle trouvé pour l'app 13635: ${roleId} (${userRole.role?.name || 'Inconnu'})`);
-            
-            if (roleId in roleCounts) {
-              roleCounts[roleId]++;
-              console.log(`  Compteur mis à jour pour le rôle ${roleId}: ${roleCounts[roleId]}`);
-            }
+      // Compter les rôles
+      if (user.appUserRoles?.length > 0) {
+        user.appUserRoles.forEach(role => {
+          const appId = role.application_id || role.applicationId;
+          if (appId === 13635) {
+            const roleId = role.role_id || role.role?.id || role.roleId;
+            if (roleId === 93) stats.client++;
+            else if (roleId === 94) stats.admin++;
+            else if (roleId === 100) stats.commune++;
           }
         });
       }
     });
     
-    // Calculer le total des utilisateurs ayant un rôle dans l'application 13635
-    const totalUsersWithRoles = roleCounts[93] + roleCounts[94] + roleCounts[100];
+    console.log('\n=== RÉSULTATS DU COMPTAGE ===');
+    console.log('Admin:', stats.admin);
+    console.log('Client:', stats.client);
+    console.log('Commune:', stats.commune);
+    console.log('Actifs:', stats.active);
+    console.log('Inactifs:', stats.inactive);
+    console.log('Total rôles:', 3);
     
-    console.log('=== RESULTATS DU COMPTAGE POUR L\'APP 13635 ===');
-    console.log( 'rôle:', totalUsersWithRoles);
-    console.log('Clients (93):', roleCounts[93]);
-    console.log('Admins (94):', roleCounts[94]);
-    console.log('Communes (100):', roleCounts[100]);
-    console.log('============================\n');
-    
-    return {
-      ...roleCounts,
-      total: totalUsersWithRoles
-    };
-  }, [users, roles]);
+    return stats;
+  }, [users]);
+  
+  // Obtenir les statistiques des utilisateurs
+  const _userStats = useMemo(() => {
+    if (users.length > 0 && roles.length > 0) {
+      return countUsersByRole();
+    }
+    return { admin: 0, client: 0, commune: 0, active: 0, inactive: 0, total: 0 };
+  }, [countUsersByRole, users.length, roles.length]);
+  
+  // Fonction pour attribuer un rôle à un utilisateur
+  const assignRole = async (userId, roleId) => {
+    try {
+      setIsLoading(true);
+      await axios.put(
+        `https://gateway.tsirylab.com/serviceauth/users/${userId}/roles`,
+        { role_id: roleId, application_id: 13635 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Mettre à jour l'état local
+      const updatedUsers = users.map(user => {
+        if (user.id === userId) {
+          const updatedRoles = (user.appUserRoles || []).filter(
+            r => r.application_id !== 13635
+          );
+          
+          if (roleId) {
+            updatedRoles.push({
+              role_id: roleId,
+              application_id: 13635,
+              role: roles.find(r => r.id === roleId) || { id: roleId, name: 'Inconnu' }
+            });
+          }
+          
+          return { ...user, appUserRoles: updatedRoles };
+        }
+        return user;
+      });
+      
+      setUsers(updatedUsers);
+      localStorage.setItem('cachedUsers', JSON.stringify(updatedUsers));
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du rôle:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Récupérer les activités récentes (commenté car non utilisé actuellement)
+  // const _recentActivities = useMemo(() => {
+  //   return users
+  //     .sort((a, b) => new Date(b.lastLogin || b.createdAt) - new Date(a.lastLogin || a.createdAt))
+  //     .slice(0, 5)
+  //     .map(user => ({
+  //       id: user.id,
+  //       name: user.name || user.email?.split('@')[0] || 'Utilisateur',
+  //       action: user.lastLogin ? 'Dernière connexion' : 'Compte créé',
+  //       date: user.lastLogin || user.createdAt
+  //     }));
+  // }, [users]);
+  
+  // Formater les dates pour l'affichage (commenté car non utilisé actuellement)
+  // const _formatDate = (dateString) => {
+  //   if (!dateString) return 'N/A';
+  //   const options = { 
+  //     year: 'numeric', 
+  //     month: 'short', 
+  //     day: 'numeric',
+  //     hour: '2-digit',
+  //     minute: '2-digit'
+  //   };
+  //   return new Date(dateString).toLocaleDateString(undefined, options);
+  // };
   
   // Effet pour charger les données au montage et quand le token change
   useEffect(() => {
@@ -154,65 +209,15 @@ const AdminDashboard = () => {
     }
     if (users.length > 0) {
       console.log('Utilisateurs chargés:', users.length);
-      countUsersByRole(); // Appel initial pour afficher les logs
     }
-  }, [roles, users, countUsersByRole]);
-
-  const assignRole = async (userId, roleId) => {
-    if (!userId || !roleId || !token) return;
-    
-    try {
-      // Mettre à jour le rôle de l'utilisateur
-      await axios.put(
-        `https://gateway.tsirylab.com/serviceauth/roles/${userId}`,
-        { roleId },
-        {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      
-      // Mettre à jour l'état local pour refléter le changement
-      setUsers(prevUsers => 
-        prevUsers.map(user => {
-          if (user.id === userId) {
-            // Mettre à jour uniquement le rôle de l'utilisateur concerné
-            const updatedRoles = user.appUserRoles?.map(role => 
-              role.role_id === roleId ? { ...role, role: { ...role.role, id: roleId } } : role
-            ) || [];
-            
-            return { 
-              ...user, 
-              appUserRoles: updatedRoles,
-              role_id: roleId 
-            };
-          }
-          return user;
-        })
-      );
-      
-      console.log(`Rôle mis à jour pour l'utilisateur ${userId}: ${roleId}`);
-      
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du rôle:', {
-        userId,
-        roleId,
-        error: error.response?.data || error.message
-      });
-      
-      // Optionnel: Afficher une notification d'erreur à l'utilisateur
-      // setError('Échec de la mise à jour du rôle. Veuillez réessayer.');
-    }
-  };
+  }, [roles, users]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement en cours...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -220,29 +225,23 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="mb-4 sm:mb-0">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {t('admin_dashboard_title') || 'Tableau de bord administrateur'}
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Gestion complète des utilisateurs et des rôles
-              </p>
-              {error && (
-                <div className="mt-2 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => navigate('/dashboard')}
+      {/* En-tête */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => navigate(-1)} 
               className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              aria-label={t('common.back')}
             >
               <ArrowLeft className="-ml-1 mr-2 h-4 w-4" />
-              Retour au tableau de bord
+              {t('common.back')}
             </button>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">
+              {t('admin.loggedInAs')}: <span className="font-medium">{state.user?.user?.username || t('common.admin')}</span>
+            </span>
           </div>
         </div>
       </header>
@@ -259,29 +258,18 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Utilisateurs</dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">
-                        {isLoading ? (
-                          <div className="animate-pulse h-6 w-8 bg-gray-200 rounded"></div>
-                        ) : (
-                          <span>{users?.length || 0}</span>
-                        )}
-                      </div>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('admin.stats.totalUsers')}</dt>
+                    <dd>
+                      <div className="text-lg font-medium text-gray-900">{users.length}</div>
                     </dd>
                   </dl>
-                  {import.meta.env.DEV && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      {users?.length || 0} utilisateur(s) chargé(s)
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
             <div className="bg-gray-50 px-4 py-4 sm:px-6">
               <div className="text-sm">
                 <Link to="/users" className="font-medium text-blue-600 hover:text-blue-500">
-                  Voir tous les utilisateurs →
+                  {t('common.viewAll')} {t('common.users').toLowerCase()} →
                 </Link>
               </div>
             </div>
@@ -296,12 +284,9 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Rôles</dt>
-                    <dd className="flex flex-col space-y-1 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base font-medium text-gray-700">Rôles disponibles:</span>
-                        <span className="text-2xl font-bold text-blue-600">3</span>
-                      </div>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('admin.stats.totalRoles')}</dt>
+                    <dd>
+                      <div className="text-lg font-medium text-gray-900">3</div>
                     </dd>
                   </dl>
                 </div>
@@ -310,7 +295,7 @@ const AdminDashboard = () => {
             <div className="bg-gray-50 px-4 py-4 sm:px-6">
               <div className="text-sm">
                 <Link to="/RoleManagement" className="font-medium text-green-600 hover:text-green-500">
-                  Gérer les rôles →
+                  {t('admin.manageRoles')} →
                 </Link>
               </div>
             </div>
@@ -325,9 +310,9 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Paramètres</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('common.settings')}</dt>
                     <dd className="mt-1 text-sm text-gray-900">
-                      Configuration du système
+                      {t('admin.systemSettings')}
                     </dd>
                   </dl>
                 </div>
@@ -336,7 +321,7 @@ const AdminDashboard = () => {
             <div className="bg-gray-50 px-4 py-4 sm:px-6">
               <div className="text-sm">
                 <a href="#" className="font-medium text-purple-600 hover:text-purple-500">
-                  Configurer →
+                  {t('common.configure')} →
                 </a>
               </div>
             </div>
@@ -350,22 +335,24 @@ const AdminDashboard = () => {
 
         {/* Section utilisateurs récents */}
         <div className="mt-8">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">{t('admin.users.recentUsers')}</h2>
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             {users.length === 0 ? (
               <div className="px-4 py-12 text-center">
-                <p className="text-gray-500">Aucun utilisateur trouvé</p>
+                <p className="text-gray-500">{t('admin.users.noUsersFound')}</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {users.slice(0, 5).map((item) => {
+                {users.slice(0, 5).map((item, index) => {
                   const user = item.user || item;
                   const citoyen = item.citoyen || {};
+                  const userKey = user.id || `user-${index}`;
                   // Trouver le rôle principal de l'utilisateur pour l'application 13635
                   const userRole = user.appUserRoles?.find(
                     role => role.application_id === 13635
                   )?.role;
                   return (
-                    <li key={user.id} className="hover:bg-gray-50">
+                    <li key={userKey} className="hover:bg-gray-50">
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center">
@@ -374,10 +361,10 @@ const AdminDashboard = () => {
                             </div>
                             <div className="ml-4">
                               <p className="text-sm font-medium text-blue-600 truncate">
-                                {citoyen?.nom || (user.email ? user.email.split('@')[0] : 'Utilisateur')}
+                                {citoyen?.nom || (user.email ? user.email.split('@')[0] : t('common.user'))}
                               </p>
                               <p className="text-sm text-gray-500 truncate">
-                                {user.email || 'Aucun email'}
+                                {user.email || t('admin.users.noEmail')}
                               </p>
                             </div>
                           </div>
@@ -397,8 +384,10 @@ const AdminDashboard = () => {
                                   }
                                 }}
                               >
-                                <option value="">Changer de rôle</option>
-                                {roles.filter(role => [93, 94, 100].includes(role.id)).map((role) => (
+                                <option value="">{t('admin.users.changeRole')}</option>
+                                {Array.isArray(roles) && roles
+                                .filter(role => [93, 94, 100].includes(role?.id))
+                                .map((role) => (
                                   <option key={role.id} value={role.id}>
                                     {role.name}
                                   </option>
