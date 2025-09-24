@@ -1,0 +1,118 @@
+{
+  "common": {
+    "login": "Hiditra",
+    "logout": "Hivoaka",
+    "register": "Hisoratra anarana",
+    "forgotPassword": "Hadino ny tenimiafinao ve?",
+    "home": "Fandraisana",
+    "dashboard": "Tabilao fanaraha-maso",
+    "adminDashboard": "Tabilao fanaraha-masan'ny mpitantana",
+    "users": "Mpampiasa",
+    "roles": "Andraikitra",
+    "settings": "Fandaharam-pitsipika",
+    "back": "Miverina",
+    "save": "Tehirizo",
+    "cancel": "Ajanona",
+    "delete": "Fafao",
+    "edit": "Ovay",
+    "view": "Jereo",
+    "viewAll": "Jereo ny",
+    "search": "Hikaroka",
+    "loading": "Eo am-pandefasana...",
+    "error": "Tsy nahomby",
+    "success": "Nahomby",
+    "warning": "Fampitandremana",
+    "info": "Fampahafantarana",
+    "configure": "Hamaha",
+    "admin": "Mpandrindra"
+  },
+  "navigation": {
+    "home": "Fandraisana",
+    "urbanPlanningActs": "Dikan-kevitra momba ny fanarenana ny tanàna",
+    "objectives": "Tanjona",
+    "services": "Tolotra",
+    "permits": "Fahazoan-dalana",
+    "alignment": "Fifanitsiana",
+    "alignmentList": "Lisitry ny fifanitsiana",
+    "alignmentDetails": "Antsipirihany momba ny fifanitsiana",
+    "userManagement": "Fitantanana ny mpampiasa",
+    "roleManagement": "Fitantanana ny andraikitra"
+  },
+  "languages": {
+    "fr": "Frantsay (FRA)",
+    "mg": "Malagasy (MLG)"
+  },
+  "auth": {
+    "email": "Mailaka",
+    "password": "Tenimiafina",
+    "confirmPassword": "Hamafiso ny tenimiafinao",
+    "rememberMe": "Tsarovy ahy",
+    "loginButton": "Hiditra",
+    "noAccount": "Tsy manana kaonty mbola ianao?",
+    "registerNow": "Hisoratra anarana izao",
+    "forgotPassword": "Hadino ny tenimiafinao ve?",
+    "resetPassword": "Hamerenana ny tenimiafinao",
+    "sendResetLink": "Alefaso ny rohy famerenana"
+  },
+  "dashboard": {
+    "welcome": "Tongasoa eto amin'ny tabilao fanaraha-maso",
+    "recentActivities": "Hetsika vao haingana",
+    "statistics": "Antontan'isa",
+    "quickActions": "Hetsika haingana"
+  },
+  "admin": {
+    "dashboard": "Tabilao fanaraha-masan'ny mpitantana",
+    "loggedInAs": "Mpiditra ho an'i",
+    "manageRoles": "Tantano ny andraikitra",
+    "systemSettings": "Fandrindrana ny rafitra",
+    "users": {
+      "title": "Fitantanana ny mpampiasa",
+      "recentUsers": "Mpampiasa vao haingana",
+      "addUser": "Manampy mpampiasa",
+      "editUser": "Ovay ny mpampiasa",
+      "deleteUser": "Fafao ny mpampiasa",
+      "userList": "Lisitry ny mpampiasa",
+      "role": "Andraikitra",
+      "status": "Sata",
+      "actions": "Hetsika",
+      "active": "Mavitrika",
+      "inactive": "Tsy mavitrika",
+      "confirmDelete": "Tena te-hamafa ity mpampiasa ity ve ianao?",
+      "noUsersFound": "Tsy hita mpampiasa",
+      "changeRole": "Manova andraikitra",
+      "noEmail": "Tsy misy mailaka",
+      "user": "Mpampiasa"
+    },
+    "roles": {
+      "title": "Fitantanana ny andraikitra",
+      "addRole": "Manampy andraikitra",
+      "editRole": "Ovay ny andraikitra",
+      "deleteRole": "Fafao ny andraikitra",
+      "roleList": "Lisitry ny andraikitra",
+      "permissions": "Fahazoan-dalana",
+      "confirmDelete": "Tena te-hamafa ity andraikitra ity ve ianao?",
+      "availableRoles": "Andraikitra misy"
+    },
+    "stats": {
+      "totalUsers": "Totalin'ny mpampiasa",
+      "activeUsers": "Mpampiasa mavitrika",
+      "roles": "Andraikitra",
+      "settings": "Fandaharam-pitsipika"
+    }
+  },
+  "alignment": {
+    "title": "Fifanitsiana",
+    "list": "Lisitry ny fifanitsiana",
+    "details": "Antsipirihany momba ny fifanitsiana",
+    "new": "Fifanitsiana vaovao",
+    "edit": "Ovay ny fifanitsiana",
+    "delete": "Fafao ny fifanitsiana",
+    "confirmDelete": "Tena te-hamafa ity fifanitsiana ity ve ianao?",
+    "reference": "Fanamarihana",
+    "status": "Sata",
+    "date": "Daty",
+    "location": "Toerana",
+    "description": "Famaritana",
+    "attachments": "Rakitsoratra"
+  }
+}
