@@ -28,7 +28,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
     {
       title: 'Permis de construire',
       icon: <Building2 className="w-5 h-5" />,
-      path: '/permis-contruire'
+      path: '/permis'
     },
     {
       title: 'Permis de remblai',
