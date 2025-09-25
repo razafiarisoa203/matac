@@ -6,7 +6,7 @@
     "forgotPassword": "Mot de passe oublié",
     "home": "Accueil",
     "dashboard": "Tableau de bord",
-    "adminDashboard": "Tableau d'administration",
+    "adminDashboard": "Tableau de bord administrateur",
     "users": "Utilisateurs",
     "roles": "Rôles",
     "settings": "Paramètres",
@@ -38,9 +38,116 @@
     "userManagement": "Gestion des utilisateurs",
     "roleManagement": "Gestion des rôles"
   },
+  "footer": {
+    "matac": "MATAC",
+    "nav": {
+      "home": "Accueil",
+      "acts": "Actes",
+      "services": "Services",
+      "objectives": "Objectifs"
+    },
+    "copyright": "© {{year}} MATAC Madagascar - Urbanisme"
+  },
   "languages": {
     "fr": "Français (FRA)",
     "mg": "Malagasy (MLG)"
+  },
+  "urbanismActs": {
+    "title": "ACTES D'URBANISME",
+    "slides": [
+      {
+        "title": "DÉCRET SUR L'URBANISME",
+        "description": "Ces actes définissent les règles d'utilisation des sols et les normes techniques régissant les projets de construction. Ils déterminent comment les terrains peuvent être utilisés dans une ville donnée."
+      },
+      {
+        "title": "PERMIS DE CONSTRUIRE",
+        "description": "Toute personne souhaitant entreprendre des travaux de construction doit obtenir un permis de construire au préalable. Cette obligation s'applique aux fonctionnaires et aux particuliers. De même, toute modification de la structure d'un terrain dans une zone urbaine régie par un plan d'urbanisme doit être approuvée par les autorités compétentes."
+      },
+      {
+        "title": "ALIGNEMENT",
+        "description": "L'alignement correspond à la délimitation des parcelles par rapport à la voie publique ou au tracé prévu. Il fixe la limite entre la voie publique et les propriétés adjacentes."
+      },
+      {
+        "title": "CERTIFICAT DE CONFORMITÉ",
+        "description": "Le certificat de conformité est un document officiel attestant que les constructions respectent les normes techniques prescrites."
+      }
+    ]
+  },
+  "home": {
+    "title1": "AMÉLIORATION,",
+    "title2": "FACILITATION",
+    "title3": "ET EFFICACITÉ",
+    "description": "Destiné aux ministères en charge de l'urbanisme, aux communes malgaches, aux services techniques régionaux, aux représentants et aux utilisateurs.",
+    "login": "Connexion",
+    "contact": "Contactez-nous"
+  },
+  "objectives": {
+    "title": "OBJECTIFS",
+    "objectivesList": [
+      {
+        "number": "01",
+        "title": "Simplifier le traitement des dossiers au sein de chaque service, ainsi qu'au niveau des administrations locales et centrales"
+      },
+      {
+        "number": "02",
+        "title": "Garantir la traçabilité et la sécurisation des dossiers"
+      },
+      {
+        "number": "03",
+        "title": "Faciliter le suivi et l'accès aux dossiers"
+      },
+      {
+        "number": "04",
+        "title": "Accroître l'efficacité du personnel administratif"
+      },
+      {
+        "number": "05",
+        "title": "Améliorer la précision et la fiabilité des informations"
+      },
+      {
+        "number": "06",
+        "title": "Renforcer la cohérence et la transparence dans les processus"
+      }
+    ]
+  },
+  "stats": {
+    "satisfiedClients": "Clients satisfaits",
+    "projectsCompleted": "Projets réalisés",
+    "experienceYears": "Années d'expérience",
+    "teamMembers": "Membres de l'équipe",
+    "awardsWon": "Prix remportés"
+  },
+  "services": {
+    "title": "Services",
+    "meetYourNeeds": "DES SERVICES ADAPTÉS À VOS BESOINS",
+    "platformDescription": "Cette plateforme vous permet de gérer en ligne toutes les procédures liées à l'urbanisme, avec un suivi en temps réel et une sécurité optimale pour tous vos dossiers.",
+    "myPlatform": "Ma plateforme",
+    "servicesList": [
+      {
+        "title": "SUIVI DES DOSSIERS",
+        "description": "Grâce à la plateforme, vous pouvez soumettre et suivre vos demandes de permis de construire en ligne.",
+        "icon": "/Bank Building.png",
+        "color": "bg-[#269745]"
+      },
+      {
+        "title": "SUIVI DES TRANSACTIONS",
+        "description": "Recevez des notifications par e-mail pour suivre vos demandes et être informé des nouveautés qui vous concernent.",
+        "icon": "/Follow.png",
+        "color": "bg-[#269745]"
+      },
+      {
+        "title": "GESTION EN LIGNE DES DOSSIERS",
+        "description": "Vos demandes sont archivées et le suivi est garanti par l'administration de la plateforme.",
+        "icon": "/Check.png",
+        "color": "bg-[#269745]"
+      },
+      {
+        "title": "SÉCURISATION DES DONNÉES",
+        "description": "Vos permis et informations sont sécurisés et accessibles à tout moment.",
+        "icon": "/Secure Server.png",
+        "color": "bg-[#269745]"
+      }
+    ]
   },
   "auth": {
     "email": "Email",
@@ -60,11 +167,31 @@
     "statistics": "Statistiques",
     "quickActions": "Actions rapides"
   },
+  "indicators": {
+    "indicator": "INDICATEUR",
+    "mapping": "CARTOGRAPHIE",
+    "documentation": "DOCUMENTATION",
+    "learnMore": "En savoir plus"
+  },
+  "infoCards": {
+    "indicator": {
+      "title": "INDICATEUR",
+      "description": "Suivez en temps réel les indicateurs principaux et les statistiques concernant les demandes de permis de construire à travers le pays."
+    },
+    "mapping": {
+      "title": "CARTOGRAPHIE",
+      "description": "Visualisez les zones d'urbanisme, les permis délivrés et les projets en cours sur la carte interactive."
+    },
+    "documentation": {
+      "title": "DOCUMENTATION",
+      "description": "Accédez à tous les documents nécessaires, formulaires et guides pour effectuer une demande de permis de construire."
+    }
+  },
   "admin": {
     "dashboard": "Tableau de bord administrateur",
     "loggedInAs": "Connecté en tant que",
     "manageRoles": "Gérer les rôles",
-    "systemSettings": "Configuration du système",
+    "systemSettings": "Paramètres système",
     "users": {
       "title": "Gestion des utilisateurs",
       "recentUsers": "Utilisateurs récents",
