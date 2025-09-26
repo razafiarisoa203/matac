@@ -2,13 +2,35 @@ import { handleNavClick } from "../utils/scrollToSection";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { User, Globe, Menu, X } from "lucide-react";
+import { User, Globe, Menu, X, Sun, Moon } from "lucide-react";
 
 function NavigationBar() {
   const { t, i18n } = useTranslation();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("accueil");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
   
   // Mettre à jour le document title et la direction du texte en fonction de la langue
   useEffect(() => {
@@ -41,16 +63,27 @@ function NavigationBar() {
                 activeSection === section ? "text-[#269745]" : "text-gray-800 hover:text-[#269745]"
               }`}
             >
-              {section === "accueil" && "Accueil"}
-              {section === "actes-urbanisme" && "Acte d'urbanisme"}
-              {section === "objectifs" && "Objectifs"}
-              {section === "services" && "Services"}
+              {section === "accueil" && t('navigation.home')}
+              {section === "actes-urbanisme" && t('navigation.urbanismActs')}
+              {section === "objectifs" && t('navigation.objectives')}
+              {section === "services" && t('navigation.services')}
             </a>
           ))}
         </div>
 
         {/* Bouton connexion & langue desktop */}
         <div className="hidden md:flex items-center space-x-4">
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 text-gray-700 hover:text-[#269745] dark:text-gray-200 dark:hover:text-white transition-colors"
+            aria-label={darkMode ? 'Désactiver le mode sombre' : 'Activer le mode sombre'}
+          >
+            {darkMode ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </button>
           <Link
             to="/login"
             className="bg-[#269745] text-white px-4 py-2 rounded-lg hover:bg-[#1e7e3a] flex items-center space-x-2 transition-colors duration-300"
@@ -122,7 +155,7 @@ function NavigationBar() {
                 sectionName = t('navigation.home');
                 break;
               case 'actes-urbanisme':
-                sectionName = t('navigation.urbanPlanningActs');
+                sectionName = t('navigation.urbanismActs');
                 break;
               case 'objectifs':
                 sectionName = t('navigation.objectives');

@@ -1,39 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const ServicesSection = () => {
+  const { t } = useTranslation();
   const [isTitleHovered, setIsTitleHovered] = useState(false);
-  const services = [
-    {
-      title: "Déposition de dossier",
-      description:
-        "Grâce à notre plateforme vous permettra de déposer et suivre votre demande de permis de construire en ligne avec nous.",
-      icon: "/Bank Building.png",
-      color: "bg-[#269745]",
-    },
-    {
-      title: "Suivie de l'évolution",
-      description:
-        "Pour vous permettre de suivre votre demande vous recevez des alertes de notification par Email, nous vous offrons un service innovant pour mieux vous servir.",
-      icon: "/Follow.png",
-      color: "bg-[#269745]",
-    },
-    {
-      title: "Dossier traité en ligne",
-      description:
-        "Archivé et garantie un traitement et suivi par l'administration de vos systèmes.",
-      icon: "/Check.png",
-      color: "bg-[#269745]",
-    },
-    {
-      title: "Archivé et sécurisé",
-      description:
-        "Votre permis est géré en sécurisé et vous bénéficiez d'avoir accès et tout moment.",
-      icon: "/Secure Server.png",
-      color: "bg-[#269745]",
-    },
-  ];
 
+  // Récupérer les services traduits
+  const servicesRaw = t('services.servicesList', { returnObjects: true }) || [];
+  const services = Array.isArray(servicesRaw) ? servicesRaw : Object.values(servicesRaw);
   return (
     <div
       id="services"
@@ -57,7 +32,7 @@ const ServicesSection = () => {
               onMouseEnter={() => setIsTitleHovered(true)}
               onMouseLeave={() => setIsTitleHovered(false)}
             >
-              <h2 className="text-4xl font-bold text-[#269745]">SERVICES</h2>
+              <h2 className="text-4xl font-bold text-[#269745]">{t('services.title')}</h2>
               {/* Ligne noire animée identique à OBJECTIFS */}
               <div
                 className={`absolute bottom-0 left-0 h-1 bg-black transition-all duration-300 ${isTitleHovered ? "w-full" : "w-0"}`}
@@ -126,18 +101,16 @@ const ServicesSection = () => {
             <div className="lg:col-span-1 flex items-center">
               <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 w-full">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  SERVICE REPONDS À VOTRE BESOIN
+                  {t('services.meetYourNeeds')}
                 </h3>
                 <p className="text-gray-600 leading-relaxed mb-6 text-sm">
-                  Notre plateforme innovante vous permet de gérer toutes vos
-                  démarches d'urbanisme en ligne, avec un suivi en temps réel et
-                  une sécurité garantie pour tous vos documents.
+                  {t('services.platformDescription')}
                 </p>
                 <Link
                   to="/login"
                   className="bg-[#269745] text-white px-6 py-3 rounded-full hover:bg-[#1e7a3a] transition-colors duration-300 flex items-center gap-2 text-sm font-semibold"
                 >
-                  Mon plateforme
+                  {t('services.myPlatform')}
                   <svg
                     className="w-4 h-4"
                     fill="none"
