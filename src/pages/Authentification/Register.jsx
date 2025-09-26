@@ -6,7 +6,6 @@ import CINVerificationStep from "../../components/Authentification/CINVerificati
 import RegistrationForm from "../../components/Authentification/RegistrationForm";
 import { citoyenService } from "../../services/api";
 import Header from "../../components/Header";
-import NavigationBar from "../../components/NavigationBar";
 import "react-toastify/dist/ReactToastify.css";
 import bgImage from "../../assets/image/construction-bg.jpeg";
 import mdatLogo from "../../assets/logo/MDAT.jpeg";
@@ -73,7 +72,6 @@ export default function Register() {
       }}
     >
       <Header />
-      <NavigationBar />
 
       {/* Conteneur central */}
       <div className="flex-1 flex items-center justify-center mt-40 px-4 py-10 sm:px-6 lg:px-8">

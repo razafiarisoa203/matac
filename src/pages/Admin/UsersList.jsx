@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Users, ArrowLeft, UserPlus, Loader2 } from 'lucide-react';
-import { useSelector } from "react-redux";
+import { useNavigate } from 'react-router-dom';
+import { Users, ArrowLeft, Loader2 } from 'lucide-react';
 import { getAllUsersByApplicationRole } from '../../services/api/userService';
 
 const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '13635';
@@ -9,21 +8,94 @@ const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '13635';
 const UsersList = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
 
-  useEffect(()=>{
-    getAllUsersByApplicationRole()
-    .then((res)=>{
-      setUsers(res)
-      console.log(res)
-    })
-    .catch((err)=>{
-      setError(err.message)
-    })
-  },[])
+  useEffect(() => {
+    const loadUsers = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const usersData = await getAllUsersByApplicationRole();
+        console.log('Données brutes de l\'API:', usersData);
+        
+        // Normaliser les données utilisateur
+        const normalizeUserData = (data) => {
+          if (!data || !Array.isArray(data)) {
+            console.error('Données utilisateur invalides:', data);
+            return [];
+          }
+          
+          return data.map(user => {
+            if (!user) {
+              console.warn('Utilisateur null ou undefined dans les données');
+              return null;
+            }
+
+            try {
+              // Vérifier si l'utilisateur a une propriété 'user' imbriquée
+              const hasNestedUser = user.user && typeof user.user === 'object';
+              
+              // Extraire les propriétés avec des valeurs par défaut
+              const baseUser = {
+                ...user,
+                id: user.id || (hasNestedUser ? user.user.user_id : null) || `user-${Math.random().toString(36).substr(2, 9)}`,
+                email: user.email || (hasNestedUser ? user.user.email : null) || 'email@inconnu.com',
+                firstname: user.firstname || (hasNestedUser ? user.user.firstname : null) || '',
+                lastname: user.lastname || (hasNestedUser ? user.user.lastname : null) || '',
+                role_id: user.role_id || (hasNestedUser ? user.user.role_id : null) || 93, // Client par défaut
+                role_name: user.role_name || (hasNestedUser ? user.user.role_name : null) || 'Client',
+                created_at: user.created_at || (hasNestedUser ? user.user.created_at : null) || new Date().toISOString(),
+                updated_at: user.updated_at || (hasNestedUser ? user.user.updated_at : null) || new Date().toISOString(),
+                last_login: user.last_login || (hasNestedUser ? user.user.last_login : null)
+              };
+
+              // Si on a un objet user imbriqué, on le conserve pour la rétrocompatibilité
+              if (hasNestedUser) {
+                baseUser.user = {
+                  ...user.user,
+                  ...baseUser
+                };
+              }
+
+              return baseUser;
+            } catch (error) {
+              console.error('Erreur lors de la normalisation de l\'utilisateur:', error, user);
+              return null;
+            }
+          }).filter(Boolean); // Filtrer les utilisateurs invalides
+        };
+        
+        const normalizedUsers = normalizeUserData(usersData);
+        
+        // Afficher les données brutes pour le débogage
+        console.log('Données utilisateur brutes:', usersData);
+        console.log('Utilisateurs normalisés:', normalizedUsers);
+        
+        // Afficher les formats de date pour le débogage
+        normalizedUsers.forEach((user, index) => {
+          console.log(`Utilisateur ${index}:`, {
+            id: user.id,
+            email: user.email,
+            created_at: user.created_at,
+            created_at_type: typeof user.created_at,
+            updated_at: user.updated_at,
+            last_login: user.last_login
+          });
+        });
+        
+        setUsers(normalizedUsers);
+      } catch (err) {
+        console.error('Erreur lors du chargement des utilisateurs:', err);
+        setError('Impossible de charger les utilisateurs. Veuillez réessayer.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   // Afficher le chargement
   if (isLoading) {
@@ -36,7 +108,7 @@ const UsersList = () => {
     );
   }
 
-  // Gestion des erreurs
+  // Afficher les erreurs
   if (error) {
     return (
       <div className="max-w-2xl mx-auto p-6 bg-red-50 rounded-lg shadow-sm">
@@ -88,13 +160,6 @@ const UsersList = () => {
                 <ArrowLeft className="-ml-1 mr-2 h-4 w-4" />
                 Retour
               </button>
-              <button
-                onClick={() => navigate('/admin/users/new')}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <UserPlus className="-ml-1 mr-2 h-4 w-4" />
-                Nouvel utilisateur
-              </button>
             </div>
           </div>
         </div>
@@ -133,15 +198,23 @@ const UsersList = () => {
             </div>
           ) : (
             <ul className="divide-y divide-gray-200">
-              {users.map((user) => {
+              {users.map((user, index) => {
+                const userKey = `user-${user.id}-${index}`; // Clé unique pour chaque élément de la liste
+                const photoUrl = user.citoyen?.citizen_photo?.includes('hello') 
+                  ? `https://gateway.tsirylab.com/serviceupload/file/preview/hello${user.citoyen.citizen_photo.split("hello")[1].replace("/","%2F")}`
+                  : null;
+                
                 return (
-                  <li key={user.id} className="hover:bg-gray-50">
+                  <li key={userKey} className="hover:bg-gray-50">
                     <div className="px-4 py-4 sm:px-6">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <Users className="h-5 w-5 text-blue-600" />
-                            <img src={"https://gateway.tsirylab.com/serviceupload/file/preview/hello"+(user.citoyen.citizen_photo.split("hello")[1]).replace("/","%2F")} className='h-10 w-10 rounded-full' alt="" />
+                            {photoUrl ? (
+                              <img src={photoUrl} className="h-10 w-10 rounded-full object-cover" alt="" />
+                            ) : (
+                              <Users className="h-5 w-5 text-blue-600" />
+                            )}
                           </div>
                           <div className="ml-4 min-w-0">
                             <p className="text-sm font-medium text-blue-600 truncate">
@@ -150,23 +223,221 @@ const UsersList = () => {
                             <p className="text-xs text-gray-500 truncate">
                               {user.email}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Créé le: {new Date(user.created_at).toLocaleDateString()}
-                            </p>
+                            <div className="text-xs text-gray-500 space-y-1 mt-1">
+                              <div className="flex items-start">
+                                <span className="w-20 text-gray-400">Créé:</span>
+                                <span className="break-all">
+                                  {(() => {
+                                    const dateStr = user.created_at || user.user?.created_at;
+                                    if (!dateStr) return 'N/A';
+                                    
+                                    try {
+                                      // Essayer de parser la date en tenant compte de différents formats
+                                      let date;
+                                      if (typeof dateStr === 'string') {
+                                        // Essayer différents formats de date
+                                        date = new Date(dateStr);
+                                        if (isNaN(date.getTime())) {
+                                          // Si le format ISO ne fonctionne pas, essayer d'autres formats
+                                          const timestamp = Date.parse(dateStr);
+                                          date = isNaN(timestamp) ? null : new Date(timestamp);
+                                        }
+                                      } else if (typeof dateStr === 'number') {
+                                        date = new Date(dateStr);
+                                      } else if (dateStr.toDate) {
+                                        // Si c'est un objet Firestore Timestamp
+                                        date = dateStr.toDate();
+                                      }
+                                      
+                                      if (!date || isNaN(date.getTime())) {
+                                        console.error('Format de date invalide:', dateStr);
+                                        return 'Format invalide';
+                                      }
+                                      
+                                      return date.toLocaleString('fr-FR', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: false
+                                      });
+                                    } catch (error) {
+                                      console.error('Erreur de format de date:', error);
+                                      return 'Erreur date';
+                                    }
+                                  })()}
+                                </span>
+                              </div>
+                              <div className="flex items-start">
+                                <span className="w-20 text-gray-400">Dernière connexion:</span>
+                                <span className="break-all">
+                                  {(() => {
+                                    const dateStr = user.last_login || user.user?.last_login;
+                                    if (!dateStr) return 'Jamais';
+                                    
+                                    try {
+                                      let date;
+                                      if (typeof dateStr === 'string') {
+                                        date = new Date(dateStr);
+                                        if (isNaN(date.getTime())) {
+                                          const timestamp = Date.parse(dateStr);
+                                          date = isNaN(timestamp) ? null : new Date(timestamp);
+                                        }
+                                      } else if (typeof dateStr === 'number') {
+                                        date = new Date(dateStr);
+                                      } else if (dateStr.toDate) {
+                                        date = dateStr.toDate();
+                                      }
+                                      
+                                      if (!date || isNaN(date.getTime())) {
+                                        console.error('Format de date de connexion invalide:', dateStr);
+                                        return 'Inconnu';
+                                      }
+                                      
+                                      return date.toLocaleString('fr-FR', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: false
+                                      });
+                                    } catch (error) {
+                                      console.error('Erreur de format de date de connexion:', error);
+                                      return 'Erreur';
+                                    }
+                                  })()}
+                                </span>
+                              </div>
+                              <div className="flex items-start">
+                                <span className="w-20 text-gray-400">Mise à jour:</span>
+                                <span className="break-all">
+                                  {(() => {
+                                    const dateStr = user.updated_at || user.user?.updated_at;
+                                    if (!dateStr) return 'N/A';
+                                    
+                                    try {
+                                      let date;
+                                      if (typeof dateStr === 'string') {
+                                        date = new Date(dateStr);
+                                        if (isNaN(date.getTime())) {
+                                          const timestamp = Date.parse(dateStr);
+                                          date = isNaN(timestamp) ? null : new Date(timestamp);
+                                        }
+                                      } else if (typeof dateStr === 'number') {
+                                        date = new Date(dateStr);
+                                      } else if (dateStr.toDate) {
+                                        date = dateStr.toDate();
+                                      }
+                                      
+                                      if (!date || isNaN(date.getTime())) {
+                                        console.error('Format de date de mise à jour invalide:', dateStr);
+                                        return 'Inconnu';
+                                      }
+                                      
+                                      return date.toLocaleString('fr-FR', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: false
+                                      });
+                                    } catch (error) {
+                                      console.error('Erreur de format de date de mise à jour:', error);
+                                      return 'Erreur';
+                                    }
+                                  })()}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div className="mt-2 sm:mt-0 sm:ml-4 w-full sm:w-72">
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                             <div className="flex-1 min-w-0">
                             <select
-                            className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
-                            value={user.role_id || ''}
-                            onChange={(e) => setUser({ ...user, role_id: e.target.value })}
-                          >
-                            <option value="">Sélectionner un rôle</option>
-                            <option value="1">Admin</option>
-                            <option value="2">Commune</option>
-                            <option value="3">Client</option>
+                              className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                              value={user.role_id || ''}
+                              onChange={async (e) => {
+                                const newRoleId = e.target.value;
+                                const newRoleName = e.target.options[e.target.selectedIndex].text;
+                                
+                                console.group('=== DÉBUT MISE À JOUR RÔLE ===');
+                                console.log('Utilisateur source:', {
+                                  id: user.id,
+                                  user_id: user.user_id,
+                                  user: user.user
+                                });
+                                
+                                try {
+                                  setUsers(prevUsers => {
+                                    console.log('Pré-mise à jour - Nombre d\'utilisateurs:', prevUsers.length);
+                                    
+                                    const updatedUsers = prevUsers.map(u => {
+                                      // Afficher les informations de chaque utilisateur pour le débogage
+                                      console.log('Vérification utilisateur:', {
+                                        id: u.id,
+                                        user_id: u.user_id,
+                                        user: u.user,
+                                        matchesId: u.id === user.id,
+                                        matchesUserId: u.user_id === user.user_id,
+                                        matchesUserObj: u.user?.id === user.user?.id || u.user?.user_id === user.user?.user_id
+                                      });
+                                      
+                                      // Vérifier si c'est l'utilisateur courant avec plus de précision
+                                      const isTargetUser = 
+                                        (u.id && u.id === user.id) || 
+                                        (u.user_id && u.user_id === user.user_id) ||
+                                        (u.user?.id && u.user.id === user.user?.id) ||
+                                        (u.user?.user_id && u.user.user_id === user.user?.user_id);
+                                      
+                                      if (!isTargetUser) {
+                                        console.log('Utilisateur non ciblé, ignoré');
+                                        return u;
+                                      }
+                                      
+                                      console.log('Utilisateur ciblé trouvé, mise à jour en cours...');
+                                      
+                                      // Créer une copie profonde de l'utilisateur
+                                      const updatedUser = { ...u };
+                                      
+                                      // Mettre à jour le rôle dans la structure appropriée
+                                      if (updatedUser.user) {
+                                        updatedUser.user = { 
+                                          ...updatedUser.user,
+                                          role_id: newRoleId,
+                                          role_name: newRoleName 
+                                        };
+                                      }
+                                      
+                                      // Mettre à jour au niveau racine
+                                      updatedUser.role_id = newRoleId;
+                                      updatedUser.role_name = newRoleName;
+                                      
+                                      console.log('Utilisateur après mise à jour:', updatedUser);
+                                      return updatedUser;
+                                    });
+                                    
+                                    console.log('Post-mise à jour - Nombre d\'utilisateurs:', updatedUsers.length);
+                                    return updatedUsers;
+                                  });
+                                  
+                                  // Ici, vous pouvez ajouter un appel API pour sauvegarder le changement
+                                  // await updateUserRole(user.id || user.user_id, newRoleId);
+                                  
+                                } catch (error) {
+                                  console.error('Erreur lors de la mise à jour du rôle:', error);
+                                } finally {
+                                  console.groupEnd();
+                                }
+                              }}
+                            >
+                              <option value="">Sélectionner un rôle</option>
+                              <option value="93">Client</option>
+                              <option value="94">Admin</option>
+                              <option value="100">Commune</option>
                           </select>
 
                             </div>

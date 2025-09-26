@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Header from "../../components/Header";
-import NavigationBar from "../../components/NavigationBar";
 import bgImage from "../../assets/image/construction-bg.jpeg";
 import { loginService } from "../../services/api";
 import { getUserRolesForApp } from "../../services/roleService";
@@ -26,7 +25,7 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [userData, setUserData] = useState(null);
-
+  
   const dispatch = useDispatch();
 
   const handleInputChange = (e) => {
@@ -60,8 +59,8 @@ const Login = () => {
         user_password: formData.password
       });
       const data = await response;
-
-      //console.log('Réponse complète de connexion:', JSON.stringify(data, null, 2));
+      
+      console.log('Réponse complète de connexion:', JSON.stringify(data, null, 2));
 
       if (!data || !data.access_token) {
         console.error('Échec de la connexion - Pas de token reçu:', data);
@@ -69,7 +68,7 @@ const Login = () => {
       }
 
       const decodedUser = jwtDecode(data.access_token);
-      //console.log('Token décodé:', decodedUser);
+      console.log('Token décodé:', decodedUser);
 
       // Store the token in localStorage
       localStorage.setItem("token", data.access_token);
@@ -80,26 +79,26 @@ const Login = () => {
       // 1. Vérifier dans data.user.roles
       if (data.user?.roles) {
         userRoles = Array.isArray(data.user.roles) ? data.user.roles : [data.user.roles];
-        // console.log('Rôles trouvés dans data.user.roles:', userRoles);
+        console.log('Rôles trouvés dans data.user.roles:', userRoles);
       }
       // 2. Vérifier dans data.roles
       else if (data.roles) {
         userRoles = Array.isArray(data.roles) ? data.roles : [data.roles];
-        // console.log('Rôles trouvés dans data.roles:', userRoles);
+        console.log('Rôles trouvés dans data.roles:', userRoles);
       }
       // 3. Vérifier dans le token décodé
       else {
         if (decodedUser.roles) {
           userRoles = Array.isArray(decodedUser.roles) ? decodedUser.roles : [decodedUser.roles];
-          //console.log('Rôles trouvés dans le token décodé:', userRoles);
+          console.log('Rôles trouvés dans le token décodé:', userRoles);
         } else {
           // 4. Essayer de récupérer via l'API des rôles
-          //console.log('Aucun rôle trouvé dans la réponse, tentative de récupération via API...');
-          //console.log('APP_ID utilisé:', APP_ID);
+          console.log('Aucun rôle trouvé dans la réponse, tentative de récupération via API...');
+          console.log('APP_ID utilisé:', APP_ID);
           try {
             const apiRoles = await getUserRolesForApp(APP_ID, data.access_token);
             userRoles = Array.isArray(apiRoles) ? apiRoles : [apiRoles];
-            //console.log('Rôles récupérés via API:', userRoles);
+            console.log('Rôles récupérés via API:', userRoles);
           } catch (roleError) {
             console.error('Erreur lors de la récupération des rôles via API:', roleError);
             userRoles = [];
@@ -107,7 +106,7 @@ const Login = () => {
         }
       }
 
-      // console.log('Rôles récupérés pour l\'application:', userRoles);
+      console.log('Rôles récupérés pour l\'application:', userRoles);
 
       // Vérifier si l'utilisateur est admin
       const isAdmin = Array.isArray(userRoles) &&
@@ -119,7 +118,7 @@ const Login = () => {
             );
         });
 
-      //console.log('Est admin?', isAdmin, 'Rôles vérifiés:', userRoles);
+      console.log('Est admin?', isAdmin, 'Rôles vérifiés:', userRoles);
 
       // Préparer les données utilisateur complètes
       const userInfo = {
@@ -164,17 +163,17 @@ const Login = () => {
         token: data.access_token
       }));
 
-      //console.log('Vérification finale - isAdmin:', isAdmin);
-      //console.log('UserInfo final:', userInfo);
+      console.log('Vérification finale - isAdmin:', isAdmin);
+      console.log('UserInfo final:', userInfo);
 
       // Si l'utilisateur est admin, afficher la boîte de dialogue
       if (isAdmin) {
-        //console.log('Utilisateur admin détecté, affichage de la boîte de dialogue');
+        console.log('Utilisateur admin détecté, affichage de la boîte de dialogue');
         setUserData(userInfo);
         setShowAdminDialog(true);
         // Ne pas rediriger immédiatement, laisser le dialog gérer la redirection
       } else {
-        // console.log('Utilisateur normal, redirection vers dashboard');
+        console.log('Utilisateur normal, redirection vers dashboard');
         // Rediriger vers le tableau de bord client
         navigate("/dashboard");
       }
@@ -194,7 +193,10 @@ const Login = () => {
         backgroundImage: `linear-gradient(rgba(15,23,42,0.75), rgba(15,23,42,0.75)), url(${bgImage})`,
       }}
     >
-
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white">
+        <Header />
+      </div>
+      
       {/* Boîte de dialogue admin */}
       {showAdminDialog && userData && (
         <AdminAccessDialog

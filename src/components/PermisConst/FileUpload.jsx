@@ -1,7 +1,7 @@
 import React from "react";
 import MaterialIcon from "./MaterialIcon";
 
-export default function FileUpload({ label, files, onChange, onRemove, required = false, acceptedTypes = [] }) {
+export default function FileUpload({ label, files, onChange, onRemove, required = true, acceptedTypes = [] }) {
     const formatSize = (b) => (b === 0 ? "0 B" : (b / 1024).toFixed(1) + " KB");
 
     return (

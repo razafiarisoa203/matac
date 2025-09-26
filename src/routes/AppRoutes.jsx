@@ -22,7 +22,6 @@ import PermisConstruction from "../components/PermisConstruction";
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import UsersList from "../pages/Admin/UsersList";
-import RegistrationForm from "../pages/Admin/RegistrationForm";
 import RoleManagement from "../pages/RoleAppli/Role";
 
 // 🔒 Protected Route Component
@@ -110,16 +109,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+    
         <Route
-          path="/admin/users/new"
-          element={
-            <ProtectedRoute>
-              <RegistrationForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/role-management"
+          path="/RoleManagement"
           element={
             <ProtectedRoute>
               <RoleManagement />

@@ -115,7 +115,6 @@ export const changePassword = async (currentPassword, newPassword) => {
   }
 };
 
-
 // Get user notifications
 export const getNotifications = async () => {
   try {

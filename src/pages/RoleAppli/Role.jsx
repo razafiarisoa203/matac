@@ -12,81 +12,166 @@ import {
   Save,
   Settings
 } from 'lucide-react';
+import axios from 'axios';
 
 // Mock API service - replace with your actual API calls
 const roleService = {
   async getRoles() {
-    // GET /serviceauth/roles
-    // Replace with actual API call
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve([
-          { id: 1, name: 'Admin', description: 'Full system access', users_count: 3 },
-          { id: 2, name: 'Manager', description: 'Management level access', users_count: 8 },
-          { id: 3, name: 'User', description: 'Basic user access', users_count: 45 }
-        ]);
-      }, 500);
-    });
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+      
+      // Récupérer uniquement les rôles spécifiques (Client, Admin, Commune) pour l'application 13635
+      const targetRoleIds = [93, 94, 100]; // IDs des rôles à afficher
+      const rolesPromises = targetRoleIds.map(roleId => 
+        axios.get(`https://gateway.tsirylab.com/serviceauth/roles/${roleId}`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      const responses = await Promise.all(rolesPromises);
+      
+      // Extraire et formater les rôles
+      return responses
+        .filter(response => response.data) // Filtrer les réponses vides
+        .map(response => {
+          const role = response.data.data || response.data;
+          return {
+            id: role.role_id || role.id,
+            name: role.role_name || role.name,
+            slug: role.role_slug || role.slug,
+            description: role.description || '',
+            users_count: role.appUserRoles?.length || role.users_count || 0,
+            created_at: role.created_at,
+            updated_at: role.updated_at
+          };
+        });
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      return [];
+    }
   },
 
   async createRole(roleData) {
-    // POST /serviceauth/roles
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ id: Date.now(), ...roleData, users_count: 0 });
-      }, 500);
-    });
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await axios.post('https://gateway.tsirylab.com/serviceauth/roles', roleData, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Retourner le nouveau rôle avec un compteur d'utilisateurs à 0
+      return { ...response.data, users_count: 0 };
+    } catch (error) {
+      console.error('Error creating role:', error);
+      throw error;
+    }
   },
 
   async updateRole(id, roleData) {
-    // PUT /serviceauth/roles/{id}
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ id, ...roleData });
-      }, 500);
-    });
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await axios.put(`https://gateway.tsirylab.com/serviceauth/roles/${id}`, roleData, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating role ${id}:`, error);
+      throw error;
+    }
   },
 
   async deleteRole(id) {
-    // DELETE /serviceauth/roles/{id}
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 500);
-    });
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      await axios.delete(`https://gateway.tsirylab.com/serviceauth/roles/${id}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error(`Error deleting role ${id}:`, error);
+      throw error;
+    }
   },
 
-  async getRolePermissions(id) {
-    // GET /serviceauth/roles/{id}/permissions
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve([
-          { id: 1, name: 'user.create', description: 'Create users' },
-          { id: 2, name: 'user.read', description: 'View users' },
-          { id: 3, name: 'user.update', description: 'Update users' },
-          { id: 4, name: 'user.delete', description: 'Delete users' },
-          { id: 5, name: 'role.manage', description: 'Manage roles' }
-        ]);
-      }, 500);
-    });
+  async getRolePermissions(roleId) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await axios.get(`https://gateway.tsirylab.com/serviceauth/roles/${roleId}/permissions`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Ensure we return an array of permissions
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error(`Error fetching permissions for role ${roleId}:`, error);
+      // Return empty array on error to prevent UI breakage
+      return [];
+    }
   },
 
   async getApplicationRoles(appId) {
-    // GET /serviceauth/roles/application/{app_id}
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve([
-          { id: 1, name: 'App Admin', application_id: appId },
-          { id: 2, name: 'App User', application_id: appId }
-        ]);
-      }, 500);
-    });
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found');
+      
+      const response = await axios.get(`https://gateway.tsirylab.com/serviceauth/roles/application/${appId}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // S'assurer que la réponse contient un tableau de rôles
+      if (response.data && Array.isArray(response.data.roles)) {
+        return response.data.roles;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      console.warn('Format de réponse inattendu pour les rôles d\'application:', response.data);
+      return [];
+    } catch (error) {
+      console.error(`Erreur lors de la récupération des rôles de l'application ${appId}:`, error);
+      // Retourner un tableau vide en cas d'erreur pour éviter de casser l'UI
+      return [];
+    }
   }
 };
 
 const RoleManagement = () => {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [roleStats, setRoleStats] = useState({
+    total: 0,
+    admin: 0,
+    client: 0,
+    commune: 0,
+    other: 0
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -110,8 +195,28 @@ const RoleManagement = () => {
   const loadRoles = async () => {
     try {
       setLoading(true);
+      // Récupérer les rôles déjà formatés et filtrés
       const rolesData = await roleService.getRoles();
+      
+      // Mettre à jour la liste des rôles
       setRoles(rolesData);
+      
+      // Calculer les statistiques basées sur les IDs connus
+      const stats = {
+        total: rolesData.length,
+        admin: rolesData.filter(r => r.id === 94).length,
+        client: rolesData.filter(r => r.id === 93).length,
+        commune: rolesData.filter(r => r.id === 100).length,
+        other: 0 // Ne devrait pas y avoir d'autres rôles
+      };
+      
+      setRoleStats(stats);
+      
+      // Logs pour le débogage
+      console.log('=== RÔLES FILTRÉS ===');
+      console.log(rolesData);
+      console.log('=== STATISTIQUES ===');
+      console.log(stats);
     } catch (error) {
       console.error('Error loading roles:', error);
     } finally {
@@ -278,6 +383,20 @@ const RoleManagement = () => {
               Nouveau Rôle
             </button>
           </div>
+        </div>
+
+        {/* Statistiques des rôles */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+            <div className="text-sm font-medium text-gray-500">Total des Rôles</div>
+            <div className="text-2xl font-semibold text-gray-900">{roleStats.total}</div>
+          </div>
+          {roleStats.other > 0 && (
+            <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+              <div className="text-sm font-medium text-gray-500">Autres Rôles</div>
+              <div className="text-2xl font-semibold text-yellow-600">{roleStats.other}</div>
+            </div>
+          )}
         </div>
 
         {/* Roles Grid */}

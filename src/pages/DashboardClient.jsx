@@ -173,7 +173,6 @@ const DashboardClient = () => {
               formatDate={formatDate}
               navigate={navigate}
             />
-
           </div>
         </main>
       </div>

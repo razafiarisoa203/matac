@@ -136,10 +136,6 @@ export const constructionService = {
     }
   },
 
-  
-
-  
-
   // Créer une nouvelle construction
   createConstruction: async (constructionData) => {
     try {
@@ -194,7 +190,6 @@ export const alignmentService = {
 
 // Service Notification
 export const notificationService = {
-
 
   async getAllNotifications() {
     try {
@@ -251,16 +246,15 @@ export const roleService = {
   async getRoles() {
     try {
       console.log('Début de la récupération des rôles...');
-
       const token = localStorage.getItem('token');
       if (!token) {
         console.error('Aucun token d\'authentification trouvé');
         throw new Error('Non authentifié');
       }
-
+      
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log('ID de l\'application MATAC:', matacAppId);
-
+      
       console.log('Envoi de la requête pour récupérer les rôles...');
       const response = await axios.get(
         `${import.meta.env.VITE_API_SERVICEAUTH}/roles`,
@@ -276,18 +270,15 @@ export const roleService = {
           timeout: 10000 // 10 secondes de timeout
         }
       );
-
       console.log('Réponse reçue pour les rôles:', {
         status: response.status,
         headers: response.headers,
         data: response.data
       });
-
       if (!response.data || !Array.isArray(response.data.data)) {
         console.error('Format de réponse inattendu pour les rôles:', response.data);
         throw new Error('Format de réponse inattendu pour les rôles');
       }
-
       const roles = response.data.data;
       console.log(`Nombre de rôles récupérés: ${roles.length}`, roles);
       return roles;
@@ -307,19 +298,19 @@ export const roleService = {
       if (!userId || !roleId) {
         throw new Error('ID utilisateur et ID rôle sont requis');
       }
-
+      
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('Non authentifié');
       }
-
+      
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log(`Assignation du rôle ${roleId} à l'utilisateur ${userId} pour l'application ${matacAppId}`);
-
+      
       const response = await axios.post(
         `${import.meta.env.VITE_API_SERVICEAUTH}/roles/assign`,
-        {
-          user_id: userId,
+        { 
+          user_id: userId, 
           role_id: roleId,
           application_id: matacAppId
         },
@@ -331,7 +322,7 @@ export const roleService = {
           }
         }
       );
-
+      
       console.log('Réponse d\'assignation de rôle:', response.data);
       return response.data;
     } catch (error) {
@@ -347,16 +338,16 @@ export const roleService = {
         console.error('ID utilisateur manquant pour la récupération des rôles');
         return [];
       }
-
+      
       const token = localStorage.getItem('token');
       if (!token) {
         console.error('Aucun token d\'authentification trouvé');
         throw new Error('Non authentifié');
       }
-
+      
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log(`Récupération des rôles pour l'utilisateur ${userId} sur l'application ${matacAppId}`);
-
+      
       try {
         // Essayer d'abord avec l'endpoint spécifique à l'utilisateur
         const response = await axios.get(
@@ -372,9 +363,9 @@ export const roleService = {
             }
           }
         );
-
+        
         console.log('Réponse complète des rôles:', response.data);
-
+        
         // Normaliser la réponse pour s'assurer qu'on a toujours un tableau
         let roles = [];
         if (response.data && Array.isArray(response.data.data)) {
@@ -384,27 +375,27 @@ export const roleService = {
         } else if (Array.isArray(response.data)) {
           roles = response.data;
         }
-
+        
         // S'assurer que chaque rôle a les propriétés attendues
         roles = roles.map(role => ({
           id: role.id || role.role_id,
           role_id: role.role_id || role.id,
           role_name: role.role_name || role.name || role.role_name,
           role_slug: role.role_slug || role.slug || '',
-          application: role.application || {
+          application: role.application || { 
             app_id: role.app_id || role.application_id || matacAppId,
             app_name: role.app_name || role.application_name || 'Inconnu'
           },
           application_id: role.application_id || (role.application ? role.application.app_id : null) || matacAppId,
           ...role
         }));
-
+        
         console.log(`Rôles normalisés pour l'utilisateur ${userId}:`, roles);
         return roles;
-
+        
       } catch (endpointError) {
         console.warn('Erreur avec l\'endpoint spécifique, tentative avec l\'endpoint général...', endpointError);
-
+        
         // Fallback: essayer avec l'endpoint général
         const response = await axios.get(
           `${import.meta.env.VITE_API_SERVICEAUTH}/roles`,
@@ -420,7 +411,7 @@ export const roleService = {
             }
           }
         );
-
+        
         // Normaliser la réponse
         let roles = [];
         if (response.data && Array.isArray(response.data.data)) {
@@ -430,7 +421,7 @@ export const roleService = {
         } else if (Array.isArray(response.data)) {
           roles = response.data;
         }
-
+        
         console.log(`Rôles récupérés (fallback) pour l'utilisateur ${userId}:`, roles);
         return roles;
       }
@@ -445,22 +436,20 @@ export const roleService = {
     }
   },
 
-  
-
   // Récupérer tous les utilisateurs avec leurs rôles pour l'application MATAC
   async getAllUsers() {
     try {
       console.log('Début de la récupération des utilisateurs...');
-
+      
       const token = localStorage.getItem('token');
       if (!token) {
         console.error('Aucun token d\'authentification trouvé');
         throw new Error('Non authentifié');
       }
-
+      
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log('ID de l\'application MATAC pour le filtrage:', matacAppId);
-
+      
       // Fonction pour normaliser les données utilisateur
       const normalizeUserData = (user) => ({
         id: user.id || user.user_id,
@@ -474,7 +463,7 @@ export const roleService = {
         updated_at: user.updated_at || null,
         ...user
       });
-
+      
       // Première tentative : récupérer les utilisateurs avec le filtre d'application
       console.log('Tentative de récupération des utilisateurs avec filtre d\'application...');
       try {
@@ -492,18 +481,18 @@ export const roleService = {
             timeout: 15000
           }
         );
-
+        
         console.log('Réponse de l\'API pour les utilisateurs (avec filtre):', {
           status: response.status,
           headers: response.headers,
           data: response.data
         });
-
+        
         let users = [];
         if (response.data && Array.isArray(response.data.data)) {
           users = response.data.data.map(normalizeUserData);
           console.log(`Nombre d'utilisateurs récupérés avec filtre: ${users.length}`);
-
+          
           if (users.length > 0) {
             return users;
           }
@@ -519,7 +508,7 @@ export const roleService = {
           response: filterError.response?.data
         });
       }
-
+      
       // Deuxième tentative : récupérer tous les utilisateurs et filtrer côté client
       console.log('Tentative de récupération de tous les utilisateurs...');
       try {
@@ -534,13 +523,13 @@ export const roleService = {
             timeout: 15000
           }
         );
-
+        
         console.log('Réponse de l\'API pour tous les utilisateurs (sans filtre):', {
           status: fallbackResponse.status,
           headers: fallbackResponse.headers,
           data: fallbackResponse.data
         });
-
+        
         let allUsers = [];
         if (fallbackResponse.data && Array.isArray(fallbackResponse.data.data)) {
           allUsers = fallbackResponse.data.data.map(normalizeUserData);
@@ -550,23 +539,23 @@ export const roleService = {
           console.error('Format de réponse inattendu pour les utilisateurs:', fallbackResponse.data);
           throw new Error('Format de réponse inattendu pour les utilisateurs');
         }
-
+        
         console.log(`Nombre total d'utilisateurs récupérés: ${allUsers.length}`);
-
+        
         // Si on a récupéré des utilisateurs, on les retourne tous
         // Le filtrage par application se fera côté client si nécessaire
         if (allUsers.length > 0) {
           return allUsers;
         }
-
+        
         return [];
-
+        
       } catch (fallbackError) {
         console.error('Échec de la récupération de tous les utilisateurs:', {
           message: fallbackError.message,
           response: fallbackError.response?.data
         });
-
+        
         // En cas d'échec, retourner un tableau vide plutôt que de lancer une erreur
         // pour permettre à l'application de continuer à fonctionner
         return [];
@@ -578,4 +567,3 @@ export const roleService = {
     }
   }
 };
-

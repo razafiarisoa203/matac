@@ -34,7 +34,7 @@ const PermisConstruction = () => {
     }
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
     localStorage.setItem('permis_construction_data', JSON.stringify({
       formData, completedSections, currentStep, currentSection, files, pieces
     }));
@@ -341,7 +341,6 @@ const PermisConstruction = () => {
                 <ArrowForwardIcon />
               </button>
             </div>
-
           </div>
         </div>
       </div>

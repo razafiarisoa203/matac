@@ -1,0 +1,118 @@
+{
+  "common": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "register": "S'inscrire",
+    "forgotPassword": "Mot de passe oublié",
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "adminDashboard": "Tableau d'administration",
+    "users": "Utilisateurs",
+    "roles": "Rôles",
+    "settings": "Paramètres",
+    "back": "Retour",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "viewAll": "Voir tous les",
+    "search": "Rechercher",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "warning": "Avertissement",
+    "info": "Information",
+    "configure": "Configurer",
+    "admin": "Administrateur"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "urbanPlanningActs": "Actes d'urbanisme",
+    "objectives": "Objectifs",
+    "services": "Services",
+    "permits": "Permis",
+    "alignment": "Alignement",
+    "alignmentList": "Liste des alignements",
+    "alignmentDetails": "Détails de l'alignement",
+    "userManagement": "Gestion des utilisateurs",
+    "roleManagement": "Gestion des rôles"
+  },
+  "languages": {
+    "fr": "Français (FRA)",
+    "mg": "Malagasy (MLG)"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "rememberMe": "Se souvenir de moi",
+    "loginButton": "Se connecter",
+    "noAccount": "Pas encore de compte ?",
+    "registerNow": "Inscrivez-vous maintenant",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "sendResetLink": "Envoyer le lien de réinitialisation"
+  },
+  "dashboard": {
+    "welcome": "Bienvenue sur votre tableau de bord",
+    "recentActivities": "Activités récentes",
+    "statistics": "Statistiques",
+    "quickActions": "Actions rapides"
+  },
+  "admin": {
+    "dashboard": "Tableau de bord administrateur",
+    "loggedInAs": "Connecté en tant que",
+    "manageRoles": "Gérer les rôles",
+    "systemSettings": "Configuration du système",
+    "users": {
+      "title": "Gestion des utilisateurs",
+      "recentUsers": "Utilisateurs récents",
+      "addUser": "Ajouter un utilisateur",
+      "editUser": "Modifier l'utilisateur",
+      "deleteUser": "Supprimer l'utilisateur",
+      "userList": "Liste des utilisateurs",
+      "role": "Rôle",
+      "status": "Statut",
+      "actions": "Actions",
+      "active": "Actif",
+      "inactive": "Inactif",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+      "noUsersFound": "Aucun utilisateur trouvé",
+      "changeRole": "Changer de rôle",
+      "noEmail": "Aucun email",
+      "user": "Utilisateur"
+    },
+    "roles": {
+      "title": "Gestion des rôles",
+      "addRole": "Ajouter un rôle",
+      "editRole": "Modifier le rôle",
+      "deleteRole": "Supprimer le rôle",
+      "roleList": "Liste des rôles",
+      "permissions": "Permissions",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce rôle ?",
+      "availableRoles": "Rôles disponibles"
+    },
+    "stats": {
+      "totalUsers": "Utilisateurs totaux",
+      "activeUsers": "Utilisateurs actifs",
+      "roles": "Rôles",
+      "settings": "Paramètres"
+    }
+  },
+  "alignment": {
+    "title": "Alignement",
+    "list": "Liste des alignements",
+    "details": "Détails de l'alignement",
+    "new": "Nouvel alignement",
+    "edit": "Modifier l'alignement",
+    "delete": "Supprimer l'alignement",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet alignement ?",
+    "reference": "Référence",
+    "status": "Statut",
+    "date": "Date",
+    "location": "Localisation",
+    "description": "Description",
+    "attachments": "Pièces jointes"
+  }
+}
