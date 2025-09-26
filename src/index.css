@@ -1,11 +1,71 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 @import "tailwindcss";
+/* Styles de base */
 body {
   font-family: "Poppins", sans-serif;
   font-weight: 500;
   font-style: normal;
   scroll-behavior: smooth;
+  background-color: #ffffff;
+  color: #1a202c;
+  transition: background-color 0.3s, color 0.3s;
 }
+
+/* Mode sombre */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #1a202c;
+  color: #f7fafc;
+}
+
+/* Styles pour les éléments de formulaire en mode sombre */
+.dark input,
+.dark select,
+.dark textarea,
+.dark .form-input {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  color: #f7fafc;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+}
+
+/* Styles pour les cartes en mode sombre */
+.dark .card,
+.dark .bg-white {
+  background-color: #2d3748;
+  color: #f7fafc;
+}
+
+/* Styles pour le texte en mode sombre */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark p,
+.dark div {
+  color: #f7fafc;
+}
+
+/* Styles pour les liens en mode sombre */
+.dark a {
+  color: #63b3ed;
+}
+
+.dark a:hover {
+  color: #90cdf4;
+}
+
 html {
   scroll-behavior: smooth;
 }
