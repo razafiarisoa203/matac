@@ -13,7 +13,7 @@ import DashboardClient from "../pages/DashboardClient";
 
 // Alignement
 import Allignement from "../pages/Allignement";
-import AlignmentList from "../pages/AlignmentList";
+//import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
 
 // Autres
@@ -76,14 +76,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/*<Route
           path="/alignements"
           element={
             <ProtectedRoute>
               <AlignmentList />
             </ProtectedRoute>
           }
-        />
+        />*/}
         <Route
           path="/alignements/:id"
           element={

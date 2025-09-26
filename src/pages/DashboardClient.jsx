@@ -6,6 +6,7 @@ import HeaderDashboard from '../components/HeaderDashboard';
 import StatsCards from '../components/StatsCards';
 import SearchBar from '../components/SearchBar';
 import AlignmentTable from '../components/AlignmentTable';
+import axios from "axios";
 
 const DashboardClient = () => {
   const [alignments, setAlignments] = useState([]);
@@ -18,6 +19,7 @@ const DashboardClient = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const navigate = useNavigate();
 
+  // Gestion du responsive (sidebar)
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -33,23 +35,24 @@ const DashboardClient = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAlignments();
-  }, []);
-
+  // Fonction pour récupérer les alignements
   const fetchAlignments = async () => {
     try {
       setLoading(true);
-      const { alignmentService, TEMP_USER_ID } = await import('../services/api');
-      const data = await alignmentService.getAlignments(TEMP_USER_ID);
-      setAlignments(data);
+      const response = await axios.get("http://localhost:3000/servicealignement/alignment");
+      setAlignments(response.data);
+      console.log("Tous les alignements récupérés :", response.data);
     } catch (err) {
-      setError(err.message);
-      console.error('Erreur:', err);
+      setError(err.message || "Erreur de récupération");
     } finally {
       setLoading(false);
     }
   };
+
+  // Charger les alignements au montage du composant
+  useEffect(() => {
+    fetchAlignments();
+  }, []);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -78,6 +81,7 @@ const DashboardClient = () => {
     }).replace(',', '');
   };
 
+  // Filtrage des données
   const filteredAlignments = alignments.filter(alignment => {
     const matchesSearch =
       alignment.id_align?.toString().includes(searchTerm) ||
@@ -98,7 +102,6 @@ const DashboardClient = () => {
       <div className="min-h-screen bg-gray-50 flex">
         <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
 
-       
         {isMobile && isSidebarOpen && (
           <div
             onClick={toggleSidebar}
@@ -170,6 +173,7 @@ const DashboardClient = () => {
               formatDate={formatDate}
               navigate={navigate}
             />
+
           </div>
         </main>
       </div>

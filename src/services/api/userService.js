@@ -3,6 +3,8 @@ import { store } from '../store/store';
 
 const API_URL = import.meta.env.VITE_API_SERVICEAUTH || 'http://localhost:5000';
 const API_URL_CITOYEN = import.meta.env.VITE_API_SERVICECITOYEN || 'http://localhost:5000';
+const API_BASE_NOTIFICATION = import.meta.env.VITE_API_SERVICENOTIFICATION;
+
 // Récupérer le profil utilisateur
 export const getUserProfile = async () => {
   try {
@@ -34,6 +36,29 @@ export const getUserProfile = async () => {
     return response.data;
   } catch (error) {
     console.error('Erreur lors de la récupération du profil:', error);
+    throw error;
+  }
+};
+
+//envoi notification envoyer admin
+export const sendNotif = async ({ to, subject, body, filePath = "" }) => {
+  try {
+    const response = await fetch(`${API_BASE_NOTIFICATION}/email/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ to, subject, body, filePath }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Erreur lors de l'envoi de la notification: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Erreur lors de notifier l'admin:", error);
     throw error;
   }
 };
@@ -89,6 +114,7 @@ export const changePassword = async (currentPassword, newPassword) => {
     throw error;
   }
 };
+
 
 // Get user notifications
 export const getNotifications = async () => {
