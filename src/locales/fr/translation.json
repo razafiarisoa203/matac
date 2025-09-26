@@ -191,7 +191,7 @@
     "terms": "En continuant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité."
   },
   "registrationForm": {
-    "title": "Formulaire d'inscription",
+    "titles": "Formulaire d'inscription",
     "personalInfo": "Informations personnelles",
     "contactInfo": "Coordonnées",
     "accountInfo": "Informations de compte",
@@ -213,7 +213,7 @@
       "password": "Mot de passe",
       "phone": "Téléphone",
       "municipality": "Commune",
-      "photo": "Photo d'identité"
+      "photos": "Photo d'identité"
     },
     "errors": {
       "required": "Ce champ est requis",

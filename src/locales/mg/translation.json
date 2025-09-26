@@ -36,7 +36,7 @@
     "matac": "MATAC",
     "nav": {
       "home": "Fandraisana",
-      "acts": "Dokam-barotra",
+      "acts": "Fandrindrana",
       "services": "Tolotra",
       "objectives": "Tanjona"
     },
@@ -47,7 +47,7 @@
     "mg": "Malagasy (MLG)"
   },
   "urbanismActs": {
-    "title": "DOKAM-BAROTRA MOMBA NY FANARENANA NY TANANA",
+    "title": "FANDRINDRANA MOMBA NY FANARENANA NY TANANA",
     "slides": [
       {
         "title": "DIDY MOMBA NY FANARENANA NY TANANA",
@@ -114,24 +114,24 @@
   },
   "services": {
     "title": "Tolotra",
-    "meetYourNeeds": "TOLOTRA MAHAVITA NY FILAN'ASAINA",
+    "meetYourNeeds": "TOLOTRA MIFANARAKA AMIN'NY FILANAO",
     "platformDescription": "Ny sehatra vaovao misy anao dia manome fahafahana hikarakarana ny fomba fiasa rehetra momba ny fanarenana ny tanàna an-tserasera, miaraka amin'ny fanarahana amin'ny fotoana tena izy sy fiarovana azo antoka ho an'ireo antontan-taratasinao rehetra.",
     "myPlatform": "Ny sehatra ahy",
     "servicesList": [
       {
-        "title": "FAMPIHAREMANA NY ANTONTAN-TARATASY",
+        "title": "FANARAHA-MASO NY ANTONTAN-TARATASY",
         "description": "Miaraka amin'ny sehatra misy anao dia afaka mampiditra sy manara-maso ny fangatahana fahazoan-dalana fanorenana an-tserasera ianao.",
         "icon": "/Bank Building.png",
         "color": "bg-[#269745]"
       },
       {
-        "title": "FANARAHANA NY FIVAROTANA",
+        "title": "FANARAHA-MASO NY FIVAROTANA",
         "description": "Mba hahafahanao manara-maso ny fangatahanao dia mahazo fampandrenesana mailaka ianao, manome tolotra vaovao izay manampy anao tsara kokoa.",
         "icon": "/Follow.png",
         "color": "bg-[#269745]"
       }, 
       {
-        "title": "KARAKARANA AN-TSERASERA NY ANTONTAN-TARATASY",
+        "title": "FINTANTANANA AN-TSERASERA NY ANTONTAN-TARATASY",
         "description": "Voatahiry sy antoka ny fikarakarana sy ny fanarahana ataon'ny fitantanana ny rafitrao.",
         "icon": "/Check.png",
         "color": "bg-[#269745]"
@@ -159,36 +159,36 @@
   "cinVerificationStep": {
     "title": "Fanamarinana ny maha-izy azy",
     "subtitle": "Ampidiro ny nomeraon'ny karapanondro nasionalinao",
-    "cinLabel": "Nomeraon'ny CIN",
-    "cinPlaceholder": "Ny nomeraon'ny CIN-nao",
+    "cinLabel": "Nomeraon'ny Kara-panondro",
+    "cinPlaceholder": "Ny nomeraon'ny Kara-panondronao",
     "requiredField": "*",
     "submitButton": "Hamarinina ny maha-izy ahy",
     "verifying": "Eo am-panamarinana...",
     "securityMessage": "Ity fanamarinana ity dia manampy amin'ny fiarovana ny fisoratana anaranao.",
     "error": {
-      "required": "Ampidiro ny nomeraon'ny CIN-nao",
-      "invalidFormat": "Ny nomeraon'ny CIN dia tsy maintsy isa fotsiny"
+      "required": "Ampidiro ny nomeraon'ny Kara-panondronao",
+      "invalidFormat": "Ny nomeraon'ny Kara-panondro dia tsy maintsy isa fotsiny"
     }
   },
   "cinVerification": {
-    "title": "Fanamarinana CIN",
+    "title": "Fanamarinana Kara-panondro",
     "subtitle": "Ampidiro ny nomeraon'ny karapanondro nasionalinao",
-    "cinLabel": "Nomeraon'ny CIN",
-    "cinPlaceholder": "Ampidiro ny nomeraon'ny CIN-nao",
+    "cinLabel": "Nomeraon'ny Kara-panondro",
+    "cinPlaceholder": "Ampidiro ny nomeraon'ny Kara-panondronao",
     "requiredField": "*",
     "submitButton": "Hamarinina ny maha-izy ahy",
     "verifying": "Eo am-panamarinana...",
     "error": {
-      "invalidLength": "Tokony misy isa 12 ny CIN",
-      "verificationFailed": "Tsy nahomby ny fanamarinana ny CIN",
+      "invalidLength": "Tokony misy isa 12 ny Kara-panondro",
+      "verificationFailed": "Tsy nahomby ny fanamarinana ny Kara-panondro",
       "serverError": "Nisy olana niseho tamin'ny fanamarinana"
     },
     "terms": "Amin'ny fanoharana an'ity, manaiky ny fepetra sy ny politikan'ny fiarovana ny angon-drakitra izahay ianao."
   },
   "registrationForm": {
-    "title": "Taratasy fisoratana anarana",
+    "titles": "Taratasy fisoratana anarana",
     "personalInfo": "Antontan'isa momba ny tena",
-    "contactInfo": "Fifandraisana",
+    "contactInfo": "Famoronana ny kaonty",
     "accountInfo": "Antontan'isa momba ny kaonty",
     "requiredField": "*",
     "submitButton": "Hisoratra anarana",
@@ -198,17 +198,17 @@
       "pseudo": "Anaram-panafahana",
       "firstName": "Anarana",
       "lastName": "Fanampin'anarana",
-      "cinNumber": "Nomeraon'ny CIN",
+      "cinNumber": "Nomeraon'ny Kara-panondro",
       "address": "Adiresy",
-      "cinIssuePlace": "Toerana nanaovana ny CIN",
-      "cinIssueDate": "Daty nanaovana ny CIN",
+      "cinIssuePlace": "Toerana nanaovana ny Kara-panondro",
+      "cinIssueDate": "Daty nanaovana ny Kara-panondro",
       "fokotany": "Fokontany",
       "username": "Anarana mpampiasa",
       "email": "Mailaka",
       "password": "Tenimiafina",
       "phone": "Finday",
       "municipality": "Kaominina",
-      "photo": "Sarin'ny tena"
+      "photos": "Sarin'ny tena"
     },
     "errors": {
       "required": "Teny ilaina ity saha ity",
@@ -225,7 +225,7 @@
     "welcome": "Amboary ny kaontinao",
     "subtitle": "Hisoratra anarana mba hahafahanao mampiasa ny tolotra rehetra",
     "haveAccount": "Efa manana kaonty ianao ve?",
-    "signIn": "Hidira",
+    "signIn": "Hiditra",
     "backToHome": "Miverina any amin'ny fandraisana",
     "error": {
       "requiredFields": "Fenoy ny saha rehetra ilaina",

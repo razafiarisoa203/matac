@@ -164,9 +164,9 @@ export default function RegistrationForm() {
               MINISTÈRE DE L'AMÉNAGEMENT DU TERRITOIRE
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('registrationForm.title')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('registrationForm.titles')}</h1>
           <p className="text-gray-600 text-sm">
-            {t('registrationForm.subtitle')}
+            {t('registrationForm.contactInfo')}
           </p>
         </div>
 
@@ -364,7 +364,7 @@ export default function RegistrationForm() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('registrationForm.fields.photo')}
+                  {t('registrationForm.fields.photos')}
                 </label>
                 <input
                   type="file"
