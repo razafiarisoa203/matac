@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import usePageTitle from "../../hooks/usePageTitle";
 import CINVerificationStep from "../../components/Authentification/CINVerificationStep";
 import RegistrationForm from "../../components/Authentification/RegistrationForm";
@@ -19,7 +20,8 @@ export default function Register() {
   const [step, setStep] = useState("verification");
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState("");
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const handleVerifyCIN = async (cin) => {
     console.log('handleVerifyCIN appelé avec CIN:', cin);
@@ -107,12 +109,12 @@ export default function Register() {
 
               {/* Lien de connexion */}
               <div className="text-center text-sm text-gray-600 mt-6">
-                Vous avez déjà un compte ?{" "}
+                {t('register.haveAccount')} {" "}
                 <Link
                   to="/login"
                   className="font-medium text-green-600 hover:text-green-700"
                 >
-                  Se connecter
+                  {t('login.submit')}
                 </Link>
               </div>
 
@@ -125,7 +127,7 @@ export default function Register() {
                   <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
-                  Retour à l'accueil
+                  {t('login.backToHome')}
                 </button>
               </div>
             </div>

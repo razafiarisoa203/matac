@@ -161,6 +161,109 @@
     "resetPassword": "Réinitialiser le mot de passe",
     "sendResetLink": "Envoyer le lien de réinitialisation"
   },
+  "cinVerificationStep": {
+    "title": "Vérification d'identité",
+    "subtitle": "Veuillez saisir votre numéro de carte d'identité nationale",
+    "cinLabel": "Numéro CIN",
+    "cinPlaceholder": "Votre numéro CIN",
+    "requiredField": "*",
+    "submitButton": "Vérifier mon identité",
+    "verifying": "Vérification en cours...",
+    "securityMessage": "Cette vérification permet de sécuriser votre inscription.",
+    "error": {
+      "required": "Veuillez saisir votre numéro CIN",
+      "invalidFormat": "Le numéro CIN ne doit contenir que des chiffres"
+    }
+  },
+  "cinVerification": {
+    "title": "Vérification CIN",
+    "subtitle": "Veuillez entrer votre numéro de carte d'identité nationale",
+    "cinLabel": "Numéro CIN",
+    "cinPlaceholder": "Entrez votre numéro CIN",
+    "requiredField": "*",
+    "submitButton": "Vérifier mon identité",
+    "verifying": "Vérification en cours...",
+    "error": {
+      "invalidLength": "Le numéro CIN doit contenir 12 chiffres",
+      "verificationFailed": "Échec de la vérification du CIN",
+      "serverError": "Une erreur est survenue lors de la vérification"
+    },
+    "terms": "En continuant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité."
+  },
+  "registrationForm": {
+    "title": "Formulaire d'inscription",
+    "personalInfo": "Informations personnelles",
+    "contactInfo": "Coordonnées",
+    "accountInfo": "Informations de compte",
+    "requiredField": "*",
+    "submitButton": "S'inscrire",
+    "submitting": "Enregistrement en cours...",
+    "successMessage": "Inscription réussie ! Redirection...",
+    "fields": {
+      "pseudo": "Pseudo",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "cinNumber": "Numéro CIN",
+      "address": "Adresse",
+      "cinIssuePlace": "Lieu de délivrance de la CIN",
+      "cinIssueDate": "Date de délivrance de la CIN",
+      "fokotany": "Fokontany",
+      "username": "Nom d'utilisateur",
+      "email": "Email",
+      "password": "Mot de passe",
+      "phone": "Téléphone",
+      "municipality": "Commune",
+      "photo": "Photo d'identité"
+    },
+    "errors": {
+      "required": "Ce champ est requis",
+      "invalidEmail": "Format d'email invalide",
+      "passwordLength": "Le mot de passe doit contenir au moins 6 caractères",
+      "invalidPhone": "Format de téléphone invalide",
+      "registrationFailed": "Échec de l'inscription"
+    },
+    "selectPlaceholder": "Sélectionner...",
+    "photoPlaceholder": "Cliquez pour téléverser une photo"
+  },
+  "register": {
+    "title": "Créer un compte",
+    "welcome": "Créez votre compte",
+    "subtitle": "Inscrivez-vous pour accéder à tous nos services",
+    "haveAccount": "Vous avez déjà un compte ?",
+    "signIn": "Connectez-vous",
+    "backToHome": "Retour à l'accueil",
+    "error": {
+      "requiredFields": "Veuillez remplir tous les champs obligatoires",
+      "invalidEmail": "Veuillez entrer une adresse email valide",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "connectionError": "Erreur de connexion au serveur"
+    }
+  },
+  "login": {
+    "title": "Se connecter",
+    "welcome": "Bienvenue sur MATAC",
+    "subtitle": "Connectez-vous pour accéder à votre espace personnel",
+    "email": "Adresse email",
+    "emailPlaceholder": "votre@email.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "rememberMe": "Se souvenir de moi",
+    "forgotPassword": "Mot de passe oublié ?",
+    "submit": "Se connecter",
+    "loggingIn": "Connexion en cours...",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "createAccount": "Créer un compte",
+    "backToHome": "Retour à l'accueil",
+    "error": {
+      "requiredFields": "Veuillez remplir tous les champs obligatoires",
+      "invalidEmail": "Veuillez entrer une adresse email valide",
+      "connectionError": "Erreur de connexion au serveur"
+    },
+    "or": "Ou",
+    "signUp": "S'inscrire",
+    "fillAllFields": "Veuillez remplir tous les champs",
+    "validEmail": "Veuillez entrer une adresse email valide"
+  },
   "dashboard": {
     "welcome": "Bienvenue sur votre tableau de bord",
     "recentActivities": "Activités récentes",

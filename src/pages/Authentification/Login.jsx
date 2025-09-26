@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { User, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Header from "../../components/Header";
 import bgImage from "../../assets/image/construction-bg.jpeg";
@@ -27,6 +28,7 @@ const Login = () => {
   const [userData, setUserData] = useState(null);
   
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,11 +43,11 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.user || !formData.password) {
-      setError("Veuillez remplir tous les champs obligatoires");
+      setError(t('login.error.requiredFields'));
       return;
     }
     if (!/\S+@\S+\.\S+/.test(formData.user)) {
-      setError("Veuillez entrer une adresse email valide");
+      setError(t('login.error.invalidEmail'));
       return;
     }
 
@@ -179,7 +181,7 @@ const Login = () => {
       }
     } catch (err) {
       console.error("Erreur de connexion:", err);
-      setError(err.message || "Une erreur est survenue lors de la connexion");
+      setError(err.message || t('login.error.connectionError'));
     } finally {
       setIsLoading(false);
       setIsSubmitting(false);
@@ -213,13 +215,13 @@ const Login = () => {
               {/* En-tête simplifié */}
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Plateforme MATAC
+                  {t('login.title')}
                 </h1>
                 <h2 className="text-lg text-gray-700 mt-2 font-medium">
-                  Bienvenue sur MATAC
+                  {t('login.welcome')}
                 </h2>
                 <p className="text-gray-500 text-sm mt-1">
-                  Connectez-vous pour accéder à votre espace personnel
+                  {t('login.subtitle')}
                 </p>
               </div>
 
@@ -234,7 +236,7 @@ const Login = () => {
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adresse email
+                    {t('login.email')}
                   </label>
                   <div className="relative">
                     <User className="absolute inset-y-0 left-3 h-4 w-4 text-gray-400 my-auto" />
@@ -246,14 +248,14 @@ const Login = () => {
                       value={formData.user}
                       onChange={handleInputChange}
                       className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500 text-sm"
-                      placeholder="votre@email.com"
+                      placeholder={t('login.emailPlaceholder')}
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mot de passe
+                    {t('login.password')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute inset-y-0 left-3 h-4 w-4 text-gray-400 my-auto" />
@@ -265,7 +267,7 @@ const Login = () => {
                       value={formData.password}
                       onChange={handleInputChange}
                       className="block w-full pl-9 pr-10 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500 text-sm"
-                      placeholder="••••••••"
+                      placeholder={t('login.passwordPlaceholder')}
                     />
                     <button
                       type="button"
@@ -292,12 +294,12 @@ const Login = () => {
                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                      Se souvenir de moi
+                      {t('login.rememberMe')}
                     </label>
                   </div>
                   <div className="text-sm">
                     <Link to="/forgot-password" className="font-medium text-green-600 hover:text-green-500">
-                      Mot de passe oublié?
+                      {t('login.forgotPassword')}
                     </Link>
                   </div>
                 </div>
@@ -307,15 +309,15 @@ const Login = () => {
                   disabled={isLoading || isSubmitting}
                   className="w-full flex justify-center items-center py-2.5 px-4 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Connexion..." : "Connexion"}
+                  {isLoading ? t('login.loggingIn') : t('login.submit')}
                 </button>
               </form>
 
               <div className="text-center mt-6">
                 <p className="text-sm text-gray-600">
-                  Pas encore de compte?{" "}
+                  {t('login.noAccount')}{" "}
                   <Link to="/register" className="font-medium text-green-600 hover:text-green-500">
-                    Créer un compte
+                    {t('login.createAccount')}
                   </Link>
                 </p>
               </div>
@@ -326,7 +328,7 @@ const Login = () => {
                   className="inline-flex items-center text-sm text-green-600 hover:text-green-500"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" />
-                  Retour à l'accueil
+                  {t('login.backToHome')}
                 </button>
               </div>
             </div>

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function CINVerificationForm({ onVerify, isVerifying, verificationError }) {
+  const { t } = useTranslation();
   const [cin, setCin] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +28,7 @@ export default function CINVerificationForm({ onVerify, isVerifying, verificatio
     e.preventDefault();
     
     if (cin.length !== 12) {
-      setError("Le numéro CIN doit contenir 12 chiffres");
+      setError(t('cinVerification.error.invalidLength'));
       return;
     }
     
@@ -36,7 +38,7 @@ export default function CINVerificationForm({ onVerify, isVerifying, verificatio
       await onVerify(cin);
     } catch (err) {
       console.error("Verification error:", err);
-      setError("Une erreur est survenue lors de la vérification");
+      setError(t('cinVerification.error.serverError'));
       setIsSubmitting(false);
     }
   };
@@ -44,23 +46,23 @@ export default function CINVerificationForm({ onVerify, isVerifying, verificatio
   return (
     <div className="w-full space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-bold text-white mb-2">Vérification CIN</h2>
+        <h2 className="text-xl font-bold text-white mb-2">{t('cinVerification.title')}</h2>
         <p className="text-sm text-blue-100">
-          Veuillez entrer votre numéro de carte d'identité nationale
+          {t('cinVerification.subtitle')}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="cin" className="block text-sm font-medium text-white mb-1">
-            Numéro CIN <span className="text-red-500">*</span>
+            {t('cinVerification.cinLabel')} <span className="text-red-500">{t('cinVerification.requiredField')}</span>
           </label>
           <input
             type="text"
             id="cin"
             value={cin}
             onChange={handleChange}
-            placeholder="Entrez votre numéro CIN"
+            placeholder={t('cinVerification.cinPlaceholder')}
             className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
               error ? 'border-red-500' : 'border-gray-300'
             }`}
@@ -84,11 +86,11 @@ export default function CINVerificationForm({ onVerify, isVerifying, verificatio
             {isSubmitting || isVerifying ? (
               <>
                 <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                Vérification en cours...
+                {t('cinVerification.verifying')}
               </>
             ) : (
               <>
-                Vérifier mon identité
+                {t('cinVerification.submitButton')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -96,7 +98,7 @@ export default function CINVerificationForm({ onVerify, isVerifying, verificatio
         </div>
 
         <p className="text-xs text-center text-blue-100 mt-4">
-          En continuant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
+          {t('cinVerification.terms')}
         </p>
       </form>
     </div>
