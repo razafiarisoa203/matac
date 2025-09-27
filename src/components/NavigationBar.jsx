@@ -41,10 +41,10 @@ function NavigationBar() {
                 activeSection === section ? "text-[#269745]" : "text-gray-800 hover:text-[#269745]"
               }`}
             >
-              {section === "accueil" && "Accueil"}
-              {section === "actes-urbanisme" && "Acte d'urbanisme"}
-              {section === "objectifs" && "Objectifs"}
-              {section === "services" && "Services"}
+              {section === "accueil" && t('navigation.home')}
+              {section === "actes-urbanisme" && t('navigation.urbanismActs')}
+              {section === "objectifs" && t('navigation.objectives')}
+              {section === "services" && t('navigation.services')}
             </a>
           ))}
         </div>
@@ -122,7 +122,7 @@ function NavigationBar() {
                 sectionName = t('navigation.home');
                 break;
               case 'actes-urbanisme':
-                sectionName = t('navigation.urbanPlanningActs');
+                sectionName = t('navigation.urbanismActs');
                 break;
               case 'objectifs':
                 sectionName = t('navigation.objectives');

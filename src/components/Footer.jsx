@@ -4,15 +4,17 @@ import MDAT from "../assets/logo/MDAT.jpeg";
 import OATF from "../assets/logo/OATF.jpg";
 import pnudlogo from "../assets/logo/pnudlogo.png";
 import REPUBLIQUE from "../assets/logo/REPUBLIQUE.png";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation();
   return (
     <footer className="bg-[#269745] text-white py-10">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           {/* Section 1 : MATAC */}
           <div className="flex flex-col items-center md:items-start justify-start">
-            <span className="text-2xl font-bold tracking-wide">MATAC</span>
+            <span className="text-2xl font-bold tracking-wide">{t('footer.matac')}</span>
           </div>
 
           {/* Section 2 : Navbar + copyright */}
@@ -22,30 +24,29 @@ const Footer = () => {
                 href="#"
                 className="hover:text-gray-300 transition-colors duration-300"
               >
-                Accueil
+                {t('footer.nav.home')}
               </a>
               <a
                 href="#"
                 className="hover:text-gray-300 transition-colors duration-300"
               >
-                Actes
+                {t('footer.nav.acts')}
               </a>
               <a
                 href="#"
                 className="hover:text-gray-300 transition-colors duration-300"
               >
-                Services
+                {t('footer.nav.services')}
               </a>
               <a
                 href="#"
                 className="hover:text-gray-300 transition-colors duration-300"
               >
-                Objectifs
+                {t('footer.nav.objectives')}
               </a>
             </nav>
             <div className="text-xs mt-2 opacity-80">
-              © {new Date().getFullYear()} MATAC Madagascar- Cartographie
-              Urbanisme
+              {t('footer.copyright', { year: new Date().getFullYear() })}
             </div>
           </div>
 
