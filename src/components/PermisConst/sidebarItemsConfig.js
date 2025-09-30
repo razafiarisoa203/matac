@@ -156,11 +156,11 @@ export const sidebarItems = {
             title: 'Documents techniques',
             icon: 'engineering',
             files: [
-                { name: 'planTerrain', label: 'Plan de situation du terrain', required:  true },
-                { name: 'droitPropriete', label: 'Titre de propriété', required:  true },
-                { name: 'planLimiteTerrain', label: 'Plan des limites du terrain', required:  true },
-                { name: 'planMasse', label: 'Plan de masse', required:  true },
-                { name: 'planFacade', label: 'Plan des façades', required:  true }
+                { name: 'planTerrain', label: 'Plan de situation du terrain', required:  false },
+                { name: 'droitPropriete', label: 'Titre de propriété', required:  false },
+                { name: 'planLimiteTerrain', label: 'Plan des limites du terrain', required:  false },
+                { name: 'planMasse', label: 'Plan de masse', required:  false },
+                { name: 'planFacade', label: 'Plan des façades', required:  false }
             ]
         }
     ]
