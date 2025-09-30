@@ -343,7 +343,7 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {users.slice(0, 5).map((item, index) => {
+                {users.slice(0, 0).map((item, index) => {
                   const user = item.user || item;
                   const citoyen = item.citoyen || {};
                   const userKey = user.id || `user-${index}`;
