@@ -50,6 +50,8 @@ export const citoyenService = {
   async checkCIN(cin) {
     try {
       const response = await citoyenApi.get(`/citizens/${cin}`);
+      console.log("retour du citizen service ", response);
+      
       return { exists: true, data: response.data };
     } catch (error) {
       if (error.response && error.response.status === 404) {
