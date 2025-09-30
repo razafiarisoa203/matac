@@ -18,6 +18,7 @@ import AlignmentDetails from "../pages/AlignmentDetails";
 
 // Autres
 import PermisConstruction from "../components/PermisConstruction";
+import AlignmentTable from "../components/AlignmentTable";
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -72,6 +73,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Allignement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/liste-demandes"
+          element={
+            <ProtectedRoute>
+              <AlignmentTable />
             </ProtectedRoute>
           }
         />
