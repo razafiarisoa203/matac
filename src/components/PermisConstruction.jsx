@@ -6,12 +6,12 @@ import { validateField } from './PermisConst/validation';
 import MaterialIcon from './PermisConst/MaterialIcon';
 import PermisSidebar from './PermisConst/PermisSidebar';
 import PermisHeader from './PermisConst/PermisHeader';
-import FileUpload from './PermisConst/FileUpload';
 import DynamicPieceManager from './PermisConst/DynamicPieceManager';
 import InputField from './PermisConst/InputField';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { constructionService } from '../services/api';
+import { useFileUpload } from '../hooks/useFileUpload'; // Import du hook
 
 const PermisConstruction = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -19,11 +19,32 @@ const PermisConstruction = () => {
   const [formData, setFormData] = useState({});
   const [completedSections, setCompletedSections] = useState({});
   const [errors, setErrors] = useState({});
-  const [files, setFiles] = useState({});
   const [pieces, setPieces] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [submissionResult, setSubmissionResult] = useState(null);
+
+  // Utilisation du hook pour l'upload de fichiers
+  const {
+    files,
+    uploadedPieceJointes,
+    isUploadingFile,
+    fileInputRef,
+    handleFileChange,
+    uploadFile,
+    removeFile,
+    removeUploadedFile,
+    clearFiles
+  } = useFileUpload();
+
+  // État pour stocker les fichiers par type
+  const [uploadedFiles, setUploadedFiles] = useState({
+    planTerrain: [],
+    droitPropriete: [],
+    planLimiteTerrain: [],
+    planMasse: [],
+    planFacade: []
+  });
 
   // Charger les données sauvegardées
   useEffect(() => {
@@ -35,7 +56,13 @@ const PermisConstruction = () => {
         setCompletedSections(parsed.completedSections || {});
         setCurrentStep(parsed.currentStep || 1);
         setCurrentSection(parsed.currentSection || 1);
-        setFiles(parsed.files || {});
+        setUploadedFiles(parsed.uploadedFiles || {
+          planTerrain: [],
+          droitPropriete: [],
+          planLimiteTerrain: [],
+          planMasse: [],
+          planFacade: []
+        });
         setPieces(parsed.pieces || []);
       } catch (error) {
         console.error('Erreur lors du chargement des données sauvegardées:', error);
@@ -50,7 +77,7 @@ const PermisConstruction = () => {
       completedSections,
       currentStep,
       currentSection,
-      files,
+      uploadedFiles,
       pieces,
       lastSaved: new Date().toISOString()
     };
@@ -60,7 +87,7 @@ const PermisConstruction = () => {
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des données:', error);
     }
-  }, [formData, completedSections, currentStep, currentSection, files, pieces]);
+  }, [formData, completedSections, currentStep, currentSection, uploadedFiles, pieces]);
 
   const handleChange = (name) => (e) => {
     const value = e.target ? e.target.value : e;
@@ -68,43 +95,77 @@ const PermisConstruction = () => {
     setErrors(prev => ({ ...prev, [name]: null }));
   };
 
-  const handleFileAdd = (name) => (newFiles) => {
-    setFiles(prev => ({ 
-      ...prev, 
-      [name]: [...(prev[name] || []), ...newFiles] 
-    }));
+  // Fonction pour gérer l'upload de fichiers par type
+  const handleFileUpload = async (fileType, file) => {
+    try {
+      const uploadedFile = await uploadFile(file);
+      
+      // Stocker le fichier uploadé dans l'état correspondant
+      setUploadedFiles(prev => ({
+        ...prev,
+        [fileType]: [...prev[fileType], {
+          ...uploadedFile,
+          fileType: fileType,
+          uploadDate: new Date().toISOString()
+        }]
+      }));
+
+      return uploadedFile;
+    } catch (error) {
+      console.error(`Erreur lors de l'upload du fichier ${fileType}:`, error);
+      throw error;
+    }
   };
 
-  const handleFileRemove = (name, index) => {
-    setFiles(prev => {
-      const updated = [...(prev[name] || [])];
-      updated.splice(index, 1);
-      return { ...prev, [name]: updated };
+  // Fonction pour supprimer un fichier uploadé
+  const handleFileRemove = (fileType, index) => {
+    setUploadedFiles(prev => {
+      const updatedFiles = [...prev[fileType]];
+      updatedFiles.splice(index, 1);
+      return { ...prev, [fileType]: updatedFiles };
     });
   };
 
-  // Fonction pour valider les pièces
+  // Fonction pour gérer la sélection de fichiers
+  const handleFileSelect = async (fileType, selectedFiles) => {
+    for (const file of selectedFiles) {
+      try {
+        await handleFileUpload(fileType, file);
+      } catch (error) {
+        console.error(`Erreur lors de l'upload du fichier ${file.name}:`, error);
+        // Vous pouvez ajouter une notification d'erreur ici
+      }
+    }
+  };
+
+  // Fonction pour valider les pièces (OPTIONNEL)
   const validatePieces = (pieces) => {
     const errors = {};
     
     pieces.forEach((piece, index) => {
-      if (!piece.destination || piece.destination.trim() === '') {
-        errors[`pieces.${index}.destination`] = 'La destination est requise';
-      }
+      // Seulement valider si la pièce a des données
+      const hasData = piece.destination || piece.niveau || piece.surface;
       
-      if (!piece.niveau || piece.niveau === '') {
-        errors[`pieces.${index}.niveau`] = 'Le niveau est requis';
+      if (hasData) {
+        if (!piece.destination || piece.destination.trim() === '') {
+          errors[`pieces.${index}.destination`] = 'La destination est requise';
+        }
+        
+        if (!piece.niveau || piece.niveau === '') {
+          errors[`pieces.${index}.niveau`] = 'Le niveau est requis';
+        }
+        
+        if (!piece.surface || piece.surface === '') {
+          errors[`pieces.${index}.surface`] = 'La surface est requise';
+        }
       }
-      
-      if (!piece.surface || piece.surface === '') {
-        errors[`pieces.${index}.surface`] = 'La surface est requise';
-      }
+      // Si aucun champ n'est rempli, la pièce est ignorée (optionnelle)
     });
     
     return errors;
   };
 
-  // Fonction de validation principale (UNIQUEMENT CETTE DÉCLARATION)
+  // Fonction de validation principale
   const validateCurrentSection = () => {
     const section = getCurrentSection();
     if (!section) return true;
@@ -115,7 +176,7 @@ const PermisConstruction = () => {
     // Valider les champs de formulaire
     if (section.fields) {
       section.fields.forEach(field => {
-        if (field.required || formData[field.name]) {
+        if (field.required) {
           const err = validateField(field.name, formData[field.name], field);
           if (err) {
             newErrors[field.name] = err;
@@ -125,28 +186,28 @@ const PermisConstruction = () => {
       });
     }
 
-    // Valider les fichiers si section fichiers
+    // Valider les fichiers si section fichiers - OPTIONNEL
     if (section.files) {
       section.files.forEach(file => {
-        if (file.required && (!files[file.name] || files[file.name].length === 0)) {
+        // Les fichiers sont optionnels (required: false dans sidebarConfig)
+        if (file.required && (!uploadedFiles[file.name] || uploadedFiles[file.name].length === 0)) {
           newErrors[file.name] = `${file.label} est requis`;
           valid = false;
         }
       });
     }
 
-    // Valider les pièces si section dynamique
+    // Valider les pièces si section dynamique - OPTIONNEL
     if (section.isDynamic) {
-      if (pieces.length === 0) {
-        newErrors.pieces = 'Au moins une pièce doit être ajoutée';
-        valid = false;
-      } else {
+      // Les pièces sont optionnelles, donc seulement valider si des données sont présentes
+      if (pieces.length > 0) {
         const pieceErrors = validatePieces(pieces);
         Object.assign(newErrors, pieceErrors);
         if (Object.keys(pieceErrors).length > 0) {
-          valid = true;
+          valid = false;
         }
       }
+      // Si aucune pièce n'est ajoutée, c'est acceptable
     }
 
     setErrors(newErrors);
@@ -160,16 +221,13 @@ const PermisConstruction = () => {
       // Préparer les données complètes pour l'envoi
       const permisData = {
         formData,
-        pieces,
-        files
+        pieces: pieces.filter(piece => 
+          piece.destination || piece.niveau || piece.surface
+        ), // Filtrer les pièces vides
+        uploadedFiles: uploadedFiles // Fichiers uploadés par type
       };
 
       console.log('Envoi des données au backend:', permisData);
-
-      // Validation finale avant envoi
-      if (!validateCurrentSection()) {
-        throw new Error('Veuillez corriger les erreurs de validation avant de soumettre');
-      }
 
       // Appel au service backend
       const result = await constructionService.submitPermisConstruction(permisData);
@@ -231,12 +289,20 @@ const PermisConstruction = () => {
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
     if (submissionResult?.success) {
+      // Réinitialiser tout
       setFormData({});
       setCompletedSections({});
-      setFiles({});
+      setUploadedFiles({
+        planTerrain: [],
+        droitPropriete: [],
+        planLimiteTerrain: [],
+        planMasse: [],
+        planFacade: []
+      });
       setPieces([]);
       setCurrentStep(1);
       setCurrentSection(1);
+      setErrors({});
     }
   };
 
@@ -257,15 +323,16 @@ const PermisConstruction = () => {
           <h2 className="text-2xl font-bold text-gray-900">{section.title}</h2>
           <p className="text-gray-600">
             {section.files
-              ? 'Téléchargez les documents requis'
+              ? 'Téléchargez les documents requis (Optionnel)'
               : section.isDynamic
-                ? 'Ajoutez les caractéristiques de chaque pièce'
+                ? 'Ajoutez les caractéristiques de chaque pièce (Optionnel)'
                 : 'Remplissez les informations demandées'}
           </p>
         </div>
       </div>
     );
 
+    // Section avec fichiers (Section 4)
     if (section.files) {
       return (
         <div className="space-y-6">
@@ -276,19 +343,78 @@ const PermisConstruction = () => {
                 {file.label}
                 {file.required && <span className="text-red-500 ml-1">*</span>}
               </label>
-              <FileUpload
-                onFilesAdd={handleFileAdd(file.name)}
-                onFileRemove={(index) => handleFileRemove(file.name, index)}
-                acceptedFiles={files[file.name] || []}
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                multiple={true}
-              />
-              {files[file.name]?.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-sm text-gray-600 mb-2">
-                    {files[file.name].length} fichier(s) téléchargé(s)
+              
+              <div className="space-y-4">
+                {/* Input file avec gestion d'upload */}
+                <input
+                  type="file"
+                  onChange={async (e) => {
+                    const selectedFiles = Array.from(e.target.files);
+                    if (selectedFiles.length > 0) {
+                      await handleFileSelect(file.name, selectedFiles);
+                    }
+                    // Reset input
+                    e.target.value = '';
+                  }}
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  className="block w-full text-sm text-gray-500 border rounded px-3 py-2"
+                  multiple
+                />
+
+                {/* Liste des fichiers uploadés pour ce type */}
+                {uploadedFiles[file.name]?.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-gray-700 mb-2">Fichiers uploadés:</h4>
+                    <div className="space-y-2">
+                      {uploadedFiles[file.name].map((uploadedFile, index) => (
+                        <div key={index} className="flex items-center justify-between bg-white p-3 rounded border">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
+                              <MaterialIcon name="description" size={16} className="text-green-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{uploadedFile.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {uploadedFile.size ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB` : 'Taille inconnue'} • 
+                                {uploadedFile.uploaded ? ' Uploadé' : ' En attente'}
+                              </p>
+                              {uploadedFile.filename && (
+                                <p className="text-xs text-gray-400">Serveur: {uploadedFile.filename}</p>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleFileRemove(file.name, index)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            disabled={isUploadingFile}
+                          >
+                            <MaterialIcon name="delete" size={20} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Message si aucun fichier */}
+                {(!uploadedFiles[file.name] || uploadedFiles[file.name].length === 0) && (
+                  <p className="text-sm text-gray-500 italic">
+                    Aucun fichier uploadé pour le moment
                   </p>
-                </div>
+                )}
+
+                {/* Indicateur de chargement */}
+                {isUploadingFile && (
+                  <div className="flex items-center space-x-2 text-blue-600">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span>Upload en cours...</span>
+                  </div>
+                )}
+              </div>
+
+              {errors[file.name] && (
+                <p className="text-red-500 text-sm mt-2">{errors[file.name]}</p>
               )}
             </div>
           ))}
@@ -296,6 +422,7 @@ const PermisConstruction = () => {
       );
     }
 
+    // Section dynamique (caractéristiques des pièces)
     if (section.isDynamic) {
       return (
         <div className="space-y-6">
@@ -306,7 +433,7 @@ const PermisConstruction = () => {
             errors={errors}
           />
           <div className="mb-4 p-4 border rounded-lg bg-gray-50">
-            <label className="block text-gray-700 font-medium mb-2">Sous-sol</label>
+            <label className="block text-gray-700 font-medium mb-2">Sous-sol (Optionnel)</label>
             <div className="flex gap-6">
               {['Oui', 'Non'].map(option => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
@@ -330,6 +457,7 @@ const PermisConstruction = () => {
       );
     }
 
+    // Section normale avec champs de formulaire
     return (
       <div className="space-y-6">
         {commonHeader}
@@ -433,7 +561,13 @@ const PermisConstruction = () => {
       localStorage.removeItem('permis_construction_data_final');
       setFormData({});
       setCompletedSections({});
-      setFiles({});
+      setUploadedFiles({
+        planTerrain: [],
+        droitPropriete: [],
+        planLimiteTerrain: [],
+        planMasse: [],
+        planFacade: []
+      });
       setPieces([]);
       setCurrentStep(1);
       setCurrentSection(1);
@@ -546,17 +680,17 @@ const PermisConstruction = () => {
 
                 <button
                   onClick={handleNext}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isUploadingFile}
                   className={`flex items-center gap-2 px-6 py-2 text-white rounded-lg transition-colors ${
-                    isSubmitting 
+                    (isSubmitting || isUploadingFile)
                       ? 'bg-gray-400 cursor-not-allowed' 
                       : 'bg-green-500 hover:bg-green-600'
                   }`}
                 >
-                  {isSubmitting ? (
+                  {(isSubmitting || isUploadingFile) ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Envoi en cours...
+                      {isUploadingFile ? 'Upload en cours...' : 'Envoi en cours...'}
                     </>
                   ) : (
                     <>

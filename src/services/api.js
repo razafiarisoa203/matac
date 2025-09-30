@@ -211,7 +211,7 @@ export const constructionService = {
     const {
       formData = {},
       pieces = [],
-      files = {}
+      uploadedFiles = {} // Maintenant on utilise uploadedFiles au lieu de files
     } = permisData;
 
     // Transformer les données radio en boolean
@@ -221,32 +221,43 @@ export const constructionService = {
       return value;
     };
 
-    // Nettoyer et valider les pièces
-    const cleanedPieces = pieces.map((piece, index) => {
-      // S'assurer que toutes les propriétés requises existent
-      const cleanedPiece = {
-        niveau: piece.niveau ? parseInt(piece.niveau) || 0 : 0,
-        destination: piece.destination || 'Non spécifié', // Valeur par défaut
-        surface: piece.surface ? parseFloat(piece.surface) || 0 : 0,
-        surfaceOuverture: piece.surfaceOuverture ? parseFloat(piece.surfaceOuverture) || 0 : 0,
-        hauteurLinteaux: piece.hauteurLinteaux ? parseFloat(piece.hauteurLinteaux) || 0 : 0,
-        hauteurPlafond: piece.hauteurPlafond ? parseFloat(piece.hauteurPlafond) || 0 : 0
-      };
+    // Nettoyer et valider les pièces - MAINTENANT OPTIONNEL
+    const cleanedPieces = pieces
+      .filter(piece =>
+        // Ne garder que les pièces qui ont au moins un champ rempli
+        piece.destination || piece.niveau || piece.surface ||
+        piece.surfaceOuverture || piece.hauteurLinteaux || piece.hauteurPlafond
+      )
+      .map((piece, index) => {
+        // S'assurer que toutes les propriétés requises existent
+        const cleanedPiece = {
+          niveau: piece.niveau ? parseInt(piece.niveau) || 0 : 0,
+          destination: piece.destination || 'Non spécifié',
+          surface: piece.surface ? parseFloat(piece.surface) || 0 : 0,
+          surfaceOuverture: piece.surfaceOuverture ? parseFloat(piece.surfaceOuverture) || 0 : 0,
+          hauteurLinteaux: piece.hauteurLinteaux ? parseFloat(piece.hauteurLinteaux) || 0 : 0,
+          hauteurPlafond: piece.hauteurPlafond ? parseFloat(piece.hauteurPlafond) || 0 : 0
+        };
 
-      // Validation supplémentaire pour la destination
-      if (!piece.destination || typeof piece.destination !== 'string') {
-        console.warn(`Pièce ${index}: destination manquante ou invalide, utilisation de la valeur par défaut`);
-        cleanedPiece.destination = 'Non spécifié';
-      }
-
-      return cleanedPiece;
-    });
+        return cleanedPiece;
+      });
 
     // Fonction pour nettoyer les valeurs numériques
     const cleanNumber = (value) => {
       if (value === '' || value === null || value === undefined) return undefined;
       const num = parseFloat(value);
       return isNaN(num) ? undefined : num;
+    };
+
+    // Fonction pour extraire les noms de fichiers uploadés
+    const getUploadedFilenames = (fileType) => {
+      if (!uploadedFiles[fileType] || !Array.isArray(uploadedFiles[fileType])) {
+        return [];
+      }
+
+      return uploadedFiles[fileType]
+        .map(file => file.filename || file.name) // Utiliser filename du serveur ou name du fichier
+        .filter(filename => filename && filename.trim() !== ''); // Filtrer les noms vides
     };
 
     // Préparer les données de base
@@ -307,8 +318,8 @@ export const constructionService = {
       equipementAssainissement: transformRadioToBoolean(formData.equipementAssainissement),
       equipementVoieAcces: transformRadioToBoolean(formData.equipementVoieAcces),
 
-      // Caractéristiques des pièces
-      pieces: cleanedPieces,
+      // Caractéristiques des pièces (OPTIONNEL)
+      pieces: cleanedPieces.length > 0 ? cleanedPieces : undefined,
 
       pieceSousSol: transformRadioToBoolean(formData.pieceSousSol),
 
@@ -333,58 +344,103 @@ export const constructionService = {
       presentationGoutiere: transformRadioToBoolean(formData.presentationGoutiere),
       presentationRegardCollecte: transformRadioToBoolean(formData.presentationRegardCollecte),
 
-      // Documents (noms de fichiers)
-      planTerrain: files.planTerrain ? files.planTerrain.map(f => f.name) : [],
-      droitPropriete: files.droitPropriete ? files.droitPropriete.map(f => f.name) : [],
-      planLimiteTerrain: files.planLimiteTerrain ? files.planLimiteTerrain.map(f => f.name) : [],
-      planMasse: files.planMasse ? files.planMasse.map(f => f.name) : [],
-      planFacade: files.planFacade ? files.planFacade.map(f => f.name) : [],
+      // Documents (noms de fichiers uploadés) - OPTIONNEL
+      planTerrain: getUploadedFilenames('planTerrain'),
+      droitPropriete: getUploadedFilenames('droitPropriete'),
+      planLimiteTerrain: getUploadedFilenames('planLimiteTerrain'),
+      planMasse: getUploadedFilenames('planMasse'),
+      planFacade: getUploadedFilenames('planFacade'),
+
+      // Informations sur les fichiers uploadés (pour le backend)
+      uploadedFilesInfo: this.prepareUploadedFilesInfo(uploadedFiles),
 
       // IDs requis (à adapter selon votre logique)
       id_align: 1, // À remplacer par l'ID d'alignement réel
       id_terrain: 1 // À remplacer par l'ID de terrain réel
     };
 
-    // Nettoyer les données undefined
+    // Nettoyer les données undefined et tableaux vides
     Object.keys(baseData).forEach(key => {
-      if (baseData[key] === undefined || baseData[key] === '') {
+      if (baseData[key] === undefined ||
+        baseData[key] === '' ||
+        (Array.isArray(baseData[key]) && baseData[key].length === 0)) {
         delete baseData[key];
       }
     });
 
+    console.log('Données préparées pour envoi:', baseData);
     return baseData;
   },
 
-  // Validation des données avant envoi
+  // Préparer les informations détaillées sur les fichiers uploadés
+  prepareUploadedFilesInfo(uploadedFiles) {
+    const filesInfo = {};
+
+    Object.keys(uploadedFiles).forEach(fileType => {
+      if (uploadedFiles[fileType] && Array.isArray(uploadedFiles[fileType])) {
+        filesInfo[fileType] = uploadedFiles[fileType].map(file => ({
+          originalName: file.name,
+          serverFilename: file.filename,
+          size: file.size,
+          type: file.type,
+          uploadDate: file.uploadDate || new Date().toISOString(),
+          url: file.url // URL de téléchargement si disponible
+        }));
+      }
+    });
+
+    // Ne retourner que si on a des fichiers
+    return Object.keys(filesInfo).length > 0 ? filesInfo : undefined;
+  },
+
+  // Validation des données avant envoi (plus flexible)
   validateConstructionData(data) {
-    // Valider les pièces
+    console.log('Validation des données:', data);
+
+    // Valider les pièces seulement si elles existent
     if (data.pieces && Array.isArray(data.pieces)) {
       data.pieces.forEach((piece, index) => {
         if (!piece.destination || typeof piece.destination !== 'string') {
           throw new Error(`La pièce ${index + 1} doit avoir une destination valide`);
         }
-        
+
         if (typeof piece.niveau !== 'number' || isNaN(piece.niveau)) {
           throw new Error(`La pièce ${index + 1} doit avoir un niveau valide`);
         }
-        
+
         if (typeof piece.surface !== 'number' || isNaN(piece.surface)) {
           throw new Error(`La pièce ${index + 1} doit avoir une surface valide`);
         }
       });
     }
 
-    // Validation supplémentaire pour les champs requis
+    // Validation pour les champs requis
     const requiredFields = ['nomProprietaire', 'cinProprietaire', 'natureTravaux', 'typeAffectation'];
-    requiredFields.forEach(field => {
-      if (!data[field]) {
-        throw new Error(`Le champ ${field} est requis`);
-      }
-    });
+    const missingFields = requiredFields.filter(field => !data[field]);
+
+    if (missingFields.length > 0) {
+      throw new Error(`Champs requis manquants: ${missingFields.join(', ')}`);
+    }
+
+    // Validation des emails si présents
+    if (data.emailProprietaire && !this.isValidEmail(data.emailProprietaire)) {
+      throw new Error('L\'email du propriétaire n\'est pas valide');
+    }
+
+    if (data.emailAuteur && !this.isValidEmail(data.emailAuteur)) {
+      throw new Error('L\'email de l\'auteur n\'est pas valide');
+    }
 
     return true;
+  },
+
+  // Méthode utilitaire pour valider les emails
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 };
+
 // Service Alignement
 export const alignmentService = {
   getAllAlignment: async () => {
