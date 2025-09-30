@@ -15,9 +15,11 @@ import DashboardClient from "../pages/DashboardClient";
 import Allignement from "../pages/Allignement";
 //import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
+import AlignmentListPage from "../pages/AlignmentListPage";
 
 // Autres
 import PermisConstruction from "../components/PermisConstruction";
+import ConstructionListPage from "../pages/ConstructionListPage";
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -75,6 +77,22 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* <Route
+          path="/liste-demandes"
+          element={
+            <ProtectedRoute>
+              <AlignmentTable />
+            </ProtectedRoute>
+          }
+        /> */}
+        <Route
+          path="/alignement-list"
+          element={
+            <ProtectedRoute>
+              <AlignmentListPage />
+            </ProtectedRoute>
+          }
+        />
         {/*<Route
           path="/alignements"
           element={
@@ -88,6 +106,16 @@ function App() {
           element={
             <ProtectedRoute>
               <AlignmentDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Permis */}
+        <Route
+          path="/permis-list"
+          element={
+            <ProtectedRoute>
+              <ConstructionListPage />
             </ProtectedRoute>
           }
         />

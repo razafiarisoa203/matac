@@ -6,15 +6,18 @@ import HeaderDashboard from '../components/HeaderDashboard';
 import StatsCards from '../components/StatsCards';
 import SearchBar from '../components/SearchBar';
 import AlignmentTable from '../components/AlignmentTable';
+import { constructionService } from '../services/api'; // Import du service construction
 import axios from "axios";
 
 const DashboardClient = () => {
   const [alignments, setAlignments] = useState([]);
+  const [constructions, setConstructions] = useState([]); // Nouvel état pour les constructions
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('tous');
+  const [selectedType, setSelectedType] = useState('tous'); // Nouveau filtre pour le type
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const navigate = useNavigate();
@@ -43,17 +46,38 @@ const DashboardClient = () => {
       setAlignments(response.data);
       console.log("Tous les alignements récupérés :", response.data);
     } catch (err) {
-      setError(err.message || "Erreur de récupération");
-    } finally {
-      setLoading(false);
+      setError(err.message || "Erreur de récupération des alignements");
     }
   };
 
-  // Charger les alignements au montage du composant
+  // Fonction pour récupérer les constructions
+  const fetchConstructions = async () => {
+    try {
+      const response = await constructionService.getConstruction();
+      setConstructions(response.data || response);
+      console.log("Toutes les constructions récupérées :", response.data || response);
+    } catch (err) {
+      console.error("Erreur de récupération des constructions:", err);
+      setError(prev => prev + " | Erreur constructions: " + err.message);
+    }
+  };
+
+  // Charger les données au montage du composant
   useEffect(() => {
-    fetchAlignments();
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchAlignments(), fetchConstructions()]);
+      } catch (err) {
+        setError("Erreur lors du chargement des données");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
+  // Fonction pour obtenir le badge de statut
   const getStatusBadge = (status) => {
     const statusConfig = {
       'en_cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
@@ -62,6 +86,20 @@ const DashboardClient = () => {
       'en_attente': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente' }
     };
     const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: status || 'Inconnu' };
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
+        {config.text}
+      </span>
+    );
+  };
+
+  // Fonction pour obtenir le tag de type
+  const getTypeTag = (type) => {
+    const typeConfig = {
+      'alignment': { color: 'bg-purple-100 text-purple-800 border-purple-200', text: 'Alignement' },
+      'construction': { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', text: 'Construction' }
+    };
+    const config = typeConfig[type] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: type || 'Inconnu' };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
         {config.text}
@@ -81,21 +119,66 @@ const DashboardClient = () => {
     }).replace(',', '');
   };
 
+  // Combiner et formater les données pour l'affichage
+  const getAllRequests = () => {
+    const alignmentRequests = alignments.map(alignment => ({
+      id: alignment.id_align,
+      reference: `ALG-${alignment.id_align}`,
+      type: 'alignment',
+      nom: alignment.qualite_demandeur || 'N/A',
+      adresse: alignment.terrain?.adresse || 'N/A',
+      date: alignment.created_at,
+      status: alignment.status || 'en_attente',
+      data: alignment
+    }));
+
+    const constructionRequests = constructions.map(construction => ({
+      id: construction.id_const,
+      reference: `CONST-${construction.id_const}`,
+      type: 'construction',
+      nom: construction.nomProprietaire || 'N/A',
+      adresse: construction.adresseProprietaire || 'N/A',
+      date: construction.created_at,
+      status: construction.status || 'en_attente', // Ajouter un champ status dans votre entité Construction si nécessaire
+      data: construction
+    }));
+
+    return [...alignmentRequests, ...constructionRequests].sort((a, b) => 
+      new Date(b.date) - new Date(a.date)
+    );
+  };
+
   // Filtrage des données
-  const filteredAlignments = alignments.filter(alignment => {
+  const allRequests = getAllRequests();
+  const filteredRequests = allRequests.filter(request => {
     const matchesSearch =
-      alignment.id_align?.toString().includes(searchTerm) ||
-      alignment.qualite_demandeur?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      alignment.terrain?.adresse?.toLowerCase().includes(searchTerm.toLowerCase());
-    const normalizedStatus = alignment.status || 'en_attente';
+      request.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.adresse?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const normalizedStatus = request.status || 'en_attente';
     const matchesStatus = selectedStatus === 'tous' || normalizedStatus === selectedStatus;
-    return matchesSearch && matchesStatus;
+    
+    const matchesType = selectedType === 'tous' || request.type === selectedType;
+
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   const itemsPerPage = 6;
-  const totalPages = Math.ceil(filteredAlignments.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedAlignments = filteredAlignments.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+
+  // Mise à jour des statistiques pour inclure les deux types
+  const statsData = {
+    alignments: alignments,
+    constructions: constructions,
+    selectedStatus: selectedStatus,
+    setSelectedStatus: setSelectedStatus,
+    selectedType: selectedType,
+    setSelectedType: setSelectedType,
+    setCurrentPage: setCurrentPage
+  };
 
   if (loading) {
     return (
@@ -117,7 +200,7 @@ const DashboardClient = () => {
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-500 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Chargement des alignements...</p>
+                  <p className="mt-4 text-gray-600">Chargement des demandes...</p>
                 </div>
               </div>
             </div>
@@ -144,10 +227,7 @@ const DashboardClient = () => {
 
         <main className="flex-1 overflow-y-auto p-0 mt-25">
           <StatsCards
-            alignments={alignments}
-            selectedStatus={selectedStatus}
-            setSelectedStatus={setSelectedStatus}
-            setCurrentPage={setCurrentPage}
+            {...statsData}
           />
 
           <div className="space-y-8 bg-white -mt-10 pt-8 pb-12">
@@ -157,19 +237,22 @@ const DashboardClient = () => {
             />
 
             <AlignmentTable
-              alignments={alignments}
-              filteredAlignments={filteredAlignments}
-              paginatedAlignments={paginatedAlignments}
+              requests={allRequests}
+              filteredRequests={filteredRequests}
+              paginatedRequests={paginatedRequests}
               error={error}
               searchTerm={searchTerm}
               selectedStatus={selectedStatus}
+              selectedType={selectedType}
               currentPage={currentPage}
               totalPages={totalPages}
               itemsPerPage={itemsPerPage}
               startIndex={startIndex}
               setCurrentPage={setCurrentPage}
               fetchAlignments={fetchAlignments}
+              fetchConstructions={fetchConstructions}
               getStatusBadge={getStatusBadge}
+              getTypeTag={getTypeTag}
               formatDate={formatDate}
               navigate={navigate}
             />

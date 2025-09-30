@@ -198,17 +198,15 @@ const PermisConstruction = () => {
     }
 
     // Valider les pièces si section dynamique - OPTIONNEL
-    if (section.isDynamic) {
-      // Les pièces sont optionnelles, donc seulement valider si des données sont présentes
-      if (pieces.length > 0) {
-        const pieceErrors = validatePieces(pieces);
-        Object.assign(newErrors, pieceErrors);
-        if (Object.keys(pieceErrors).length > 0) {
-          valid = false;
-        }
-      }
-      // Si aucune pièce n'est ajoutée, c'est acceptable
-    }
+    // if (section.isDynamic) {
+    //   if (pieces.length > 0) {
+    //     const pieceErrors = validatePieces(pieces);
+    //     Object.assign(newErrors, pieceErrors);
+    //     if (Object.keys(pieceErrors).length > 0) {
+    //       valid = true;
+    //     }
+    //   }
+    // }
 
     setErrors(newErrors);
     return valid;
