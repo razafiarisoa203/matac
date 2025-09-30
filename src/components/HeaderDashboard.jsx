@@ -2,14 +2,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Menu, Bell, User, Upload, X } from "lucide-react";
 import { useSelector } from "react-redux";
-import { notificationService, citoyenService } from "../services/api";
+import { citoyenService } from "../services/api";
 
-export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile, onProfileClick }) {
+export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClick }) {
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading] = useState(false);
+  const [error] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState(null);
@@ -92,24 +91,6 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
     }
   }, [displayCitizens, displayUser]);
 
-  // Récupérer les notifications
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true);
-      try {
-        const data = await notificationService.getAllNotifications();
-        setNotifications(data);
-        setError(null);
-      } catch (err) {
-        setError("Impossible de charger les notifications");
-        console.error('Erreur lors de la récupération des notifications:', err.response?.data || err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNotifications();
-  }, []);
-
   // Gérer les clics en dehors des menus
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -127,9 +108,6 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  // Compter les notifications non lues
-  const unreadCount = notifications.filter((notif) => notif.unread).length;
 
   const handleProfileClick = () => {
     setIsProfileFormOpen(!isProfileFormOpen);
@@ -229,20 +207,7 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
     }
   };
 
-  const markAsRead = async (id) => {
-    try {
-      await notificationService.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((notif) =>
-          notif.id === id ? { ...notif, unread: false } : notif
-        )
-      );
-      console.log(`Notification ${id} marquée comme lue`);
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de la notification:", error);
-    }
-  };
-
+ 
   const getInitials = (name) => {
     if (!name) return "U";
     const words = name.trim().split(" ");
@@ -287,68 +252,6 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
         
         <h1 className="font-bold text-2xl tracking-wide text-black">MATAC</h1>
       </div>
-
-      {/* Droite */}
-      <div className="flex items-center space-x-5">
-        {/* Notification */}
-        <div className="relative">
-          <button
-            onClick={handleNotificationClick}
-            className="p-2 rounded-full hover:bg-green-200 transition-colors relative"
-            aria-label="Open notifications"
-          >
-            <Bell size={22} className="text-black" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-
-          {isNotificationOpen && (
-            <div
-              ref={notificationRef}
-              className="absolute top-14 right-0 bg-white text-black shadow-lg rounded-lg p-4 w-full sm:w-[400px] z-50"
-            >
-              <h2 className="text-lg font-semibold mb-4">Notifications</h2>
-              {loading ? (
-                <p className="text-sm text-gray-500">Chargement...</p>
-              ) : error ? (
-                <p className="text-sm text-red-500">{error}</p>
-              ) : notifications.length === 0 ? (
-                <p className="text-sm text-gray-500">Aucune notification</p>
-              ) : (
-                <ul className="space-y-3">
-                  {notifications.map((notification) => (
-                    <li
-                      key={notification.id}
-                      className={`p-3 rounded-md ${
-                        notification.unread ? "bg-green-100" : "bg-gray-100"
-                      } hover:bg-green-200 transition-colors`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-sm font-medium">{notification.message}</p>
-                          <p className="text-xs text-gray-500">{notification.timestamp}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                          {notification.unread && (
-                            <button
-                              onClick={() => markAsRead(notification.id)}
-                              className="text-xs text-green-500 hover:text-green-700"
-                            >
-                              Marquer comme lu
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* Profil */}
         <div className="relative">
@@ -534,7 +437,6 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
             </div>
           )}
         </div>
-      </div>
     </header>
   );
 }

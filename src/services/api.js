@@ -41,6 +41,7 @@ const authApi = addInterceptor(createApi(servicesApi.auth));
 const citoyenApi = addInterceptor(createApi(servicesApi.citoyen));
 const uploadApi = addInterceptor(createApi(servicesApi.upload));
 const alignementApi = addInterceptor(createApi(servicesApi.alignement));
+const notificationApi = addInterceptor(createApi(servicesApi.auth)); // Utilise le même endpoint que auth pour les notifications
 
 // ===================== Services =====================
 
@@ -175,6 +176,56 @@ export const alignmentService = {
   },
 };
 
+// Service Notification
+export const notificationService = {
+  async getAllNotifications() {
+    try {
+      const response = await notificationApi.get('/servicenotification/notifications');
+      console.log('All notifications retrieved:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des notifications:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  async markAsRead(notificationId) {
+    try {
+      const response = await notificationApi.patch(`/servicenotification/notifications/${notificationId}/read`);
+      console.log('Notification marked as read:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors du marquage comme lu:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  async deleteNotification(notificationId) {
+    try {
+      const response = await notificationApi.delete(`/servicenotification/notifications/${notificationId}`);
+      console.log('Notification deleted successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la notification:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  async broadcastNotification(notificationData) {
+    try {
+      const response = await notificationApi.post('/servicenotification/notifications/broadcast', notificationData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Broadcast notification posted successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la création de la notification de diffusion:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+};
 
 // Service pour la gestion des rôles
 export const roleService = {
