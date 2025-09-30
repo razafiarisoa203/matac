@@ -5,11 +5,12 @@ export const TEMP_USER_ID = 'temp_user_id_123';
 
 // Récupération des URLs depuis le .env
 const servicesApi = {
-  territoire: import.meta.env.VITE_API_SERVICETERITOIRE,
-  auth: import.meta.env.VITE_API_SERVICEAUTH,
-  citoyen: import.meta.env.VITE_API_SERVICECITOYEN,
-  upload: import.meta.env.VITE_API_SERVICEUPLOAD,
-  alignement: import.meta.env.VITE_API_SERVICEALIGNEMENT,
+  // Tous les services utilisent l'URL de base avec leur chemin respectif
+  territoire: `${import.meta.env.VITE_API_URL}/serviceterritoire-v2`,
+  auth: `${import.meta.env.VITE_API_URL}/serviceauth`,
+  citoyen: `${import.meta.env.VITE_API_URL}/servicecitoyen`,
+  upload: `${import.meta.env.VITE_API_URL}/serviceupload`,
+  alignement: `${import.meta.env.VITE_API_URL}/servicealignement`,
 };
 
 // Factory pour créer une instance Axios par service
@@ -122,34 +123,25 @@ export const authService = {
   },
 };
 
+// Service Construction
 export const constructionService = {
   // Récupérer toutes les constructions
   getConstruction: async () => {
     try {
-      const response = await fetch(`${API_BASE_CONSTRUCTION}/serviceconstruction/construction`);
-      return await response.json();
+      // Utilisation de l'API de territoire pour les constructions
+      const response = await territoireApi.get('/construction');
+      return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des constructions:', error);
-      return [];
+      throw error;
     }
   },
 
   // Créer une nouvelle construction
   createConstruction: async (constructionData) => {
     try {
-      const response = await fetch(`${API_BASE_CONSTRUCTION}/serviceconstruction/construction`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(constructionData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création de la construction');
-      }
-
-      return await response.json();
+      const response = await territoireApi.post('/construction', constructionData);
+      return response.data;
     } catch (error) {
       console.error('Erreur lors de la création de la construction:', error);
       throw error;
@@ -183,58 +175,6 @@ export const alignmentService = {
   },
 };
 
-// Service Notification
-export const notificationService = {
-  
-
-  async getAllNotifications() {
-    try {
-      const response = await api.get('/servicenotification/notifications');
-      console.log('All notifications retrieved:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des notifications:', error.response?.data || error.message);
-      throw error;
-    }
-  },
-
-  async markAsRead(notificationId) {
-    try {
-      const response = await api.patch(`/servicenotification/notifications/${notificationId}/read`);
-      console.log('Notification marked as read:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors du marquage comme lu:', error.response?.data || error.message);
-      throw error;
-    }
-  },
-
-  async deleteNotification(notificationId) {
-    try {
-      const response = await api.delete(`/servicenotification/notifications/${notificationId}`);
-      console.log('Notification deleted successfully:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la suppression de la notification:', error.response?.data || error.message);
-      throw error;
-    }
-  },
-
-  async broadcastNotification(notificationData) {
-    try {
-      const response = await api.post('/servicenotification/notifications/broadcast', notificationData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('Broadcast notification posted successfully:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la création de la notification de diffusion:', error.response?.data || error.message);
-      throw error;
-    }
-  }
-};
 
 // Service pour la gestion des rôles
 export const roleService = {
