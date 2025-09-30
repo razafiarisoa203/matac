@@ -109,7 +109,7 @@ const ConstructionListPage = () => {
 
   // Fonction pour voir les détails
   const viewDetails = (constructionId) => {
-    navigate(`/construction-details/${constructionId}`);
+    navigate(`/permis-details/${constructionId}`);
   };
 
   if (loading) {

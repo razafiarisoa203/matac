@@ -484,22 +484,52 @@ export const alignmentService = {
   createAlignment: async (alignmentData) => {
     return alignementApi.post('/alignment', alignmentData);
   },
-  getAlignment: async (id) => {
-    return alignementApi.get(`/alignment/${id}`);
+  // Récupérer un alignement par ID
+  async getAlignmentById(id) {
+    try {
+      const response = await alignementApi.get(`/alignment/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'alignement:', error);
+      throw error;
+    }
   },
-  updateAlignment: async (id, alignmentData) => {
-    return alignementApi.put(`/alignment/${id}`, alignmentData);
+
+  // Récupérer un alignement par ID avec tous les détails
+  async getAlignmentDetails(id) {
+    try {
+      const response = await alignementApi.get(`/alignment/${id}/details`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des détails:', error);
+      throw error;
+    }
   },
-  deleteAlignment: async (id) => {
-    return alignementApi.delete(`/alignment/${id}`);
+
+  // Générer un PDF pour un alignement
+  async generateAlignmentPDF(id) {
+    try {
+      const response = await alignementApi.get(`/alignment/${id}/pdf`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      throw error;
+    }
   },
-  uploadFile: async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return alignementApi.post('/alignments/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+
+  // Mettre à jour le statut d'un alignement
+  async updateAlignmentStatus(id, status) {
+    try {
+      const response = await alignementApi.patch(`/alignment/${id}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+      throw error;
+    }
   },
+  
   createTerrain: async (terrainData) => {
     return alignementApi.post('/terrain', terrainData);
   },
