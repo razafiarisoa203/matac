@@ -104,18 +104,18 @@ function App() {
         <Route
           path="/users"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <UsersList />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
     
         <Route
           path="/RoleManagement"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <RoleManagement />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
       </Routes>
