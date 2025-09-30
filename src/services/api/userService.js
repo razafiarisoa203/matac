@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { store } from '../store/store';
 
-const API_URL = import.meta.env.VITE_API_SERVICEAUTH || 'http://localhost:5000';
-const API_URL_CITOYEN = import.meta.env.VITE_API_SERVICECITOYEN || 'http://localhost:5000';
+// Utilisation de l'URL de base depuis les variables d'environnement
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const BASE_AUTH_URL = `${API_URL}/serviceauth`;
+const BASE_CITOYEN_URL = `${API_URL}/servicecitoyen`;
 // Récupérer le profil utilisateur
 export const getUserProfile = async () => {
   try {
@@ -146,50 +148,59 @@ export const markAllNotificationsAsRead = async () => {
   }
 };
 
+// Configuration de base pour les requêtes axios
+const getAuthConfig = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Aucun token d\'authentification trouvé');
+  }
+
+  return {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
+};
+
 export const getAllUsersByApplicationRole = async () => {
   try {
-    // 1. On récupère la première page pour avoir total & limit
-    const firstRes = await axios.get(`${API_URL}/users/application/${13635}?limit=100&page=1`);
-    const { limit, total, data: firstPageUsers } = firstRes.data;
+    const config = getAuthConfig();
+    const appId = import.meta.env.VITE_APP_ID || 13635;
 
-    const numberOfPages = Math.ceil(total / limit) || 1;
-
-    // 2. Préparer toutes les requêtes des autres pages
-    const requests = [];
-    for (let i = 2; i <= numberOfPages; i++) {
-      requests.push(axios.get(`${API_URL}/users?limit=100&page=${i}`));
-    }
-
-    // 3. Exécuter en parallèle
-    const responses = await Promise.all(requests);
-
-    // 4. Rassembler tous les utilisateurs
-    let allUsers = [...firstPageUsers];
-    responses.forEach((res) => {
-      allUsers = [...allUsers, ...res.data.data];
-    });
-
-    // 5. Filtrer les utilisateurs avec le rôle (id=67)
-    const filteredUsers = allUsers.filter((u) =>
-      u.appUserRoles?.some((r) => r.role.role_id === 93)
+    // 1. Récupérer les utilisateurs de l'application
+    const response = await axios.get(
+      `${BASE_AUTH_URL}/users/application/${appId}?limit=100&page=1`,
+      config
     );
 
-    // 6. Récupérer les citoyens en parallèle
-    const citizenRequests = filteredUsers.map(async (user) => {
-      try {
-        const res = await axios.get(
-          `${API_URL_CITOYEN}/citizens/getCitizenById/${user.id_citizen}`
-        );
-        return { user, citoyen: res.data || null };
-      } catch {
-        return { user, citoyen: null }; // gestion en cas d'erreur
-      }
-    });
+    // 2. Si pas de données, on retourne un tableau vide
+    if (!response.data || !response.data.data) {
+      return [];
+    }
 
-    const usersWithCitizens = await Promise.all(citizenRequests);
+    // 3. Récupérer les citoyens en parallèle
+    const users = response.data.data;
+    const usersWithCitizens = await Promise.all(
+      users.map(async (user) => {
+        if (!user.id_citizen) return { user, citoyen: null };
+        
+        try {
+          const res = await axios.get(
+            `${BASE_CITOYEN_URL}/citizens/getCitizenById/${user.id_citizen}`,
+            config
+          );
+          return { user, citoyen: res.data || null };
+        } catch (error) {
+          console.error('Erreur récupération citoyen:', error);
+          return { user, citoyen: null };
+        }
+      })
+    );
+
     return usersWithCitizens;
-  } catch (e) {
-    console.error("Erreur lors de la récupération des utilisateurs:", e);
-    return null;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des utilisateurs:", error);
+    throw error; // On propage l'erreur pour la gérer dans le composant
   }
 };
