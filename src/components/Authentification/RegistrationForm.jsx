@@ -25,7 +25,7 @@ export default function RegistrationForm() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [communes, setCommunes] = useState();
+  const [communes, setCommunes] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -315,7 +315,7 @@ export default function RegistrationForm() {
                   placeholder="Commune"
                 >
                   <option value="">{t('registrationForm.selectPlaceholder')}</option>
-                  {communes &&
+                  {Array.isArray(communes) &&
                     communes.map((c, i) => (
                       <option value={c.commune_id} key={i}>
                         {c.name}
@@ -343,7 +343,7 @@ export default function RegistrationForm() {
                   placeholder="ID Fokotany"
                 >
                   <option value="">{t('registrationForm.selectPlaceholder')}</option>
-                  {communes ? (
+                  {Array.isArray(communes) ? (
                     communes
                       .find((c) => c.commune_id == formData.municipality_id)
                       ?.fokotanys.map((f, i) => (
