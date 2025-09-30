@@ -10,6 +10,8 @@ const servicesApi = {
   citoyen: import.meta.env.VITE_API_SERVICECITOYEN,
   upload: import.meta.env.VITE_API_SERVICEUPLOAD,
   alignement: import.meta.env.VITE_API_SERVICEALIGNEMENT,
+  construction: import.meta.env.VITE_API_SERVICECONSTRUCTION, // Ajout du service construction
+  notification: import.meta.env.VITE_API_SERVICENOTIFICATION, // Ajout du service notification
 };
 
 // Factory pour créer une instance Axios par service
@@ -19,7 +21,7 @@ const createApi = (baseURL) =>
     headers: { 'Content-Type': 'application/json' },
   });
 
-// Ajout d’intercepteur pour le token
+// Ajout d'intercepteur pour le token
 const addInterceptor = (instance) => {
   instance.interceptors.request.use(
     (config) => {
@@ -40,6 +42,11 @@ const authApi = addInterceptor(createApi(servicesApi.auth));
 const citoyenApi = addInterceptor(createApi(servicesApi.citoyen));
 const uploadApi = addInterceptor(createApi(servicesApi.upload));
 const alignementApi = addInterceptor(createApi(servicesApi.alignement));
+const constructionApi = addInterceptor(createApi(servicesApi.construction)); // Instance pour construction
+const notificationApi = addInterceptor(createApi(servicesApi.notification)); // Instance pour notification
+
+// Instance API générique (pour compatibilité)
+const api = addInterceptor(createApi(servicesApi.auth));
 
 // ===================== Services =====================
 
@@ -106,8 +113,6 @@ export const loginService = {
   },
 };
 
-
-
 // Service Auth
 export const authService = {
   async forgotPassword(user_email) {
@@ -124,41 +129,262 @@ export const authService = {
   },
 };
 
+// Service Construction (complété)
 export const constructionService = {
   // Récupérer toutes les constructions
-  getConstruction: async () => {
+  async getConstruction() {
     try {
-      const response = await fetch(`${API_BASE_CONSTRUCTION}/serviceconstruction/construction`);
-      return await response.json();
+      const response = await constructionApi.get('/construction');
+      return response.data;
     } catch (error) {
       console.error('Erreur lors de la récupération des constructions:', error);
-      return [];
+      throw error;
     }
   },
 
   // Créer une nouvelle construction
-  createConstruction: async (constructionData) => {
+  async createConstruction(constructionData) {
     try {
-      const response = await fetch(`${API_BASE_CONSTRUCTION}/serviceconstruction/construction`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(constructionData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création de la construction');
-      }
-
-      return await response.json();
+      const response = await constructionApi.post('/construction', constructionData);
+      return response.data;
     } catch (error) {
       console.error('Erreur lors de la création de la construction:', error);
       throw error;
     }
   },
-};
 
+  // Récupérer une construction par ID
+  async getConstructionById(id) {
+    try {
+      const response = await constructionApi.get(`/construction/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération de la construction:', error);
+      throw error;
+    }
+  },
+
+  // Mettre à jour une construction
+  async updateConstruction(id, constructionData) {
+    try {
+      const response = await constructionApi.put(`/construction/${id}`, constructionData);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la construction:', error);
+      throw error;
+    }
+  },
+
+  // Supprimer une construction
+  async deleteConstruction(id) {
+    try {
+      const response = await constructionApi.delete(`/construction/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la construction:', error);
+      throw error;
+    }
+  },
+
+  async submitPermisConstruction(permisData) {
+    try {
+      console.log('Envoi des données de permis de construction:', permisData);
+
+      // Préparer les données pour l'API avec validation renforcée
+      const submissionData = this.prepareConstructionData(permisData);
+
+      // Valider les données avant envoi
+      this.validateConstructionData(submissionData);
+
+      const response = await constructionApi.post('/construction', submissionData);
+
+      console.log('Réponse du serveur:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la soumission du permis:', error);
+      throw error;
+    }
+  },
+
+  // Méthode pour préparer les données au format attendu par le backend
+  prepareConstructionData(permisData) {
+    const {
+      formData = {},
+      pieces = [],
+      files = {}
+    } = permisData;
+
+    // Transformer les données radio en boolean
+    const transformRadioToBoolean = (value) => {
+      if (value === 'Oui') return true;
+      if (value === 'Non') return false;
+      return value;
+    };
+
+    // Nettoyer et valider les pièces
+    const cleanedPieces = pieces.map((piece, index) => {
+      // S'assurer que toutes les propriétés requises existent
+      const cleanedPiece = {
+        niveau: piece.niveau ? parseInt(piece.niveau) || 0 : 0,
+        destination: piece.destination || 'Non spécifié', // Valeur par défaut
+        surface: piece.surface ? parseFloat(piece.surface) || 0 : 0,
+        surfaceOuverture: piece.surfaceOuverture ? parseFloat(piece.surfaceOuverture) || 0 : 0,
+        hauteurLinteaux: piece.hauteurLinteaux ? parseFloat(piece.hauteurLinteaux) || 0 : 0,
+        hauteurPlafond: piece.hauteurPlafond ? parseFloat(piece.hauteurPlafond) || 0 : 0
+      };
+
+      // Validation supplémentaire pour la destination
+      if (!piece.destination || typeof piece.destination !== 'string') {
+        console.warn(`Pièce ${index}: destination manquante ou invalide, utilisation de la valeur par défaut`);
+        cleanedPiece.destination = 'Non spécifié';
+      }
+
+      return cleanedPiece;
+    });
+
+    // Fonction pour nettoyer les valeurs numériques
+    const cleanNumber = (value) => {
+      if (value === '' || value === null || value === undefined) return undefined;
+      const num = parseFloat(value);
+      return isNaN(num) ? undefined : num;
+    };
+
+    // Préparer les données de base
+    const baseData = {
+      // Section 1: Identification
+      natureTravaux: formData.natureTravaux,
+      typeAffectation: formData.typeAffectation,
+      referenceAlignement: formData.referenceAlignement,
+
+      // Propriétaire
+      civiliteProprietaire: formData.civiliteProprietaire,
+      nomProprietaire: formData.nomProprietaire,
+      telProprietaire: formData.telProprietaire,
+      emailProprietaire: formData.emailProprietaire,
+      cinProprietaire: formData.cinProprietaire,
+      adresseProprietaire: formData.adresseProprietaire,
+
+      // Section 2: Renseignement architectural
+      auteurOuvrage: formData.auteurOuvrage,
+      nomAuteur: formData.nomAuteur,
+      fonctionAuteur: formData.fonctionAuteur,
+      numeroOrdreAuteur: formData.numeroOrdreAuteur,
+      telAuteur: formData.telAuteur,
+      emailAuteur: formData.emailAuteur,
+      adresseAuteur: formData.adresseAuteur,
+      zoneImplantation: formData.zoneImplantation,
+      materiaux: formData.materiaux,
+      dureeTravaux: cleanNumber(formData.dureeTravaux),
+      montantTravaux: cleanNumber(formData.montantTravaux),
+      longueurProjet: cleanNumber(formData.longueurProjet),
+      largeurProjet: cleanNumber(formData.largeurProjet),
+      hauteurProjet: cleanNumber(formData.hauteurProjet),
+
+      // Section 3: Renseignement technique
+      surfaceTerrain: cleanNumber(formData.surfaceTerrain),
+      empriseSolExistant: cleanNumber(formData.empriseSolExistant),
+      empriseSol: cleanNumber(formData.empriseSol),
+      cesProjet: cleanNumber(formData.cesProjet),
+      surfacePlancherExistant: cleanNumber(formData.surfacePlancherExistant),
+      surfacePlancherProjet: cleanNumber(formData.surfacePlancherProjet),
+      surfaceVerte: cleanNumber(formData.surfaceVerte),
+      niveauRPlus: cleanNumber(formData.niveauRPlus),
+
+      // Distances
+      distanceCheminPublic: cleanNumber(formData.distanceCheminPublic),
+      distanceSentierPublic: cleanNumber(formData.distanceSentierPublic),
+      distanceRouteNationale: cleanNumber(formData.distanceRouteNationale),
+      distanceRiviere: cleanNumber(formData.distanceRiviere),
+      distanceCanalPublic: cleanNumber(formData.distanceCanalPublic),
+      distanceInstallationEnergie: cleanNumber(formData.distanceInstallationEnergie),
+      distanceLigneElectrique: cleanNumber(formData.distanceLigneElectrique),
+      distanceProjetLimitePropriete: cleanNumber(formData.distanceProjetLimitePropriete),
+      distanceMinimaleProjetConstructionExistante: cleanNumber(formData.distanceMinimaleProjetConstructionExistante),
+
+      // Équipements terrain
+      equipementEau: transformRadioToBoolean(formData.equipementEau),
+      equipementElectricite: transformRadioToBoolean(formData.equipementElectricite),
+      equipementAssainissement: transformRadioToBoolean(formData.equipementAssainissement),
+      equipementVoieAcces: transformRadioToBoolean(formData.equipementVoieAcces),
+
+      // Caractéristiques des pièces
+      pieces: cleanedPieces,
+
+      pieceSousSol: transformRadioToBoolean(formData.pieceSousSol),
+
+      // Équipement de l'ouvrage
+      existantVhVb: transformRadioToBoolean(formData.existantVhVb),
+      existantTerasse: transformRadioToBoolean(formData.existantTerasse),
+      existantGardeCorp: transformRadioToBoolean(formData.existantGardeCorp),
+      nbrVeranda: cleanNumber(formData.nbrVeranda),
+      nbrCouloir: cleanNumber(formData.nbrCouloir),
+      nbrEscalier: cleanNumber(formData.nbrEscalier),
+      nbrServitude: cleanNumber(formData.nbrServitude),
+
+      // Assainissement
+      existantBranchementEauPublic: transformRadioToBoolean(formData.existantBranchementEauPublic),
+      utilisationFosseEptique: transformRadioToBoolean(formData.utilisationFosseEptique),
+      typeFosseEptique: formData.typeFosseEptique,
+      evacuationEauxPluviales: cleanNumber(formData.evacuationEauxPluviales),
+      nbrUsageFosse: cleanNumber(formData.nbrUsageFosse),
+      capaciteFosse: cleanNumber(formData.capaciteFosse),
+      utilisationPuisard: transformRadioToBoolean(formData.utilisationPuisard),
+      puisardAuFondation: cleanNumber(formData.puisardAuFondation),
+      presentationGoutiere: transformRadioToBoolean(formData.presentationGoutiere),
+      presentationRegardCollecte: transformRadioToBoolean(formData.presentationRegardCollecte),
+
+      // Documents (noms de fichiers)
+      planTerrain: files.planTerrain ? files.planTerrain.map(f => f.name) : [],
+      droitPropriete: files.droitPropriete ? files.droitPropriete.map(f => f.name) : [],
+      planLimiteTerrain: files.planLimiteTerrain ? files.planLimiteTerrain.map(f => f.name) : [],
+      planMasse: files.planMasse ? files.planMasse.map(f => f.name) : [],
+      planFacade: files.planFacade ? files.planFacade.map(f => f.name) : [],
+
+      // IDs requis (à adapter selon votre logique)
+      id_align: 1, // À remplacer par l'ID d'alignement réel
+      id_terrain: 1 // À remplacer par l'ID de terrain réel
+    };
+
+    // Nettoyer les données undefined
+    Object.keys(baseData).forEach(key => {
+      if (baseData[key] === undefined || baseData[key] === '') {
+        delete baseData[key];
+      }
+    });
+
+    return baseData;
+  },
+
+  // Validation des données avant envoi
+  validateConstructionData(data) {
+    // Valider les pièces
+    if (data.pieces && Array.isArray(data.pieces)) {
+      data.pieces.forEach((piece, index) => {
+        if (!piece.destination || typeof piece.destination !== 'string') {
+          throw new Error(`La pièce ${index + 1} doit avoir une destination valide`);
+        }
+        
+        if (typeof piece.niveau !== 'number' || isNaN(piece.niveau)) {
+          throw new Error(`La pièce ${index + 1} doit avoir un niveau valide`);
+        }
+        
+        if (typeof piece.surface !== 'number' || isNaN(piece.surface)) {
+          throw new Error(`La pièce ${index + 1} doit avoir une surface valide`);
+        }
+      });
+    }
+
+    // Validation supplémentaire pour les champs requis
+    const requiredFields = ['nomProprietaire', 'cinProprietaire', 'natureTravaux', 'typeAffectation'];
+    requiredFields.forEach(field => {
+      if (!data[field]) {
+        throw new Error(`Le champ ${field} est requis`);
+      }
+    });
+
+    return true;
+  }
+};
 // Service Alignement
 export const alignmentService = {
   getAllAlignment: async () => {
@@ -188,12 +414,11 @@ export const alignmentService = {
   },
 };
 
-// Service Notification
+// Service Notification (CORRIGÉ)
 export const notificationService = {
-
   async getAllNotifications() {
     try {
-      const response = await api.get('/servicenotification/notifications');
+      const response = await notificationApi.get('/notifications');
       console.log('All notifications retrieved:', response.data);
       return response.data;
     } catch (error) {
@@ -204,7 +429,7 @@ export const notificationService = {
 
   async markAsRead(notificationId) {
     try {
-      const response = await api.patch(`/servicenotification/notifications/${notificationId}/read`);
+      const response = await notificationApi.patch(`/notifications/${notificationId}/read`);
       console.log('Notification marked as read:', response.data);
       return response.data;
     } catch (error) {
@@ -215,7 +440,7 @@ export const notificationService = {
 
   async deleteNotification(notificationId) {
     try {
-      const response = await api.delete(`/servicenotification/notifications/${notificationId}`);
+      const response = await notificationApi.delete(`/notifications/${notificationId}`);
       console.log('Notification deleted successfully:', response.data);
       return response.data;
     } catch (error) {
@@ -226,11 +451,7 @@ export const notificationService = {
 
   async broadcastNotification(notificationData) {
     try {
-      const response = await api.post('/servicenotification/notifications/broadcast', notificationData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await notificationApi.post('/notifications/broadcast', notificationData);
       console.log('Broadcast notification posted successfully:', response.data);
       return response.data;
     } catch (error) {
@@ -246,48 +467,41 @@ export const roleService = {
   async getRoles() {
     try {
       console.log('Début de la récupération des rôles...');
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       if (!token) {
         console.error('Aucun token d\'authentification trouvé');
         throw new Error('Non authentifié');
       }
-      
+
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log('ID de l\'application MATAC:', matacAppId);
-      
+
       console.log('Envoi de la requête pour récupérer les rôles...');
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_SERVICEAUTH}/roles`,
+      const response = await authApi.get(
+        '/roles',
         {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'X-Application-ID': matacAppId
-          },
           params: {
             applicationId: matacAppId
           },
-          timeout: 10000 // 10 secondes de timeout
+          timeout: 10000
         }
       );
+
       console.log('Réponse reçue pour les rôles:', {
         status: response.status,
-        headers: response.headers,
         data: response.data
       });
+
       if (!response.data || !Array.isArray(response.data.data)) {
         console.error('Format de réponse inattendu pour les rôles:', response.data);
         throw new Error('Format de réponse inattendu pour les rôles');
       }
+
       const roles = response.data.data;
       console.log(`Nombre de rôles récupérés: ${roles.length}`, roles);
       return roles;
     } catch (error) {
-      console.error('Erreur lors de la récupération des rôles:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
+      console.error('Erreur lors de la récupération des rôles:', error);
       throw error;
     }
   },
@@ -298,31 +512,24 @@ export const roleService = {
       if (!userId || !roleId) {
         throw new Error('ID utilisateur et ID rôle sont requis');
       }
-      
-      const token = localStorage.getItem('token');
+
+      const token = localStorage.getItem('authToken');
       if (!token) {
         throw new Error('Non authentifié');
       }
-      
+
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log(`Assignation du rôle ${roleId} à l'utilisateur ${userId} pour l'application ${matacAppId}`);
-      
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_SERVICEAUTH}/roles/assign`,
-        { 
-          user_id: userId, 
+
+      const response = await authApi.post(
+        '/roles/assign',
+        {
+          user_id: userId,
           role_id: roleId,
           application_id: matacAppId
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'X-Application-ID': matacAppId
-          }
         }
       );
-      
+
       console.log('Réponse d\'assignation de rôle:', response.data);
       return response.data;
     } catch (error) {
@@ -338,35 +545,28 @@ export const roleService = {
         console.error('ID utilisateur manquant pour la récupération des rôles');
         return [];
       }
-      
-      const token = localStorage.getItem('token');
+
+      const token = localStorage.getItem('authToken');
       if (!token) {
         console.error('Aucun token d\'authentification trouvé');
         throw new Error('Non authentifié');
       }
-      
+
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log(`Récupération des rôles pour l'utilisateur ${userId} sur l'application ${matacAppId}`);
-      
+
       try {
-        // Essayer d'abord avec l'endpoint spécifique à l'utilisateur
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_SERVICEAUTH}/users/${userId}/roles`,
+        const response = await authApi.get(
+          `/users/${userId}/roles`,
           {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              'X-Application-ID': matacAppId
-            },
             params: {
               applicationId: matacAppId
             }
           }
         );
-        
+
         console.log('Réponse complète des rôles:', response.data);
-        
-        // Normaliser la réponse pour s'assurer qu'on a toujours un tableau
+
         let roles = [];
         if (response.data && Array.isArray(response.data.data)) {
           roles = response.data.data;
@@ -375,44 +575,36 @@ export const roleService = {
         } else if (Array.isArray(response.data)) {
           roles = response.data;
         }
-        
-        // S'assurer que chaque rôle a les propriétés attendues
+
         roles = roles.map(role => ({
           id: role.id || role.role_id,
           role_id: role.role_id || role.id,
           role_name: role.role_name || role.name || role.role_name,
           role_slug: role.role_slug || role.slug || '',
-          application: role.application || { 
+          application: role.application || {
             app_id: role.app_id || role.application_id || matacAppId,
             app_name: role.app_name || role.application_name || 'Inconnu'
           },
           application_id: role.application_id || (role.application ? role.application.app_id : null) || matacAppId,
           ...role
         }));
-        
+
         console.log(`Rôles normalisés pour l'utilisateur ${userId}:`, roles);
         return roles;
-        
+
       } catch (endpointError) {
         console.warn('Erreur avec l\'endpoint spécifique, tentative avec l\'endpoint général...', endpointError);
-        
-        // Fallback: essayer avec l'endpoint général
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_SERVICEAUTH}/roles`,
+
+        const response = await authApi.get(
+          '/roles',
           {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              'X-Application-ID': matacAppId
-            },
             params: {
               userId: userId,
               applicationId: matacAppId
             }
           }
         );
-        
-        // Normaliser la réponse
+
         let roles = [];
         if (response.data && Array.isArray(response.data.data)) {
           roles = response.data.data;
@@ -421,17 +613,12 @@ export const roleService = {
         } else if (Array.isArray(response.data)) {
           roles = response.data;
         }
-        
+
         console.log(`Rôles récupérés (fallback) pour l'utilisateur ${userId}:`, roles);
         return roles;
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération des rôles utilisateur:', {
-        userId,
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
+      console.error('Erreur lors de la récupération des rôles utilisateur:', error);
       return [];
     }
   },
@@ -440,17 +627,16 @@ export const roleService = {
   async getAllUsers() {
     try {
       console.log('Début de la récupération des utilisateurs...');
-      
-      const token = localStorage.getItem('token');
+
+      const token = localStorage.getItem('authToken');
       if (!token) {
         console.error('Aucun token d\'authentification trouvé');
         throw new Error('Non authentifié');
       }
-      
+
       const matacAppId = import.meta.env.VITE_APP_ID;
       console.log('ID de l\'application MATAC pour le filtrage:', matacAppId);
-      
-      // Fonction pour normaliser les données utilisateur
+
       const normalizeUserData = (user) => ({
         id: user.id || user.user_id,
         user_id: user.user_id || user.id,
@@ -463,73 +649,55 @@ export const roleService = {
         updated_at: user.updated_at || null,
         ...user
       });
-      
-      // Première tentative : récupérer les utilisateurs avec le filtre d'application
+
       console.log('Tentative de récupération des utilisateurs avec filtre d\'application...');
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_SERVICEAUTH}/users`,
+        const response = await authApi.get(
+          '/users',
           {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              'X-Application-ID': matacAppId
-            },
             params: {
               applicationId: matacAppId
             },
             timeout: 15000
           }
         );
-        
+
         console.log('Réponse de l\'API pour les utilisateurs (avec filtre):', {
           status: response.status,
-          headers: response.headers,
           data: response.data
         });
-        
+
         let users = [];
         if (response.data && Array.isArray(response.data.data)) {
           users = response.data.data.map(normalizeUserData);
           console.log(`Nombre d'utilisateurs récupérés avec filtre: ${users.length}`);
-          
+
           if (users.length > 0) {
             return users;
           }
         } else if (Array.isArray(response.data)) {
-          // Si la réponse est directement un tableau
           users = response.data.map(normalizeUserData);
           console.log(`Nombre d'utilisateurs récupérés (format direct): ${users.length}`);
           return users;
         }
       } catch (filterError) {
-        console.warn('Erreur lors de la récupération avec filtre d\'application, tentative sans filtre...', {
-          message: filterError.message,
-          response: filterError.response?.data
-        });
+        console.warn('Erreur lors de la récupération avec filtre d\'application, tentative sans filtre...', filterError);
       }
-      
-      // Deuxième tentative : récupérer tous les utilisateurs et filtrer côté client
+
       console.log('Tentative de récupération de tous les utilisateurs...');
       try {
-        const fallbackResponse = await axios.get(
-          `${import.meta.env.VITE_API_SERVICEAUTH}/users`,
+        const fallbackResponse = await authApi.get(
+          '/users',
           {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              'X-Application-ID': matacAppId
-            },
             timeout: 15000
           }
         );
-        
+
         console.log('Réponse de l\'API pour tous les utilisateurs (sans filtre):', {
           status: fallbackResponse.status,
-          headers: fallbackResponse.headers,
           data: fallbackResponse.data
         });
-        
+
         let allUsers = [];
         if (fallbackResponse.data && Array.isArray(fallbackResponse.data.data)) {
           allUsers = fallbackResponse.data.data.map(normalizeUserData);
@@ -539,31 +707,35 @@ export const roleService = {
           console.error('Format de réponse inattendu pour les utilisateurs:', fallbackResponse.data);
           throw new Error('Format de réponse inattendu pour les utilisateurs');
         }
-        
+
         console.log(`Nombre total d'utilisateurs récupérés: ${allUsers.length}`);
-        
-        // Si on a récupéré des utilisateurs, on les retourne tous
-        // Le filtrage par application se fera côté client si nécessaire
+
         if (allUsers.length > 0) {
           return allUsers;
         }
-        
+
         return [];
-        
+
       } catch (fallbackError) {
-        console.error('Échec de la récupération de tous les utilisateurs:', {
-          message: fallbackError.message,
-          response: fallbackError.response?.data
-        });
-        
-        // En cas d'échec, retourner un tableau vide plutôt que de lancer une erreur
-        // pour permettre à l'application de continuer à fonctionner
+        console.error('Échec de la récupération de tous les utilisateurs:', fallbackError);
         return [];
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des utilisateurs:', error);
-      // Retourner un tableau vide en cas d'erreur
       return [];
     }
   }
+};
+
+export default {
+  citoyenService,
+  uploadService,
+  territoireService,
+  loginService,
+  authService,
+  constructionService,
+  alignmentService,
+  notificationService,
+  roleService,
+  TEMP_USER_ID
 };

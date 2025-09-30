@@ -30,9 +30,9 @@ const ProtectedRoute = ({ children }) => {
     user: state.user?.user || null,
   }));
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // if (!user) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
   return children;
 };
