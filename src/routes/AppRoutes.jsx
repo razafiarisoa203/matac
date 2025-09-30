@@ -19,7 +19,7 @@ import AlignmentListPage from "../pages/AlignmentListPage";
 
 // Autres
 import PermisConstruction from "../components/PermisConstruction";
-import AlignmentTable from "../components/AlignmentTable";
+import ConstructionListPage from "../pages/ConstructionListPage";
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -77,14 +77,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/liste-demandes"
           element={
             <ProtectedRoute>
               <AlignmentTable />
             </ProtectedRoute>
           }
-        />
+        /> */}
         <Route
           path="/alignement-list"
           element={
@@ -106,6 +106,16 @@ function App() {
           element={
             <ProtectedRoute>
               <AlignmentDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Permis */}
+        <Route
+          path="/permis-list"
+          element={
+            <ProtectedRoute>
+              <ConstructionListPage />
             </ProtectedRoute>
           }
         />

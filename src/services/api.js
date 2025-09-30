@@ -142,6 +142,41 @@ export const constructionService = {
     }
   },
 
+  // Récupérer une construction par ID avec tous les détails
+  async getConstructionDetails(id) {
+    try {
+      const response = await constructionApi.get(`/construction/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des détails:', error);
+      throw error;
+    }
+  },
+
+  // Générer un PDF pour une construction
+  async generateConstructionPDF(id) {
+    try {
+      const response = await constructionApi.get(`/construction/${id}/pdf`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      throw error;
+    }
+  },
+
+  // Mettre à jour le statut d'une construction
+  async updateConstructionStatus(id, status) {
+    try {
+      const response = await constructionApi.patch(`/construction/${id}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+      throw error;
+    }
+  },
+
   // Créer une nouvelle construction
   async createConstruction(constructionData) {
     try {
@@ -468,29 +503,29 @@ export const alignmentService = {
   createTerrain: async (terrainData) => {
     return alignementApi.post('/terrain', terrainData);
   },
-    // Récupérer un alignement par ID avec tous les détails
-    async getAlignmentDetails(id) {
-      try {
-        const response = await alignementApi.get(`/alignment/${id}/details`);
-        return response.data;
-      } catch (error) {
-        console.error('Erreur lors de la récupération des détails:', error);
-        throw error;
-      }
-    },
-  
-    // Générer un PDF pour un alignement
-    async generateAlignmentPDF(id) {
-      try {
-        const response = await alignementApi.get(`/alignment/${id}/pdf`, {
-          responseType: 'blob'
-        });
-        return response.data;
-      } catch (error) {
-        console.error('Erreur lors de la génération du PDF:', error);
-        throw error;
-      }
+  // Récupérer un alignement par ID avec tous les détails
+  async getAlignmentDetails(id) {
+    try {
+      const response = await alignementApi.get(`/alignment/${id}/details`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des détails:', error);
+      throw error;
     }
+  },
+
+  // Générer un PDF pour un alignement
+  async generateAlignmentPDF(id) {
+    try {
+      const response = await alignementApi.get(`/alignment/${id}/pdf`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      throw error;
+    }
+  }
 };
 
 // Service Notification (CORRIGÉ)

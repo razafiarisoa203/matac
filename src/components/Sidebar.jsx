@@ -18,7 +18,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
     {
       title: 'Mes actions',
       icon: <TrendingUp className="w-5 h-5" />,
-      path: '/alignment-list',
+      path: '/dashboard',
     },
     {
       title: 'Alignement',
@@ -28,7 +28,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
     {
       title: 'Permis de construire',
       icon: <Building2 className="w-5 h-5" />,
-      path: '/permis'
+      path: '/permis-list'
     },
     {
       title: 'Permis de remblai',
