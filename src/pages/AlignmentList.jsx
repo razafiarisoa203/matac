@@ -1,28 +1,26 @@
-import { useState, useEffect } from "react";
+/*import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Search, 
-  Plus, 
-  MapPin, 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, 
+import {
+  Search,
+  Plus,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
   ChevronsRight,
   Filter,
   List,
-  MoreVertical,
   CheckCircle2,
   Clock,
   AlertCircle,
   User,
-  Download,
-  Printer,
   Eye,
   FileText
 } from "lucide-react";
 import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
-import NavigationBar from '../components/NavigationBar';
+import axios from "axios";
+
+
 const AlignmentList = () => {
   const [alignments, setAlignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,25 +31,26 @@ const AlignmentList = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchAlignments();
-  }, []);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
 
-  const fetchAlignments = async () => {
-    try {
-      setLoading(true);
-      // Import alignmentService
-      const { alignmentService, TEMP_USER_ID } = await import('../services/api');
-      
-      // Fetch alignments from backend
-      const data = await alignmentService.getAlignments(TEMP_USER_ID);
-      setAlignments(data);
-    } catch (err) {
-      setError(err.message);
-      console.error('Erreur:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Import dynamique du service
+
+        // Appel backend
+        const response = await axios.get("http://localhost:3000/servicealignement/alignment");
+        setAlignments(response.data);
+        console.log("Tous les alignements récupérés :", response.data);
+
+      } catch (err) {
+        setError(err.message || "Erreur de récupération");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleViewDetails = (alignmentId) => {
     navigate(`/alignment-details/${alignmentId}`);
@@ -59,29 +58,29 @@ const AlignmentList = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'en_cours': { 
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
+      'en_cours': {
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         text: 'En cours'
       },
-      'approuve': { 
-        color: 'bg-green-100 text-green-800 border-green-200', 
+      'approuve': {
+        color: 'bg-green-100 text-green-800 border-green-200',
         text: 'Approuvé'
       },
-      'rejete': { 
-        color: 'bg-red-100 text-red-800 border-red-200', 
+      'rejete': {
+        color: 'bg-red-100 text-red-800 border-red-200',
         text: 'Rejeté'
       },
-      'en_attente': { 
-        color: 'bg-blue-100 text-blue-800 border-blue-200', 
+      'en_attente': {
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
         text: 'En attente'
       }
     };
-    
-    const config = statusConfig[status] || { 
-      color: 'bg-gray-100 text-gray-800 border-gray-200', 
+
+    const config = statusConfig[status] || {
+      color: 'bg-gray-100 text-gray-800 border-gray-200',
       text: status || 'Inconnu'
     };
-    
+
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5  -full text-xs font-medium border ${config.color}`}>
         {config.text}
@@ -102,13 +101,13 @@ const AlignmentList = () => {
   };
 
   const filteredAlignments = alignments.filter(alignment => {
-    const matchesSearch = 
+    const matchesSearch =
       alignment.id_align?.toString().includes(searchTerm) ||
       alignment.qualite_demandeur?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       alignment.terrain?.adresse?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = selectedStatus === 'tous' || alignment.status === selectedStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -123,8 +122,8 @@ const AlignmentList = () => {
       <div className="min-h-screen bg-gray-50 flex">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* <Header />
-          <NavigationBar /> */}
+          //{ <Header />
+          //<NavigationBar /> 
           <main className="flex-1 overflow-y-auto p-6">
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center justify-center h-64">
@@ -142,17 +141,17 @@ const AlignmentList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
+      //{ Sidebar }
       <Sidebar />
-      
-      {/* Main Content */}
+
+      //{ Main Content }
       <div className="ml-40 flex-1 flex flex-col overflow-hidden">
-        {/* <Header />
-        <NavigationBar /> */}
-        
+        //{ <Header />
+        //<NavigationBar /> }
+
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
-            {/* Page Header */}
+           // { Page Header }
             <div className="mb-8">
               <div className="flex justify-between items-center">
                 <div>
@@ -168,14 +167,13 @@ const AlignmentList = () => {
                 </button>
               </div>
             </div>
-            
-            {/* Stats Cards */}
+
+            //{ Stats Cards }
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div 
+              <div
                 onClick={() => setSelectedStatus('tous')}
-                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-lime-500 ${
-                  selectedStatus === 'tous' ? 'ring-2 ring-lime-500' : ''
-                }`}
+                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-lime-500 ${selectedStatus === 'tous' ? 'ring-2 ring-lime-500' : ''
+                  }`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-lime-100  -lg text-lime-600">
@@ -188,12 +186,11 @@ const AlignmentList = () => {
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setSelectedStatus('en_attente')}
-                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-blue-500 ${
-                  selectedStatus === 'en_attente' ? 'ring-2 ring-blue-500' : ''
-                }`}
+                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-blue-500 ${selectedStatus === 'en_attente' ? 'ring-2 ring-blue-500' : ''
+                  }`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-blue-100  -lg text-blue-600">
@@ -208,12 +205,11 @@ const AlignmentList = () => {
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setSelectedStatus('approuve')}
-                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-green-500 ${
-                  selectedStatus === 'approuve' ? 'ring-2 ring-green-500' : ''
-                }`}
+                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-green-500 ${selectedStatus === 'approuve' ? 'ring-2 ring-green-500' : ''
+                  }`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-green-100  -lg text-green-600">
@@ -228,12 +224,11 @@ const AlignmentList = () => {
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setSelectedStatus('rejete')}
-                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-red-500 ${
-                  selectedStatus === 'rejete' ? 'ring-2 ring-red-500' : ''
-                }`}
+                className={`bg-white  -xl shadow-sm p-6 flex items-center justify-between hover:shadow-md transition-all cursor-pointer border-l-4 border-red-500 ${selectedStatus === 'rejete' ? 'ring-2 ring-red-500' : ''
+                  }`}
               >
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-red-100  -lg text-red-600">
@@ -250,7 +245,7 @@ const AlignmentList = () => {
               </div>
             </div>
 
-            {/* Search and View Controls */}
+            //{ Search and View Controls }
             <div className="bg-white  -xl shadow-sm p-6 mb-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="relative flex-1">
@@ -279,7 +274,7 @@ const AlignmentList = () => {
               </div>
             </div>
 
-            {/* Error Display */}
+            //{ Error Display }
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
                 <div className="flex">
@@ -299,15 +294,15 @@ const AlignmentList = () => {
               </div>
             )}
 
-            {/* Table */}
+            //{Table }
             <div className="bg-white  -xl shadow-sm overflow-hidden mb-6">
               {filteredAlignments.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun alignement trouvé</h3>
                   <p className="mt-1 text-gray-500">
-                    {searchTerm || selectedStatus !== 'tous' 
-                      ? "Aucun alignement ne correspond à vos critères de recherche." 
+                    {searchTerm || selectedStatus !== 'tous'
+                      ? "Aucun alignement ne correspond à vos critères de recherche."
                       : "Vous n'avez pas encore créé de demande d'alignement."}
                   </p>
                   <div className="mt-6">
@@ -392,8 +387,8 @@ const AlignmentList = () => {
                       ))}
                     </tbody>
                   </table>
-                  
-                  {/* Pagination */}
+
+                  //{Pagination }
                   {totalPages > 1 && (
                     <div className="bg-white px-6 py-4 flex items-center justify-between border-t border-gray-200  -b-xl">
                       <div className="flex-1 flex justify-between sm:hidden">
@@ -443,11 +438,10 @@ const AlignmentList = () => {
                               <button
                                 key={page}
                                 onClick={() => setCurrentPage(page)}
-                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
-                                  currentPage === page
-                                    ? 'z-10 bg-lime-600 border-lime-600 text-white hover:bg-lime-700'
-                                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                                }`}
+                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${currentPage === page
+                                  ? 'z-10 bg-lime-600 border-lime-600 text-white hover:bg-lime-700'
+                                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                  }`}
                               >
                                 {page}
                               </button>
@@ -483,4 +477,4 @@ const AlignmentList = () => {
   );
 };
 
-export default AlignmentList;
+export default AlignmentList;*/

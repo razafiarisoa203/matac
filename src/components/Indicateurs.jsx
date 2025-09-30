@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next";
+
 const Indicateurs = () => {
+  const { t } = useTranslation();
   // Fonction pour gérer les clics (à adapter avec vos URLs)
   const handleClick = (destination) => {
     // Exemple de redirection - À adapter avec vos routes réelles
@@ -40,11 +43,11 @@ const Indicateurs = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-[#269745] mb-2">
-                  INDICATEUR
+                  {t('indicators.indicator')}
                 </h3>
 
                 <div className="mt-4 text-[#269745] text-sm font-medium flex items-center">
-                  En savoir plus
+                  {t('indicators.learnMore')}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4 ml-1"
@@ -83,11 +86,11 @@ const Indicateurs = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-[#269745] mb-2">
-                  CARTOGRAPHIE
+                  {t('indicators.mapping')}
                 </h3>
 
                 <div className="mt-4 text-[#269745] text-sm font-medium flex items-center">
-                  En savoir plus
+                  {t('indicators.learnMore')}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4 ml-1"
@@ -126,11 +129,11 @@ const Indicateurs = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-[#269745] mb-2">
-                  DOCUMENTATION
+                  {t('indicators.documentation')}
                 </h3>
 
                 <div className="mt-4 text-[#269745] text-sm font-medium flex items-center">
-                  En savoir plus
+                  {t('indicators.learnMore')}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4 ml-1"

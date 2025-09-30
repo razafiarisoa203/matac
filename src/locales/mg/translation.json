@@ -28,19 +28,121 @@
   },
   "navigation": {
     "home": "Fandraisana",
-    "urbanPlanningActs": "Dikan-kevitra momba ny fanarenana ny tanàna",
+    "urbanismActs": "Dokam-barotra momba ny fanarenana ny tanàna",
     "objectives": "Tanjona",
-    "services": "Tolotra",
-    "permits": "Fahazoan-dalana",
-    "alignment": "Fifanitsiana",
-    "alignmentList": "Lisitry ny fifanitsiana",
-    "alignmentDetails": "Antsipirihany momba ny fifanitsiana",
-    "userManagement": "Fitantanana ny mpampiasa",
-    "roleManagement": "Fitantanana ny andraikitra"
+    "services": "Tolotra"
+  },
+  "footer": {
+    "matac": "MATAC",
+    "nav": {
+      "home": "Fandraisana",
+      "acts": "Dokam-barotra",
+      "services": "Tolotra",
+      "objectives": "Tanjona"
+    },
+    "copyright": " MATAC Madagasikara - Sarintany Fanarenana"
   },
   "languages": {
     "fr": "Frantsay (FRA)",
     "mg": "Malagasy (MLG)"
+  },
+  "urbanismActs": {
+    "title": "DOKAM-BAROTRA MOMBA NY FANARENANA NY TANANA",
+    "slides": [
+      {
+        "title": "DIDY MOMBA NY FANARENANA NY TANANA",
+        "description": "Ireo dia natao tamin'ny alalan'ny fitsipika momba ny fahafahana mampiasa ny tany sy ny fitsipika ara-teknika mamaritra ny tetikasa fanorenana. Mamaritra ny fomba samihafa ahafahana mampiasa ny tany ao an-tanàna iray."
+      },
+      {
+        "title": "FAHAZOAN-DÀLANA HANORINA",
+        "description": "Ny rehetra mikasa hanao fanorenana dia tsy maintsy mahazo fahazoan-dàlana hanorina aloha. Ity adidy ity dia mifanaraka amin'ireo mpanompo ny daholobe sy ny olon-tsotra. Koa koa, ny rehetra mikasa hanao asa fanovana ny endriky ny tany ao an-tanàna misy drafitry ny fanarenana ny tanàna dia tsy maintsy mahazo aloha ny fahazoan-dàlana avy amin'ny manam-pahefana mahakasika."
+      },
+      {
+        "title": "FIFANITSY",
+        "description": "Ny fifanitsiana dia ny fametrahana ny sisin'ny lalana na ny drafitry ny lalana izay angatahin'ny tompon'ny fananana. Io no fetra mizara ny lalana ho an'ny daholo sy ny fananana eny amoron-dalana."
+      },
+      {
+        "title": "TARATASY FANAMARINANA NY FANARAHANA NY FEPETRA",
+        "description": "Ny taratasy fanamarinana ny fanarahana ny fepetra dia taratasy ara-panjakana izay manamarina ny fanarahana ny toromarika ara-teknika nomena."
+      }
+    ]
+  },
+  "home": {
+    "title1": "FANATSARANA,",
+    "title2": "FAMPITAN-TSORATRA",
+    "title3": "SY FAHAIZANA",
+    "description": "Natao ho an'ny Ministeria mikarakara ny fanarenana ny tanàna, ny Kaominina Malagasy, ny sampan-draharaha teknika isam-paritra, ny solontena ary ny mpampiasa.",
+    "login": "Hiditra",
+    "contact": "Mifandraisa aminay"
+  },
+  
+  "objectives": {
+    "title": "TANJONA",
+    "objectivesList": [
+      {
+        "number": "01",
+        "title": "Hanatsotra ny fotoana fandefasana ny dosiera eo anivon'ny sampana tsirairay, ary koa eo amin'ny governemanta eo an-toerana sy ny governemanta foibe"
+      },
+      {
+        "number": "02",
+        "title": "Hahazoana antoka ny fiarovana sy ny fahafantarana ny dian'ny dosiera"
+      },
+      {
+        "number": "03",
+        "title": "Hanamora ny fikojakojana ny dian'ny dosiera sy ny fahazoana azy"
+      },
+      {
+        "number": "04",
+        "title": "Hampitombo ny fahombiazan'ny asa ataon'ny mpiasam-panjakana"
+      },
+      {
+        "number": "05",
+        "title": "Hampitombo ny fahamarinan-toerana sy ny fahamarinan-kevitra"
+      },
+      {
+        "number": "06",
+        "title": "Hampitombo ny fahamarinan-toerana sy ny fahamarinan-kevitra"
+      }
+    ]
+  },
+  "stats": {
+    "satisfiedClients": "Mpanjifa afa-po",
+    "projectsCompleted": "Tetikasa vita",
+    "experienceYears": "Taona fanabeazana",
+    "teamMembers": "Mpikambana ao amin'ny ekipa",
+    "awardsWon": "Loka nahazo"
+  },
+  "services": {
+    "title": "Tolotra",
+    "meetYourNeeds": "TOLOTRA MAHAVITA NY FILAN'ASAINA",
+    "platformDescription": "Ny sehatra vaovao misy anao dia manome fahafahana hikarakarana ny fomba fiasa rehetra momba ny fanarenana ny tanàna an-tserasera, miaraka amin'ny fanarahana amin'ny fotoana tena izy sy fiarovana azo antoka ho an'ireo antontan-taratasinao rehetra.",
+    "myPlatform": "Ny sehatra ahy",
+    "servicesList": [
+      {
+        "title": "FAMPIHAREMANA NY DOSIERA",
+        "description": "Miaraka amin'ny sehatra misy anao dia afaka mampiditra sy manara-maso ny fangatahana fahazoan-dalana fanorenana an-tserasera ianao.",
+        "icon": "/Bank Building.png",
+        "color": "bg-[#269745]"
+      },
+      {
+        "title": "FANARAHANA NY FIVAROTANA",
+        "description": "Mba hahafahanao manara-maso ny fangatahanao dia mahazo fampandrenesana mailaka ianao, manome tolotra vaovao izay manampy anao tsara kokoa.",
+        "icon": "/Follow.png",
+        "color": "bg-[#269745]"
+      },
+      {
+        "title": "KARAKARANA AN-TSERASERA NY DOSIERA",
+        "description": "Voatahiry sy antoka ny fikarakarana sy ny fanarahana ataon'ny fitantanana ny rafitrao.",
+        "icon": "/Check.png",
+        "color": "bg-[#269745]"
+      },
+      {
+        "title": "VOATAHIRY SY VOARO",
+        "description": "Voatahiry sy voaro ny fahazoan-dalanao ary manana fahafahana miditra amin'izay fotoana rehetra ianao.",
+        "icon": "/Secure Server.png",
+        "color": "bg-[#269745]"
+      }
+    ]
   },
   "auth": {
     "email": "Mailaka",
@@ -59,6 +161,26 @@
     "recentActivities": "Hetsika vao haingana",
     "statistics": "Antontan'isa",
     "quickActions": "Hetsika haingana"
+  },
+  "indicators": {
+    "indicator": "FAMANTARANA",
+    "mapping": "SARINTANY",
+    "documentation": "LAHATENY FANAMPINY",
+    "learnMore": "Hijery bebe kokoa"
+  },
+  "infoCards": {
+    "indicator": {
+      "title": "FAMANTARANA",
+      "description": "Araho amin'ny fotoana tena izy ireo famantarana fototra sy ny antontan'isa momba ny fangatahana fahazoan-dàlana hanorina manerana ny firenena."
+    },
+    "mapping": {
+      "title": "SARINTANY",
+      "description": "Jereo ny faritra voarakitra ara-panarenana, ny fahazoan-dàlana omena ary ny tetikasa efa andehanana amin'ny sehatra sarintany mavitrika."
+    },
+    "documentation": {
+      "title": "LAHATENY FANAMPINY",
+      "description": "Mahazoa ny antontan-taratina ilaina rehetra, taratasy fangatahana ary torolàlana ho an'ny fanaovana fangatahana fahazoan-dàlana hanorina."
+    }
   },
   "admin": {
     "dashboard": "Tabilao fanaraha-masan'ny mpitantana",

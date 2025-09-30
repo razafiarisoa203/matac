@@ -106,6 +106,8 @@ export const loginService = {
   },
 };
 
+
+
 // Service Auth
 export const authService = {
   async forgotPassword(user_email) {
@@ -159,6 +161,9 @@ export const constructionService = {
 
 // Service Alignement
 export const alignmentService = {
+  getAllAlignment: async () => {
+    return alignementApi.get('/alignment');
+  },
   createAlignment: async (alignmentData) => {
     return alignementApi.post('/alignment', alignmentData);
   },
@@ -185,7 +190,6 @@ export const alignmentService = {
 
 // Service Notification
 export const notificationService = {
-  
 
   async getAllNotifications() {
     try {
@@ -242,7 +246,6 @@ export const roleService = {
   async getRoles() {
     try {
       console.log('Début de la récupération des rôles...');
-      
       const token = localStorage.getItem('token');
       if (!token) {
         console.error('Aucun token d\'authentification trouvé');
@@ -267,18 +270,15 @@ export const roleService = {
           timeout: 10000 // 10 secondes de timeout
         }
       );
-      
       console.log('Réponse reçue pour les rôles:', {
         status: response.status,
         headers: response.headers,
         data: response.data
       });
-      
       if (!response.data || !Array.isArray(response.data.data)) {
         console.error('Format de réponse inattendu pour les rôles:', response.data);
         throw new Error('Format de réponse inattendu pour les rôles');
       }
-      
       const roles = response.data.data;
       console.log(`Nombre de rôles récupérés: ${roles.length}`, roles);
       return roles;

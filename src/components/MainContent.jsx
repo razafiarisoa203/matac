@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const MainContent = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <>
@@ -11,18 +13,16 @@ const MainContent = () => {
           <div className="w-full lg:w-1/2 lg:pr-8">
           {/* Titre principal */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl text-[#131313] mb-4 sm:mb-6 leading-tight">
-            Amélioration,
+            {t('home.title1')}
             <br />
-            transparence et
+            {t('home.title2')}
             <br />
-            efficacité
+            {t('home.title3')}
           </h1>
 
           {/* Description */}
           <p className="text-base sm:text-lg text-[#131313] mb-6 sm:mb-8 max-w-lg leading-relaxed opacity-90">
-            Conçus pour le Ministère en charge de l'urbanisme, les Communes
-            Malagasy, les services techniques communaux, les mandataires ainsi
-            que les usagers.
+            {t('home.description')}
           </p>
 
           {/* Boutons  */}
@@ -34,10 +34,10 @@ const MainContent = () => {
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#269745")}
               onClick={() => navigate("/login")}
             >
-              Se connecter
+              {t('home.login')}
             </button>
             <button className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 border-2 border-[#269745] bg-white text-[#269745] hover:bg-[#269745] hover:text-white w-full sm:w-auto text-sm sm:text-base">
-              Contactez-nous
+              {t('home.contact')}
             </button>
           </div>
 
@@ -51,7 +51,7 @@ const MainContent = () => {
                 +150
               </div>
               <div className="text-xs sm:text-sm text-[#131313] opacity-75">
-                Clients satisfaits
+                {t('stats.satisfiedClients')}
               </div>
             </div>
             <div className="text-center p-2 sm:p-3 bg-white/50 rounded-lg">
@@ -62,7 +62,7 @@ const MainContent = () => {
                 +400
               </div>
               <div className="text-xs sm:text-sm text-[#131313] opacity-75">
-                Dossiers traités
+                {t('stats.projectsCompleted')}
               </div>
             </div>
             <div className="text-center p-2 sm:p-3 bg-white/50 rounded-lg">
@@ -73,7 +73,7 @@ const MainContent = () => {
                 5 ans
               </div>
               <div className="text-xs sm:text-sm text-[#131313] opacity-75">
-                D'expérience
+                {t('stats.experienceYears')}
               </div>
             </div>
           </div>

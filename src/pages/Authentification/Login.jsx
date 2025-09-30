@@ -142,7 +142,7 @@ const Login = () => {
           );
           citizenData = citizenResponse.data;
           userInfo.citizenData = citizenData;
-          console.log('Données du citoyen récupérées:', citizenData);
+          // console.log('Données du citoyen récupérées:', citizenData);
         } catch (err) {
           console.error("Erreur lors de la récupération des données du citoyen:", err);
         }

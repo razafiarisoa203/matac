@@ -21,7 +21,7 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
 
   // Récupérer les données utilisateur depuis Redux ET localStorage
   const { citizens, user } = useSelector((state) => {
-    console.log('Redux user state:', JSON.stringify(state.user, null, 2));
+    //console.log('Redux user state:', JSON.stringify(state.user, null, 2));
     return state.user;
   });
 
@@ -35,7 +35,7 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
       try {
         const parsedData = JSON.parse(storedData);
         setLocalStorageData(parsedData);
-        console.log('Données du localStorage:', parsedData);
+       // console.log('Données du localStorage:', parsedData);
       } catch (error) {
         console.error('Erreur lors du parsing des données localStorage:', error);
       }
@@ -73,8 +73,8 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
     const citizenData = displayCitizens || {};
     const userData = displayUser || {};
     
-    console.log('Données citoyen pour formulaire:', citizenData);
-    console.log('Données user pour formulaire:', userData);
+    //console.log('Données citoyen pour formulaire:', citizenData);
+    //console.log('Données user pour formulaire:', userData);
     
     setFormData({
       citizen_name: citizenData.citizen_name || citizenData.name || citizenData.pseudo || userData.name || "",
@@ -200,7 +200,7 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
 
     try {
       const updatedProfile = await citoyenService.updateCitizenProfile(userId, formDataToSend);
-      console.log("Profil mis à jour avec succès:", updatedProfile);
+     // console.log("Profil mis à jour avec succès:", updatedProfile);
       
       // Mettre à jour le localStorage avec les nouvelles données
       if (localStorageData) {
@@ -237,7 +237,7 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
           notif.id === id ? { ...notif, unread: false } : notif
         )
       );
-      console.log(`Notification ${id} marquée comme lue`);
+     // console.log(`Notification ${id} marquée comme lue`);
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la notification:", error);
     }
@@ -255,16 +255,16 @@ export default function HeaderDashboard({ toggleSidebar, isSidebarOpen, isMobile
 
   // Afficher les informations de débogage
   useEffect(() => {
-    console.log('=== DONNÉES PROFIL DISPONIBLES ===');
-    console.log('Données Redux - user:', user);
-    console.log('Données Redux - citizens:', citizens);
-    console.log('Données localStorage:', localStorageData);
-    console.log('Données affichées - user:', displayUser);
-    console.log('Données affichées - citizens:', displayCitizens);
-    console.log('Nom affiché:', displayName);
-    console.log('ID utilisateur:', userId);
-    console.log('Image de profil:', profileImage);
-    console.log('================================');
+    //console.log('=== DONNÉES PROFIL DISPONIBLES ===');
+    //console.log('Données Redux - user:', user);
+   // console.log('Données Redux - citizens:', citizens);
+    //console.log('Données localStorage:', localStorageData);
+   // console.log('Données affichées - user:', displayUser);
+   // console.log('Données affichées - citizens:', displayCitizens);
+    //console.log('Nom affiché:', displayName);
+    //console.log('ID utilisateur:', userId);
+    //console.log('Image de profil:', profileImage);
+    //console.log('================================');
   }, [user, citizens, localStorageData, displayUser, displayCitizens, displayName, userId, profileImage]);
 
   return (

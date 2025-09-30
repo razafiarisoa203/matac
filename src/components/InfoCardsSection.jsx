@@ -1,6 +1,8 @@
 import { FileText, MapPin, Target } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const InfoCardsSection = () => {
+  const { t } = useTranslation();
   return (
     <section className="py-16 bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,12 +14,11 @@ const InfoCardsSection = () => {
                 <Target className="w-5 h-5 text-gray-800" />
               </div>
               <h3 className="text-lg font-semibold text-lime-600">
-                INDICATEUR
+                {t('infoCards.indicator.title')}
               </h3>
             </div>
             <p className="text-gray-600 text-sm">
-              Suivez en temps réel les indicateurs clés de performance et les statistiques 
-              des demandes de permis de construire à travers le pays.
+              {t('infoCards.indicator.description')}
             </p>
           </div>
 
@@ -28,12 +29,11 @@ const InfoCardsSection = () => {
                 <MapPin className="w-5 h-5 text-gray-800" />
               </div>
               <h3 className="text-lg font-semibold text-lime-600">
-                CARTOGRAPHIE
+                {t('infoCards.mapping.title')}
               </h3>
             </div>
             <p className="text-gray-600 text-sm">
-              Visualisez les zones d'urbanisme, les permis délivrés et les projets 
-              en cours sur notre plateforme cartographique interactive.
+              {t('infoCards.mapping.description')}
             </p>
           </div>
 
@@ -44,12 +44,11 @@ const InfoCardsSection = () => {
                 <FileText className="w-5 h-5 text-gray-800" />
               </div>
               <h3 className="text-lg font-semibold text-lime-600">
-                DOCUMENTATION
+                {t('infoCards.documentation.title')}
               </h3>
             </div>
             <p className="text-gray-600 text-sm">
-              Accédez à tous les documents nécessaires, formulaires et guides 
-              pour vos démarches de demande de permis de construire.
+              {t('infoCards.documentation.description')}
             </p>
           </div>
         </div>
