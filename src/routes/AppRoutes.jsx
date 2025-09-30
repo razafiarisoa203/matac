@@ -15,6 +15,7 @@ import DashboardClient from "../pages/DashboardClient";
 import Allignement from "../pages/Allignement";
 //import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetails from "../pages/AlignmentDetails";
+import AlignmentListPage from "../pages/AlignmentListPage";
 
 // Autres
 import PermisConstruction from "../components/PermisConstruction";
@@ -81,6 +82,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AlignmentTable />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/alignement-list"
+          element={
+            <ProtectedRoute>
+              <AlignmentListPage />
             </ProtectedRoute>
           }
         />
