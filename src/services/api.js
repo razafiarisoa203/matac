@@ -47,16 +47,85 @@ const notificationApi = addInterceptor(createApi(servicesApi.auth)); // Utilise 
 
 // Service Citoyen
 export const citoyenService = {
-  async checkCIN(cin) {
-    try {
-      const response = await citoyenApi.get(`/citizens/${cin}`);
-      return { exists: true, data: response.data };
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        return { exists: false };
-      }
-      throw error;
+  async checkCIN(cin, maxRetries = 2) {
+    // Vérification de base du format CIN (12 chiffres)
+    if (!/^\d{12}$/.test(cin)) {
+      throw new Error('Format CIN invalide. Le CIN doit contenir exactement 12 chiffres.');
     }
+
+    let lastError;
+    let attempt = 0;
+    const endpoints = [
+      `/citizens/check-cin?cin=${cin}`,  // Nouvel endpoint
+      `/citizens/${cin}`                  // Ancien endpoint de secours
+    ];
+
+    while (attempt <= maxRetries) {
+      for (const endpoint of endpoints) {
+        try {
+          attempt++;
+          console.log(`Tentative ${attempt} avec l'endpoint: ${endpoint}`);
+          
+          const response = await citoyenApi.get(endpoint);
+          
+          // Si on utilise le premier endpoint
+          if (endpoint.includes('check-cin')) {
+            if (typeof response.data?.exists === 'boolean') {
+              return { 
+                exists: response.data.exists, 
+                data: response.data,
+                source: 'check-cin-endpoint'
+              };
+            }
+            return { exists: false, source: 'check-cin-endpoint' };
+          } 
+          // Si on utilise le deuxième endpoint
+          else {
+            return { 
+              exists: true, 
+              data: response.data,
+              source: 'citizens-endpoint'
+            };
+          }
+          
+        } catch (error) {
+          lastError = error;
+          
+          // Journalisation détaillée de l'erreur
+          console.error(`Erreur lors de la tentative ${attempt} avec ${endpoint}:`, {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message
+          });
+
+          // Si c'est une erreur 404 sur le deuxième endpoint, le CIN n'existe pas
+          if (error.response?.status === 404 && endpoint.includes(cin)) {
+            return { 
+              exists: false,
+              source: 'citizens-endpoint-404'
+            };
+          }
+
+          // Attendre avant de réessayer (backoff exponentiel)
+          if (attempt < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Maximum 10 secondes
+            console.log(`Nouvelle tentative dans ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+    }
+
+    // Si on arrive ici, toutes les tentatives ont échoué
+    const errorMessage = lastError?.response?.status === 500
+      ? "Le service de vérification du CIN est actuellement indisponible. Veuillez réessayer plus tard ou contacter le support technique."
+      : "Impossible de vérifier le CIN. Veuillez vérifier votre connexion internet et réessayer.";
+    
+    const error = new Error(errorMessage);
+    error.isRetryable = true; // Pour permettre une nouvelle tentative côté UI
+    error.originalError = lastError;
+    throw error;
   },
 
   async createCitizen(citizenData) {
@@ -87,16 +156,178 @@ export const uploadService = {
 // Service Territoire
 export const territoireService = {
   async getCommunes() {
-    const response = await territoireApi.get('/communes');
-    return response.data;
+    try {
+      console.log('[API] Récupération des communes...');
+      const response = await territoireApi.get('/communes/members');
+      
+      // Vérifier la structure de la réponse
+      if (!response.data) {
+        console.warn('[API] Aucune donnée dans la réponse des communes');
+        return [];
+      }
+      
+      // Gérer différents formats de réponse
+      const data = response.data.data || response.data;
+      const communes = Array.isArray(data) ? data : [data];
+      
+      console.log(`[API] ${communes.length} communes récupérées`);
+      return communes.map(c => ({
+        id: c.id || c.commune_id || '',
+        commune_id: c.id || c.commune_id || '',
+        formatted_id: c.id || c.commune_id || '',
+        name: c.nom || c.name || `Commune ${c.id || c.commune_id || ''}`,
+        ...c
+      }));
+      
+    } catch (error) {
+      console.error('[API] Erreur lors de la récupération des communes:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      return [];
+    }
   },
+  
   async getRegions() {
     const response = await territoireApi.get('/regions');
     return response.data;
   },
-  async getFokotanys(communeId) {
-    const response = await territoireApi.get(`/api/fokotanys/commune/${communeId}`);
-    return response.data;
+  
+  async getFokotanys(communeFormattedId) {
+    try {
+      if (!communeFormattedId) {
+        console.warn('[API] Aucun ID de commune fourni pour la récupération des fokotanys');
+        return [];
+      }
+
+      console.log(`[API] Récupération des fokotanys pour la commune ${communeFormattedId}...`);
+      
+      // Récupérer d'abord la liste des communes avec leurs fokotanys
+      const communes = await this.getCommunes();
+      
+      // Trouver la commune correspondante
+      const commune = communes.find(c => 
+        c.formatted_id === communeFormattedId || 
+        c.commune_id?.toString() === communeFormattedId ||
+        c.id?.toString() === communeFormattedId
+      );
+      
+      if (!commune) {
+        console.warn(`[API] Aucune commune trouvée avec l'ID ${communeFormattedId}`);
+        return [];
+      }
+      
+      // Récupérer les fokotanys de la commune
+      const fokotanys = commune.fokotanys || [];
+      
+      if (fokotanys.length === 0) {
+        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId} (${commune.name})`);
+      } else {
+        console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId} (${commune.name})`);
+      }
+      
+      // Formater les données des fokotanys
+      return fokotanys.map(f => ({
+        id: f.fokotany_id || f.id || '',
+        fokotany_id: f.fokotany_id || f.id || '',
+        formatted_id: f.formatted_id || f.fokotany_id || f.id || '',
+        name: f.name || f.nom || `Fokotany ${f.fokotany_id || f.id || ''}`,
+        ...f
+      }));
+      
+    } catch (error) {
+      console.error(`[API] Erreur lors de la récupération des fokotanys:`, {
+        communeFormattedId,
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      
+      // Si c'est une erreur 404, retourner un tableau vide au lieu de lever une exception
+      if (error.response?.status === 404) {
+        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
+        return [];
+      }
+      
+      // Pour les autres erreurs, propager avec un message clair
+      throw new Error(`Impossible de charger les fokotanys pour la commune ${communeFormattedId}. Veuillez réessayer plus tard.`);
+    }
+  },
+  
+  async getCommuneMembers(communeFormattedId) {
+    try {
+      if (!communeFormattedId) {
+        console.warn('[API] Aucun ID de commune fourni pour la récupération des membres');
+        return [];
+      }
+
+      console.log(`[API] Récupération des membres pour la commune ${communeFormattedId}...`);
+      
+      // Utilisation du nouvel endpoint pour les membres de la commune
+      let response;
+      try {
+        // Ajout d'un timeout pour éviter les attentes trop longues
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes de timeout
+        
+        response = await territoireApi.get(`/communes/members`, {
+          params: { commune_id: communeFormattedId },
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+      } catch (error) {
+        console.error('[API] Erreur lors de la récupération des membres de la commune:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        return [];
+      }
+      
+      // Vérifier la structure de la réponse
+      if (!response.data) {
+        console.warn('[API] Aucune donnée dans la réponse des membres de la commune');
+        return [];
+      }
+      
+      // Gérer différents formats de réponse
+      const data = response.data.data || response.data;
+      
+      // S'assurer que nous retournons un tableau
+      const members = Array.isArray(data) ? data : [data];
+      
+      if (members.length === 0) {
+        console.warn(`[API] Aucun membre trouvé pour la commune ${communeFormattedId}`);
+      } else {
+        console.log(`[API] ${members.length} membres récupérés pour la commune ${communeFormattedId}`);
+      }
+      
+      return members.map(member => ({
+        id: member.id || member.user_id || '',
+        user_id: member.user_id || member.id || '',
+        name: member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || `Membre ${member.id || ''}`,
+        role: member.role || 'Membre',
+        phone: member.phone || member.telephone || '',
+        email: member.email || '',
+        ...member
+      }));
+      
+    } catch (error) {
+      console.error(`[API] Erreur lors de la récupération des membres de la commune:`, {
+        communeFormattedId,
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      
+      // En cas d'erreur, retourner un tableau vide
+      return [];
+    }
   },
 };
 

@@ -218,6 +218,12 @@
       "registrationFailed": "Tsy nahomby ny fisoratana anarana"
     },
     "selectPlaceholder": "Misafidiana...",
+    "selectCommuneFirst": "Misafidia kaominina aloha",
+    "loading": "Eo am-pandefasana...",
+    "loadingFokotanys": "Eo am-pandefasana ny fokontany...",
+    "errorLoadingFokotanys": "Nisy olana niseho tamin'ny fandraisana ny fokontany",
+    "selectFokotany": "Misafidia fokontany",
+    "noFokotanyAvailable": "Tsy misy fokontany mbola misy",
     "photoPlaceholder": "Tsindrio raha te hampiditra sary ianao"
   },
   "register": {

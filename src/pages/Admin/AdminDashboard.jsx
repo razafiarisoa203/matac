@@ -103,16 +103,16 @@ const AdminDashboard = () => {
       if (user.appUserRoles?.length > 0) {
         user.appUserRoles.forEach(role => {
           const appId = role.application_id || role.applicationId;
-          if (appId === 13635) {
+          if (appId === 15) {
             const roleId = role.role_id || role.role?.id || role.roleId;
             
             // Incrémenter le compteur pour ce rôle
             roleCounts[roleId] = (roleCounts[roleId] || 0) + 1;
             
             // Mettre à jour les compteurs spécifiques
-            if (roleId === 93) stats.client++;
-            else if (roleId === 94) stats.admin++;
-            else if (roleId === 100) stats.commune++;
+            if (roleId === 27) stats.client++;      // Client
+            else if (roleId === 26) stats.admin++;   // Admin
+            else if (roleId === 100) stats.commune++; // Commune
           }
         });
       }
@@ -156,7 +156,7 @@ const AdminDashboard = () => {
 
     try {
       setIsLoading(true);
-      const appId = import.meta.env.VITE_APP_ID || 13635;
+      const appId = import.meta.env.VITE_APP_ID || 15;
       
       await axios.put(
         `${import.meta.env.VITE_API_URL}/serviceauth/users/${userId}/roles`,
@@ -386,9 +386,9 @@ const AdminDashboard = () => {
                   const user = item.user || item;
                   const citoyen = item.citoyen || {};
                   const userKey = user.id || `user-${index}`;
-                  // Trouver le rôle principal de l'utilisateur pour l'application 13635
+                  // Trouver le rôle principal de l'utilisateur pour l'application 15
                   const userRole = user.appUserRoles?.find(
-                    role => role.application_id === 13635
+                    role => role.application_id === 15
                   )?.role;
                   return (
                     <li key={userKey} className="hover:bg-gray-50">

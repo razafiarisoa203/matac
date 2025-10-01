@@ -52,17 +52,17 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <Dashboard />
-            </ProtectedRoute>
+           // </ProtectedRoute>
           }
         />
         <Route
           path="/dashboard-client"
           element={
-            <ProtectedRoute>
+           // <ProtectedRoute>
               <DashboardClient />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
 
@@ -70,25 +70,25 @@ function App() {
         <Route
           path="/alignement"
           element={
-            <ProtectedRoute>
+          //  <ProtectedRoute>
               <Allignement />
-            </ProtectedRoute>
+          //  </ProtectedRoute>
           }
         />
         <Route
           path="/alignements"
           element={
-            <ProtectedRoute>
+           // <ProtectedRoute>
               <AlignmentList />
-            </ProtectedRoute>
+           // </ProtectedRoute>
           }
         />
         <Route
           path="/alignements/:id"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <AlignmentDetails />
-            </ProtectedRoute>
+          //  </ProtectedRoute>
           }
         />
 
