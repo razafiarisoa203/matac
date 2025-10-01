@@ -89,16 +89,89 @@ export const uploadService = {
 // Service Territoire
 export const territoireService = {
   async getCommunes() {
-    const response = await territoireApi.get('/communes');
-    return response.data;
+    try {
+      console.log('[API] Récupération des communes...');
+      const response = await territoireApi.get('/communes');
+      
+      // Vérifier la structure de la réponse
+      if (!response.data) {
+        console.warn('[API] Aucune donnée dans la réponse des communes');
+        return [];
+      }
+      
+      // Gérer différents formats de réponse
+      const data = response.data.data || response.data;
+      const communes = Array.isArray(data) ? data : [data];
+      
+      console.log(`[API] ${communes.length} communes récupérées`);
+      return communes.map(c => ({
+        id: c.id || c.commune_id || '',
+        commune_id: c.id || c.commune_id || '',
+        formatted_id: c.id || c.commune_id || '', // Ajout de formatted_id pour l'URL
+        name: c.nom || c.name || `Commune ${c.id || c.commune_id || ''}`,
+        ...c
+      }));
+      
+    } catch (error) {
+      console.error('[API] Erreur lors de la récupération des communes:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      return [];
+    }
   },
+  
   async getRegions() {
     const response = await territoireApi.get('/regions');
     return response.data;
   },
-  async getFokotanys(communeId) {
-    const response = await territoireApi.get(`/api/fokotanys/commune/${communeId}`);
-    return response.data;
+  
+  async getFokotanys(communeFormattedId) {
+    try {
+      if (!communeFormattedId) {
+        console.warn('[API] Aucun ID de commune fourni pour la récupération des fokotanys');
+        return [];
+      }
+
+      console.log(`[API] Récupération des fokotanys pour la commune ${communeFormattedId}...`);
+      const response = await territoireApi.get(`/fokotanys/commune/${communeFormattedId}`);
+      
+      // Vérifier la structure de la réponse
+      if (!response.data) {
+        console.warn('[API] Aucune donnée dans la réponse des fokotanys');
+        return [];
+      }
+      
+      // Gérer différents formats de réponse
+      const data = response.data.data || response.data;
+      
+      // S'assurer que nous retournons un tableau
+      const fokotanys = Array.isArray(data) ? data : [data];
+      
+      console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId}`);
+      
+      return fokotanys.map(f => ({
+        id: f.id || f.fokotany_id || '',
+        fokotany_id: f.id || f.fokotany_id || '',
+        formatted_id: f.id || f.fokotany_id || '', // Ajout de formatted_id pour la cohérence
+        name: f.nom || f.name || `Fokotany ${f.id || f.fokotany_id || ''}`,
+        ...f
+      }));
+      
+    } catch (error) {
+      console.error(`[API] Erreur lors de la récupération des fokotanys:`, {
+        communeFormattedId,
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      
+      // Renvoyer une erreur plus détaillée pour le débogage
+      throw new Error(`Impossible de charger les fokotanys pour la commune ${communeFormattedId}: ${error.message}`);
+    }
   },
 };
 
