@@ -95,7 +95,7 @@ function NavigationBar() {
           <div className="relative">
             <button
               onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center space-x-1 text-gray-800 hover:text-[#269745] transition-colors"
+              className="flex items-center space-x-1 text-gray-800 hover:text-[#269745] dark:text-green-500 dark:hover:text-green-400 transition-colors"
             >
               <Globe className="w-5 h-5" />
               <span className="text-sm font-medium">{i18n.language.toUpperCase()}</span>
@@ -116,8 +116,8 @@ function NavigationBar() {
                   onClick={() => changeLanguage('fr')}
                   className={`block px-4 py-2 text-sm w-full text-left ${
                     i18n.language === 'fr' 
-                      ? 'bg-gray-100 text-[#269745] font-medium' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-gray-100 dark:bg-gray-800 text-[#269745] dark:text-green-400 font-medium' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('languages.fr')}
@@ -126,8 +126,8 @@ function NavigationBar() {
                   onClick={() => changeLanguage('mg')}
                   className={`block px-4 py-2 text-sm w-full text-left ${
                     i18n.language === 'mg' 
-                      ? 'bg-gray-100 text-[#269745] font-medium' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-gray-100 dark:bg-gray-800 text-[#269745] dark:text-green-400 font-medium' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('languages.mg')}
