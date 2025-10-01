@@ -225,6 +225,10 @@
     "selectPlaceholder": "Sélectionner...",
     "selectCommuneFirst": "Sélectionnez d'abord une commune",
     "loading": "Chargement...",
+    "loadingFokotanys": "Chargement des fokotanys...",
+    "errorLoadingFokotanys": "Erreur lors du chargement des fokotanys",
+    "selectFokotany": "Sélectionnez un fokotany",
+    "noFokotanyAvailable": "Aucun fokotany disponible",
     "photoPlaceholder": "Cliquez pour téléverser une photo"
   },
   "register": {

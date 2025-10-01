@@ -31,28 +31,58 @@ export default function RegistrationForm() {
     communes: false,
     fokotanys: false
   });
+  const [apiError, setApiError] = useState(null);
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
     
+    // Clear any previous API errors
+    if (apiError) setApiError(null);
+    
     // Si la commune change, on réinitialise le fokotany sélectionné
-    if (name === 'municipality_id') {
+    if (name === 'municipality_id' && value) {
+      // Trouver la commune sélectionnée pour récupérer son formatted_id
+      const selectedCommune = communes.find(c => c.id === value || c.commune_id === value);
+      const communeFormattedId = selectedCommune?.formatted_id || value;
+      
       setFormData(prev => ({
         ...prev,
         [name]: value,
-        fokotany_id: '' // Réinitialiser la sélection du fokontany
+        fokotany_id: '' // Réinitialiser la sélection du fokotany
       }));
       
       // Charger les fokotanys pour la commune sélectionnée
       try {
         setIsLoading(prev => ({ ...prev, fokotanys: true }));
-        // Utiliser directement l'ID de la commune pour le filtre
-        const fokotanysData = await territoireService.getFokotanys(value);
-        console.log('Fokotanys chargés:', fokotanysData);
-        setFokotanys(fokotanysData);
+        setFokotanys([]); // Réinitialiser la liste pendant le chargement
+        setApiError(null); // Réinitialiser les erreurs précédentes
+        
+        console.log(`Chargement des fokotanys pour la commune ${communeFormattedId} (ID: ${value})...`);
+        const fokotanysData = await territoireService.getFokotanys(communeFormattedId);
+        
+        if (!fokotanysData || fokotanysData.length === 0) {
+          console.warn(`Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
+          setApiError('Aucun fokotany disponible pour cette commune');
+        } else {
+          console.log(`${fokotanysData.length} fokotanys chargés pour la commune ${communeFormattedId}`, fokotanysData);
+          setFokotanys(fokotanysData);
+          
+          // Si un seul fokotany est disponible, le sélectionner automatiquement
+          if (fokotanysData.length === 1) {
+            const singleFokotany = fokotanysData[0];
+            const fokotanyId = singleFokotany.id || singleFokotany.fokotany_id;
+            console.log(`Sélection automatique du fokotany unique: ${fokotanyId}`);
+            
+            setFormData(prev => ({
+              ...prev,
+              fokotany_id: fokotanyId.toString()
+            }));
+          }
+        }
       } catch (error) {
         console.error('Erreur lors du chargement des fokotanys:', error);
-        setFokotanys([]); // Réinitialiser la liste en cas d'erreur
+        setApiError(error.message || 'Erreur lors du chargement des fokotanys. Veuillez réessayer.');
+        setFokotanys([]);
       } finally {
         setIsLoading(prev => ({ ...prev, fokotanys: false }));
       }
@@ -350,8 +380,8 @@ export default function RegistrationForm() {
                   onChange={handleInputChange}
                   disabled={isLoading.communes}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.municipality_id ? "border-red-500" : "border-gray-300"
-                  }`}
+                    errors.municipality_id ? 'border-red-500' : 'border-gray-300'
+                  } ${isLoading.communes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder="Commune"
                 >
                   <option value="">
@@ -359,11 +389,16 @@ export default function RegistrationForm() {
                       ? t('registrationForm.loading') 
                       : t('registrationForm.selectPlaceholder')}
                   </option>
-                  {communes.map((commune) => (
-                    <option value={commune.commune_id} key={commune.commune_id}>
-                      {commune.name}
-                    </option>
-                  ))}
+                  {communes.map((commune) => {
+                    const communeId = commune.id || commune.commune_id;
+                    const communeName = commune.name || commune.nom || `Commune ${communeId}`;
+                    
+                    return (
+                      <option value={communeId} key={communeId}>
+                        {communeName}
+                      </option>
+                    );
+                  })}
                 </select>
                 {errors.municipality_id && (
                   <p className="text-red-500 text-xs mt-1">
@@ -373,35 +408,64 @@ export default function RegistrationForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('registrationForm.fields.fokotany')} <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('registrationForm.fields.fokotany')} <span className="text-red-500">*</span>
+                  </label>
+                  {isLoading.fokotanys && (
+                    <span className="text-xs text-gray-500 inline-flex items-center">
+                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Chargement...
+                    </span>
+                  )}
+                </div>
                 <select
                   name="fokotany_id"
                   value={formData.fokotany_id}
                   onChange={handleInputChange}
                   disabled={!formData.municipality_id || isLoading.fokotanys}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.fokotany_id ? "border-red-500" : "border-gray-300"
-                  } ${!formData.municipality_id ? 'bg-gray-100' : ''}`}
-                  placeholder="ID Fokotany"
+                    errors.fokotany_id ? 'border-red-500' : 'border-gray-300'
+                  } ${!formData.municipality_id || isLoading.fokotanys ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 >
                   <option value="">
                     {!formData.municipality_id 
-                      ? t('registrationForm.selectCommuneFirst') 
+                      ? t('registrationForm.selectCommuneFirst')
                       : isLoading.fokotanys 
-                        ? t('registrationForm.loading')
-                        : fokotanys.length === 0
-                          ? 'Aucun fokontany trouvé'
-                          : t('registrationForm.selectPlaceholder')}
+                        ? t('registrationForm.loadingFokotanys')
+                        : apiError
+                          ? t('registrationForm.errorLoadingFokotanys')
+                          : t('registrationForm.selectFokotany')}
                   </option>
-                  {fokotanys.map((f) => (
-                    <option value={f.fokotany_id} key={f.fokotany_id}>
-                      {f.name} ({f.formatted_id || f.fokotany_id})
-                    </option>
-                  ))}
+                  {fokotanys.length > 0 ? (
+                    fokotanys.map((fokotany) => {
+                      const fokotanyId = fokotany.id || fokotany.fokotany_id;
+                      const fokotanyName = fokotany.name || fokotany.nom || `Fokotany ${fokotanyId}`;
+                      
+                      return (
+                        <option 
+                          key={fokotanyId} 
+                          value={fokotanyId}
+                        >
+                          {fokotanyName}
+                        </option>
+                      );
+                    })
+                  ) : (
+                    formData.municipality_id && !isLoading.fokotanys && !apiError && (
+                      <option value="" disabled>{t('registrationForm.noFokotanyAvailable')}</option>
+                    )
+                  )}
                 </select>
-                {errors.fokotany_id && (
+                {apiError && !isLoading.fokotanys && (
+                  <p className="text-yellow-600 text-xs mt-1">
+                    {apiError}
+                  </p>
+                )}
+                {errors.fokotany_id && !apiError && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.fokotany_id}
                   </p>
