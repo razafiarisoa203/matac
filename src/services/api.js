@@ -35,10 +35,36 @@ const addInterceptor = (instance) => {
   return instance;
 };
 
+// Configuration spéciale pour citoyenApi pour gérer les fichiers
+const createCitoyenApi = (baseURL) => {
+  const instance = axios.create({
+    baseURL,
+    // Ne pas définir le Content-Type ici, il sera défini automatiquement avec le bon boundary
+  });
+
+  // Intercepteur pour ajouter le token d'authentification
+  instance.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      // Pour les requêtes FormData, laisser le navigateur définir le Content-Type avec le bon boundary
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  return instance;
+};
+
 // Instances axios par service
 const territoireApi = addInterceptor(createApi(servicesApi.territoire));
 const authApi = addInterceptor(createApi(servicesApi.auth));
-const citoyenApi = addInterceptor(createApi(servicesApi.citoyen));
+const citoyenApi = createCitoyenApi(servicesApi.citoyen); // Utilise la configuration spéciale
 const uploadApi = addInterceptor(createApi(servicesApi.upload));
 const alignementApi = addInterceptor(createApi(servicesApi.alignement));
 const notificationApi = addInterceptor(createApi(servicesApi.auth)); // Utilise le même endpoint que auth pour les notifications
@@ -129,12 +155,103 @@ export const citoyenService = {
   },
 
   async createCitizen(citizenData) {
-    const response = await authApi.post(
-      '/users/register-with-citizen-short',
-      citizenData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
-    return response.data;
+    try {
+      console.log('Début de createCitizen avec les données:', citizenData);
+      
+      // Créer un nouvel objet FormData
+      const formData = new FormData();
+      let fokotanyFormattedId = '';
+      
+      // Vérifier si c'est déjà un FormData
+      const isFormData = citizenData instanceof FormData;
+      console.log('Données reçues est un FormData:', isFormData);
+      
+      // Si c'est un FormData, le cloner, sinon ajouter les champs manuellement
+      if (isFormData) {
+        const entries = Array.from(citizenData.entries());
+        
+        // D'abord, collecter le fokotany_formatted_id s'il est présent
+        const fokotanyEntry = entries.find(([key]) => key === 'fokotany_formatted_id');
+        if (fokotanyEntry) {
+          fokotanyFormattedId = fokotanyEntry[1];
+        }
+        
+        // Ajouter tous les champs sauf fokotany_id qui sera ajouté après
+        for (const [key, value] of entries) {
+          if (key !== 'fokotany_id' && value !== null && value !== undefined) {
+            console.log(`Ajout de ${key}:`, value);
+            formData.append(key, value);
+          }
+        }
+        
+        // Ajouter fokotany_id avec la même valeur que fokotany_formatted_id
+        if (fokotanyFormattedId) {
+          console.log(`Ajout de fokotany_id:`, fokotanyFormattedId);
+          formData.append('fokotany_id', fokotanyFormattedId);
+        }
+      } else {
+        // Pour un objet standard, traiter fokotany_formatted_id en premier
+        if (citizenData.fokotany_formatted_id) {
+          fokotanyFormattedId = citizenData.fokotany_formatted_id;
+          formData.append('fokotany_formatted_id', fokotanyFormattedId);
+          formData.append('fokotany_id', fokotanyFormattedId);
+        }
+        
+        // Ajouter les autres champs
+        Object.entries(citizenData).forEach(([key, value]) => {
+          if (key !== 'fokotany_formatted_id' && key !== 'fokotany_id' && 
+              value !== undefined && value !== null) {
+            // Pour les champs de type fichier, toujours les ajouter même s'ils sont vides
+            if (key === 'citizen_photo' || (value instanceof File)) {
+              console.log(`Ajout du fichier ${key}:`, value.name || 'fichier vide');
+              formData.append(key, value);
+            } else if (value !== '') { // Ne pas ajouter les chaînes vides
+              console.log(`Ajout de ${key}:`, value);
+              formData.append(key, value);
+            }
+          }
+        });
+      }
+      
+      // Afficher le contenu de FormData pour débogage
+      console.log('Contenu de FormData:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      
+      console.log('Envoi de la requête POST à /citizens');
+      
+      // Utiliser l'instance citoyenApi configurée qui gère déjà le token et le Content-Type
+      const response = await citoyenApi.post('/citizens', formData);
+      
+      console.log('Réponse reçue:', response);
+      return response.data;
+      
+    } catch (error) {
+      console.error('Erreur dans createCitizen:', {
+        message: error.message,
+        code: error.code,
+        response: {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers
+        },
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      
+      // Créer une erreur plus détaillée
+      const apiError = new Error(error.response?.data?.message || 'Erreur lors de la création du citoyen');
+      apiError.status = error.response?.status;
+      apiError.details = error.response?.data;
+      
+      throw apiError;
+    }
   },
 };
 
@@ -228,13 +345,26 @@ export const territoireService = {
       }
       
       // Formater les données des fokotanys
-      return fokotanys.map(f => ({
-        id: f.fokotany_id || f.id || '',
-        fokotany_id: f.fokotany_id || f.id || '',
-        formatted_id: f.formatted_id || f.fokotany_id || f.id || '',
-        name: f.name || f.nom || `Fokotany ${f.fokotany_id || f.id || ''}`,
-        ...f
-      }));
+      return fokotanys.map(f => {
+        const fokotanyId = f.fokotany_id || f.id || '';
+        // Extraire le formatted_id de l'objet fokotany
+        const formattedId = f.formatted_id || f.formatted_id || fokotanyId;
+        
+        console.log('Fokotany data:', {
+          original: f,
+          id: fokotanyId,
+          formatted_id: formattedId
+        });
+        
+        return {
+          id: fokotanyId,
+          fokotany_id: fokotanyId,
+          formatted_id: formattedId,
+          name: f.name || f.nom || `Fokotany ${fokotanyId}`,
+          // Conserver toutes les propriétés d'origine
+          ...f
+        };
+      });
       
     } catch (error) {
       console.error(`[API] Erreur lors de la récupération des fokotanys:`, {
@@ -334,7 +464,15 @@ export const territoireService = {
 // Service Login
 export const loginService = {
   async login(loginData) {
-    const response = await authApi.post('/auth/login', loginData);
+    const response = await axios.post('https://gateway.tsirylab.com/serviceauth/auth/login', loginData);
+    
+    // Stocker le token d'authentification
+    if (response.data && response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+      // Mettre à jour l'en-tête d'autorisation pour les requêtes futures
+      authApi.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+    }
+    
     return response.data;
   },
 };
@@ -352,6 +490,76 @@ export const authService = {
   async getConnectedUser() {
     const response = await authApi.get('/auth/profile');
     return response.data;
+  },
+  async registerUser(userData) {
+    try {
+      // 1. First create the user
+      const userResponse = await axios.post('https://gateway.tsirylab.com/serviceauth/users', {
+        user_pseudo: userData.user_pseudo,
+        user_email: userData.user_email,
+        user_password: userData.user_password,
+        user_phone: userData.user_phone,
+        municipality_id: userData.municipality_id,
+        id_citizen: userData.id_citizen || null
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+
+      // 2. If user creation is successful and we have citizen data, create citizen profile
+      if (userResponse.data && userResponse.data.id && userData.citizenData) {
+        const formData = new FormData();
+        
+        // Required fields
+        const requiredFields = [
+          'citizen_name',
+          'citizen_lastname',
+          'citizen_national_card_number',
+          'citizen_adress',
+          'fokotany_formatted_id'
+        ];
+
+        // Check if all required fields are present
+        const missingFields = requiredFields.filter(field => !userData.citizenData[field]);
+        if (missingFields.length > 0) {
+          throw new Error(`Missing required citizen fields: ${missingFields.join(', ')}`);
+        }
+        
+        // Append file if it exists (required)
+        if (!userData.citizenData.citizen_photo) {
+          throw new Error('Citizen photo is required');
+        }
+        formData.append('citizen_photo', userData.citizenData.citizen_photo);
+        
+        // Append all citizen data
+        const citizenFields = [
+          'citizen_name', 'citizen_lastname', 'citizen_national_card_number',
+          'citizen_adress', 'citizen_city', 'fokotany_formatted_id',
+          'citizen_national_card_date', 'citizen_national_card_location'
+        ];
+        
+        citizenFields.forEach(field => {
+          if (userData.citizenData[field] !== undefined) {
+            formData.append(field, userData.citizenData[field]);
+          }
+        });
+        
+        // Create citizen profile
+        await axios.post('https://gateway.tsirylab.com/servicecitoyen/citizens', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+      }
+      
+      return userResponse.data;
+    } catch (error) {
+      console.error('Registration error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 };
 
