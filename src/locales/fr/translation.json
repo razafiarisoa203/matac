@@ -223,6 +223,8 @@
       "registrationFailed": "Échec de l'inscription"
     },
     "selectPlaceholder": "Sélectionner...",
+    "selectCommuneFirst": "Sélectionnez d'abord une commune",
+    "loading": "Chargement...",
     "photoPlaceholder": "Cliquez pour téléverser une photo"
   },
   "register": {

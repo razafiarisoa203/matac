@@ -22,17 +22,46 @@ export default function RegistrationForm() {
     municipality_id: "",
     citizen_photo: null,
   });
-
+  
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [communes, setCommunes] = useState([]);
+  const [fokotanys, setFokotanys] = useState([]);
+  const [isLoading, setIsLoading] = useState({
+    communes: false,
+    fokotanys: false
+  });
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // Si la commune change, on réinitialise le fokotany sélectionné
+    if (name === 'municipality_id') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        fokotany_id: '' // Réinitialiser la sélection du fokontany
+      }));
+      
+      // Charger les fokotanys pour la commune sélectionnée
+      try {
+        setIsLoading(prev => ({ ...prev, fokotanys: true }));
+        // Utiliser directement l'ID de la commune pour le filtre
+        const fokotanysData = await territoireService.getFokotanys(value);
+        console.log('Fokotanys chargés:', fokotanysData);
+        setFokotanys(fokotanysData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des fokotanys:', error);
+        setFokotanys([]); // Réinitialiser la liste en cas d'erreur
+      } finally {
+        setIsLoading(prev => ({ ...prev, fokotanys: false }));
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -149,9 +178,19 @@ export default function RegistrationForm() {
   };
 
   useEffect(() => {
-    territoireService.getCommunes().then((data) => {
-      setCommunes(data);
-    });
+    const loadData = async () => {
+      try {
+        setIsLoading(prev => ({ ...prev, communes: true }));
+        const communesData = await territoireService.getCommunes();
+        setCommunes(communesData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des communes:', error);
+      } finally {
+        setIsLoading(prev => ({ ...prev, communes: false }));
+      }
+    };
+
+    loadData();
   }, []);
 
   return (
@@ -309,18 +348,22 @@ export default function RegistrationForm() {
                   name="municipality_id"
                   value={formData.municipality_id}
                   onChange={handleInputChange}
+                  disabled={isLoading.communes}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.municipality_id ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Commune"
                 >
-                  <option value="">{t('registrationForm.selectPlaceholder')}</option>
-                  {Array.isArray(communes) &&
-                    communes.map((c, i) => (
-                      <option value={c.commune_id} key={i}>
-                        {c.name}
-                      </option>
-                    ))}
+                  <option value="">
+                    {isLoading.communes 
+                      ? t('registrationForm.loading') 
+                      : t('registrationForm.selectPlaceholder')}
+                  </option>
+                  {communes.map((commune) => (
+                    <option value={commune.commune_id} key={commune.commune_id}>
+                      {commune.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.municipality_id && (
                   <p className="text-red-500 text-xs mt-1">
@@ -337,23 +380,26 @@ export default function RegistrationForm() {
                   name="fokotany_id"
                   value={formData.fokotany_id}
                   onChange={handleInputChange}
+                  disabled={!formData.municipality_id || isLoading.fokotanys}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.fokotany_id ? "border-red-500" : "border-gray-300"
-                  }`}
+                  } ${!formData.municipality_id ? 'bg-gray-100' : ''}`}
                   placeholder="ID Fokotany"
                 >
-                  <option value="">{t('registrationForm.selectPlaceholder')}</option>
-                  {Array.isArray(communes) ? (
-                    communes
-                      .find((c) => c.commune_id == formData.municipality_id)
-                      ?.fokotanys.map((f, i) => (
-                        <option value={f.fokotany_id} key={i}>
-                          {f.name}
-                        </option>
-                      ))
-                  ) : (
-                    <></>
-                  )}
+                  <option value="">
+                    {!formData.municipality_id 
+                      ? t('registrationForm.selectCommuneFirst') 
+                      : isLoading.fokotanys 
+                        ? t('registrationForm.loading')
+                        : fokotanys.length === 0
+                          ? 'Aucun fokontany trouvé'
+                          : t('registrationForm.selectPlaceholder')}
+                  </option>
+                  {fokotanys.map((f) => (
+                    <option value={f.fokotany_id} key={f.fokotany_id}>
+                      {f.name} ({f.formatted_id || f.fokotany_id})
+                    </option>
+                  ))}
                 </select>
                 {errors.fokotany_id && (
                   <p className="text-red-500 text-xs mt-1">
