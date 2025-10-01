@@ -333,7 +333,7 @@ const PermisConstruction = () => {
 
               <button
                 onClick={handleNext}
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded"
+                className="flex items-center gap-2 px-4 py-2 bg-[#269745] text-white rounded"
               >
                 {currentStep === steps.length && currentSection === (sidebarItems[currentStep]?.length || 1)
                   ? 'Envoyer le dossier'
