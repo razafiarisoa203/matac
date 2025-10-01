@@ -33,11 +33,50 @@ export default function RegistrationForm() {
   });
   const [apiError, setApiError] = useState(null);
 
+  const validateCinField = (cinValue) => {
+    const numericValue = (cinValue || '').replace(/\D/g, '');
+    
+    if (numericValue.length > 0 && numericValue.length !== 12) {
+      setErrors(prev => ({
+        ...prev,
+        citizen_national_card_number: t('registrationForm.errors.cinLength')
+      }));
+      return false;
+    } else if (errors.citizen_national_card_number) {
+      // Clear error if validation passes
+      const newErrors = { ...errors };
+      delete newErrors.citizen_national_card_number;
+      setErrors(newErrors);
+    }
+    return numericValue.length === 12;
+  };
+
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
     
     // Clear any previous API errors
     if (apiError) setApiError(null);
+    
+    // For CIN field - only allow digits and exactly 12 characters
+    if (name === 'citizen_national_card_number') {
+      // Only allow digits and limit to 12 characters
+      const numericValue = value.replace(/\D/g, '').slice(0, 12);
+      
+      // Update the input value (only digits)
+      e.target.value = numericValue;
+      
+      // Update form data with the numeric value
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue
+      }));
+      
+      // Validate CIN length
+      validateCinField(numericValue);
+      
+      // Don't proceed with other validations for CIN field
+      return;
+    }
     
     // Si la commune change, on réinitialise le fokotany sélectionné
     if (name === 'municipality_id' && value) {
@@ -151,6 +190,16 @@ export default function RegistrationForm() {
     // Phone validation
     if (formData.user_phone && !/^[0-9+\-\s()]+$/.test(formData.user_phone)) {
       newErrors.user_phone = t('registrationForm.errors.invalidPhone');
+    }
+
+    // CIN validation - must be exactly 12 digits and required
+    if (!formData.citizen_national_card_number || formData.citizen_national_card_number.trim() === '') {
+      newErrors.citizen_national_card_number = t('registrationForm.errors.required');
+    } else {
+      const cin = formData.citizen_national_card_number.replace(/\D/g, '');
+      if (cin.length !== 12) {
+        newErrors.citizen_national_card_number = t('registrationForm.errors.cinLength');
+      }
     }
 
     setErrors(newErrors);
@@ -296,10 +345,14 @@ export default function RegistrationForm() {
                   name="citizen_national_card_number"
                   value={formData.citizen_national_card_number}
                   onChange={handleInputChange}
+                  maxLength={12}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.citizen_national_card_number ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder={t('registrationForm.fields.cinNumber')}
+                  title={t('registrationForm.errors.cinLength')}
                 />
                 {errors.citizen_national_card_number && (
                   <p className="text-red-500 text-xs mt-1">

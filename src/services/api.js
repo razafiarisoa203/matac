@@ -47,18 +47,85 @@ const notificationApi = addInterceptor(createApi(servicesApi.auth)); // Utilise 
 
 // Service Citoyen
 export const citoyenService = {
-  async checkCIN(cin) {
-    try {
-      const response = await citoyenApi.get(`/citizens/${cin}`);
-      console.log("retour du citizen service ", response);
-      
-      return { exists: true, data: response.data };
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        return { exists: false };
-      }
-      throw error;
+  async checkCIN(cin, maxRetries = 2) {
+    // Vérification de base du format CIN (12 chiffres)
+    if (!/^\d{12}$/.test(cin)) {
+      throw new Error('Format CIN invalide. Le CIN doit contenir exactement 12 chiffres.');
     }
+
+    let lastError;
+    let attempt = 0;
+    const endpoints = [
+      `/citizens/check-cin?cin=${cin}`,  // Nouvel endpoint
+      `/citizens/${cin}`                  // Ancien endpoint de secours
+    ];
+
+    while (attempt <= maxRetries) {
+      for (const endpoint of endpoints) {
+        try {
+          attempt++;
+          console.log(`Tentative ${attempt} avec l'endpoint: ${endpoint}`);
+          
+          const response = await citoyenApi.get(endpoint);
+          
+          // Si on utilise le premier endpoint
+          if (endpoint.includes('check-cin')) {
+            if (typeof response.data?.exists === 'boolean') {
+              return { 
+                exists: response.data.exists, 
+                data: response.data,
+                source: 'check-cin-endpoint'
+              };
+            }
+            return { exists: false, source: 'check-cin-endpoint' };
+          } 
+          // Si on utilise le deuxième endpoint
+          else {
+            return { 
+              exists: true, 
+              data: response.data,
+              source: 'citizens-endpoint'
+            };
+          }
+          
+        } catch (error) {
+          lastError = error;
+          
+          // Journalisation détaillée de l'erreur
+          console.error(`Erreur lors de la tentative ${attempt} avec ${endpoint}:`, {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message
+          });
+
+          // Si c'est une erreur 404 sur le deuxième endpoint, le CIN n'existe pas
+          if (error.response?.status === 404 && endpoint.includes(cin)) {
+            return { 
+              exists: false,
+              source: 'citizens-endpoint-404'
+            };
+          }
+
+          // Attendre avant de réessayer (backoff exponentiel)
+          if (attempt < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Maximum 10 secondes
+            console.log(`Nouvelle tentative dans ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+    }
+
+    // Si on arrive ici, toutes les tentatives ont échoué
+    const errorMessage = lastError?.response?.status === 500
+      ? "Le service de vérification du CIN est actuellement indisponible. Veuillez réessayer plus tard ou contacter le support technique."
+      : "Impossible de vérifier le CIN. Veuillez vérifier votre connexion internet et réessayer.";
+    
+    const error = new Error(errorMessage);
+    error.isRetryable = true; // Pour permettre une nouvelle tentative côté UI
+    error.originalError = lastError;
+    throw error;
   },
 
   async createCitizen(citizenData) {
@@ -135,7 +202,32 @@ export const territoireService = {
       }
 
       console.log(`[API] Récupération des fokotanys pour la commune ${communeFormattedId}...`);
-      const response = await territoireApi.get(`/fokotanys/commune/${communeFormattedId}`);
+      
+      // Essayer d'abord avec le nouvel endpoint
+      let response;
+      try {
+        // Ajout d'un timeout pour éviter les attentes trop longues
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes de timeout
+        
+        response = await territoireApi.get(`/communes/${communeFormattedId}/fokotanys`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+      } catch (firstError) {
+        // Si le premier endpoint échoue, essayer avec l'ancien endpoint
+        if (firstError.response?.status === 404 || firstError.name === 'AbortError') {
+          console.log('[API] Essai avec l\'ancien endpoint /fokotanys/commune/...');
+          try {
+            response = await territoireApi.get(`/fokotanys/commune/${communeFormattedId}`);
+          } catch {
+            console.warn('[API] Échec des deux endpoints pour les fokotanys, retour d\'une liste vide');
+            return [];
+          }
+        } else {
+          throw firstError;
+        }
+      }
       
       // Vérifier la structure de la réponse
       if (!response.data) {
@@ -149,12 +241,16 @@ export const territoireService = {
       // S'assurer que nous retournons un tableau
       const fokotanys = Array.isArray(data) ? data : [data];
       
-      console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId}`);
+      if (fokotanys.length === 0) {
+        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
+      } else {
+        console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId}`);
+      }
       
       return fokotanys.map(f => ({
         id: f.id || f.fokotany_id || '',
         fokotany_id: f.id || f.fokotany_id || '',
-        formatted_id: f.id || f.fokotany_id || '', // Ajout de formatted_id pour la cohérence
+        formatted_id: f.id || f.fokotany_id || '',
         name: f.nom || f.name || `Fokotany ${f.id || f.fokotany_id || ''}`,
         ...f
       }));
@@ -169,8 +265,14 @@ export const territoireService = {
         method: error.config?.method
       });
       
-      // Renvoyer une erreur plus détaillée pour le débogage
-      throw new Error(`Impossible de charger les fokotanys pour la commune ${communeFormattedId}: ${error.message}`);
+      // Si c'est une erreur 404, retourner un tableau vide au lieu de lever une exception
+      if (error.response?.status === 404) {
+        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
+        return [];
+      }
+      
+      // Pour les autres erreurs, propager avec un message clair
+      throw new Error(`Impossible de charger les fokotanys pour la commune ${communeFormattedId}. Veuillez réessayer plus tard.`);
     }
   },
 };
