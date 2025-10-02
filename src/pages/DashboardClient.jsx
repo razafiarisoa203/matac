@@ -42,7 +42,7 @@ const DashboardClient = () => {
   const fetchAlignments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3000/servicealignement/alignment");
+      const response = await axios.get("http://localhost:3001/servicealignement/alignment");
       setAlignments(response.data);
       console.log("Tous les alignements récupérés :", response.data);
     } catch (err) {

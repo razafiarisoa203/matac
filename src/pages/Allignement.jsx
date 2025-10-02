@@ -296,12 +296,12 @@ function Allignement() {
           };
 
 
-          // Post direct en JSON
+          /* Post direct en JSON
           await axios.post(
-            "http://localhost:3000/servicealignement/piece-jointe/with-file-info",
+            "http://localhost:3001/servicealignement/piece-jointe/with-file-info",
             pieceJointeData,
             { headers: { "Content-Type": "application/json" } }
-          );
+          );*/
         }
       }
 
@@ -312,7 +312,7 @@ function Allignement() {
         body: "Un utilisateur a soumis le formulaire avec succès.",
         filePath: "" // obligatoire même si vide
       });
-       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
+      alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 
       setTimeout(() => {
         setCurrentStep(1);
