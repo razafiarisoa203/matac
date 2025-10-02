@@ -21,7 +21,7 @@ export const sidebarItems = {
             id: 2,
             title: 'Référence alignement',
             icon: 'straighten',
-            fields: [{ label: 'Référence d\'alignement', name: 'referenceAlignement', type: 'text', placeholder: 'Ex: REF-2024-001', required: false }]
+            fields: [{ label: 'Référence d\'alignement', name: 'referenceAlignement', type: 'text', placeholder: 'Ex: REF-2024-001', required: false, pattern: '^[A-Za-z0-9]+$', title: 'Lettres et chiffres uniquement' }]
         },
         {
             id: 3,
@@ -30,10 +30,10 @@ export const sidebarItems = {
             fields: [
                 { label: 'Civilité', name: 'civiliteProprietaire', type: 'radio', placeholder: ['Madame', 'Monsieur'], required: true },
                 { label: 'Nom complet', name: 'nomProprietaire', type: 'text', required: true },
-                { label: 'Téléphone', name: 'telProprietaire', type: 'tel', required: true },
+                { label: 'Téléphone', name: 'telProprietaire', type: 'tel', required: true, inputMode: 'numeric' },
                 { label: 'Email', name: 'emailProprietaire', type: 'email', required: true },
-                { label: 'CIN', name: 'cinProprietaire', type: 'number', required: true },
-                { label: 'Adresse', name: 'adresseProprietaire', type: 'text', required: true }
+                { label: 'CIN', name: 'cinProprietaire', type: 'number', required: true, inputMode: 'numeric' },
+                { label: 'Adresse', name: 'adresseProprietaire', type: 'text', required: true, pattern: '^[A-Za-z0-9]+$', title: 'Lettres et chiffres uniquement' }
             ]
         },
     ],
@@ -44,10 +44,10 @@ export const sidebarItems = {
             icon: 'groups',
             fields: [
                 { label: 'Auteur de l\'ouvrage', name: 'auteurOuvrage', type: 'radio', placeholder: ['Architecte', 'Ingénieur BTP / Déssinateur agréer'], required: true },
-                { label: 'Nom', name: 'nomAuteur', type: 'text', required: true },
+                { label: 'Nom', name: 'nomAuteur', type: 'text', required: true, pattern: '^[A-Za-z]+$', title: 'Lettres uniquement' },
                 { label: 'Fonction', name: 'fonctionAuteur', type: 'text', required: true },
-                { label: 'Numéro d\'ordre', name: 'numeroOrdreAuteur', type: 'text', required: true },
-                { label: 'Téléphone', name: 'telAuteur', type: 'tel', required: true },
+                { label: 'Numéro d\'ordre', name: 'numeroOrdreAuteur', type: 'text', required: true, inputMode: 'numeric' },
+                { label: 'Téléphone', name: 'telAuteur', type: 'tel', required: true, inputMode: 'numeric' },
                 { label: 'Email', name: 'emailAuteur', type: 'email', required: true },
                 { label: 'Adresse', name: 'adresseAuteur', type: 'text', required: true },
             ]
@@ -126,10 +126,10 @@ export const sidebarItems = {
                 { label: 'Implémentation du VH / VB au niveau du toilette, cuisine, fosse eptique', name: 'existantVhVb', type: 'radio', placeholder: ['Oui', 'Non'], required: true },
                 { label: 'Terasse', name: 'existantTerasse', type: 'radio', placeholder: ['Oui', 'Non'], required: true },
                 { label: 'Garde Corp', name: 'existantGardeCorp', type: 'radio', placeholder: ['Oui', 'Non'], required: true },
-                { label: 'Nombre veranda (m)', name: 'nbrVeranda', type: 'number', required:  true },
-                { label: 'Nombre couloir (m)', name: 'nbrCouloir', type: 'number', required:  true },
-                { label: 'Nombre escalier (m)', name: 'nbrEscalier', type: 'number', required:  true },
-                { label: 'Nombre Servitude / Voie d\'acces (m)', name: 'nbrServitude', type: 'number', required:  true },
+                { label: 'Nombre veranda (m)', name: 'nbrVeranda', type: 'number', required:  true, inputMode: 'numeric' },
+                { label: 'Nombre couloir (m)', name: 'nbrCouloir', type: 'number', required:  true, inputMode: 'numeric' },
+                { label: 'Nombre escalier (m)', name: 'nbrEscalier', type: 'number', required:  true, inputMode: 'numeric' },
+                { label: 'Nombre Servitude / Voie d\'acces (m)', name: 'nbrServitude', type: 'number', required:  true, inputMode: 'numeric' },
             ]
         },
         {
