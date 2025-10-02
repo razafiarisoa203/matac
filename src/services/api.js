@@ -7,7 +7,7 @@ export const TEMP_USER_ID = 'temp_user_id_123';
 const servicesApi = {
   // Tous les services utilisent l'URL de base avec leur chemin respectif
   territoire: `${import.meta.env.VITE_API_URL}/serviceterritoire-v2`,
-  auth: `${import.meta.env.VITE_API_URL}/serviceauth`,
+  auth: `${import.meta.env.VITE_API_URL}/serviceauth/auth`,
   citoyen: `${import.meta.env.VITE_API_URL}/servicecitoyen`,
   upload: `${import.meta.env.VITE_API_URL}/serviceupload`,
   alignement: `${import.meta.env.VITE_API_URL}/servicealignement`,
@@ -20,20 +20,19 @@ const createApi = (baseURL) =>
     headers: { 'Content-Type': 'application/json' },
   });
 
-// Ajout d’intercepteur pour le token
-const addInterceptor = (instance) => {
-  instance.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-  return instance;
-};
+  const addInterceptor = (instance) => {
+    instance.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+    return instance;
+  }; 
 
 // Configuration spéciale pour citoyenApi pour gérer les fichiers
 const createCitoyenApi = (baseURL) => {
@@ -464,15 +463,14 @@ export const territoireService = {
 // Service Login
 export const loginService = {
   async login(loginData) {
-    const response = await axios.post('https://gateway.tsirylab.com/serviceauth/auth/login', loginData);
-    
-    // Stocker le token d'authentification
+    // ⚠️ on utilise authApi.post et pas axios.post avec une URL en dur
+    const response = await authApi.post('login', loginData);
+
     if (response.data && response.data.token) {
       localStorage.setItem('authToken', response.data.token);
-      // Mettre à jour l'en-tête d'autorisation pour les requêtes futures
       authApi.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
     }
-    
+
     return response.data;
   },
 };
@@ -480,15 +478,15 @@ export const loginService = {
 // Service Auth
 export const authService = {
   async forgotPassword(user_email) {
-    const response = await authApi.post('/auth/forgot-password', { user_email });
+    const response = await authApi.post('/forgot-password', { user_email });
     return response.data;
   },
   async getUserData(user_id) {
-    const response = await authApi.get(`/auth/user/${user_id}`);
+    const response = await authApi.get(`/user/${user_id}`);
     return response.data;
   },
   async getConnectedUser() {
-    const response = await authApi.get('/auth/profile');
+    const response = await authApi.get('/profile');
     return response.data;
   },
   async registerUser(userData) {
