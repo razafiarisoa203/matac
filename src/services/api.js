@@ -617,6 +617,24 @@ export const alignmentService = {
 
 // Service Notification
 export const notificationService = {
+  async sendVerificationEmail(email, code) {
+    try {
+      const response = await axios.post('/servicenotification/email/send', {
+        to: email,
+        subject: 'Réinitialisation de votre mot de passe',
+        template: 'password-reset',
+        data: {
+          code: code,
+          expiration: '15 minutes'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'email de vérification:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
   async getAllNotifications() {
     try {
       const response = await notificationApi.get('/servicenotification/notifications');

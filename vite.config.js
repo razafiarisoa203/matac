@@ -11,6 +11,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/servicenotification': {
+        target: 'https://gateway.tsirylab.com',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
