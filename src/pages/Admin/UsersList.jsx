@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ArrowLeft, Loader2 } from 'lucide-react';
 import { getAllUsersByApplicationRole } from '../../services/api/userService';
 
 const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '15';
+
+// TTL du cache en ms (60s)
+const CACHE_TTL_MS = 60 * 1000;
 
 const UsersList = () => {
   const navigate = useNavigate();
@@ -19,7 +22,6 @@ const UsersList = () => {
     total: 0,
     totalPages: 1
   });
-  const isFetchingRef = useRef(false);
 
   // Debounce de la recherche pour éviter des fetch à chaque frappe
   useEffect(() => {
@@ -30,13 +32,40 @@ const UsersList = () => {
   // Chargement des utilisateurs avec dépendances stables
   useEffect(() => {
     let isMounted = true;
-    const fetchUsers = async () => {
-      if (isFetchingRef.current) {
-        // Empêche les requêtes simultanées ou doublées (StrictMode)
-        return;
+    const cacheKey = `users_page_${pagination.page}_limit_${pagination.limit}_q_${debouncedSearchTerm || ''}`;
+    const readCache = () => {
+      try {
+        const raw = sessionStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.ts || !parsed.payload) return null;
+        if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+        return parsed.payload;
+      } catch { return null; }
+    };
+    const writeCache = (payload) => {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), payload }));
+      } catch {
+        // Le cache peut échouer (quota, navigation privée). On ignore silencieusement.
       }
-      isFetchingRef.current = true;
-      setIsLoading(true);
+    };
+    const fetchUsers = async () => {
+      // Essayer d'afficher immédiatement le cache
+      const cached = readCache();
+      if (cached && isMounted) {
+        setUsers(cached.users || []);
+        setPagination(prev => ({
+          ...prev,
+          page: cached.page ?? prev.page,
+          limit: cached.limit ?? prev.limit,
+          total: cached.total ?? prev.total,
+          totalPages: cached.totalPages ?? prev.totalPages,
+        }));
+        setIsLoading(false);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
       try {
         const { page, limit } = pagination;
@@ -62,17 +91,26 @@ const UsersList = () => {
             ? prev
             : next
         ));
+        // Écrire dans le cache pour les prochains affichages
+        writeCache({
+          users: usersData,
+          ...next
+        });
       } catch (err) {
         console.error('Erreur lors du chargement des utilisateurs:', err);
-        if (isMounted) setError('Impossible de charger les utilisateurs. Veuillez réessayer.');
+        if (isMounted) {
+          setError('Impossible de charger les utilisateurs. Veuillez réessayer.');
+        }
       } finally {
-        isFetchingRef.current = false;
         if (isMounted) setIsLoading(false);
       }
     };
 
     fetchUsers();
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false; 
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, pagination.limit, debouncedSearchTerm]);
 
   // Plus de useEffect séparé qui dépend de loadUsers pour éviter les boucles

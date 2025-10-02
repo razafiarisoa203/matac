@@ -6,6 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const BASE_AUTH_URL = `${API_URL}/serviceauth`;
 const BASE_CITOYEN_URL = `${API_URL}/servicecitoyen`;
 const APP_ID = import.meta.env.VITE_APP_ID || 15; // Default to 15 if not set
+// Cache simple en mémoire
+let __rolesCache = { data: null, ts: 0 };
 // Configuration de base pour les requêtes axios
 const getAuthConfig = () => {
   const token = localStorage.getItem('authToken');
@@ -28,7 +30,7 @@ const getAuthConfig = () => {
  * @param {string} search - Terme de recherche optionnel
  * @returns {Promise<Object>} - Liste des utilisateurs et métadonnées de pagination
  */
-export const getUsers = async (page = 1, limit = 10, search = '') => {
+export const getUsers = async (page = 1, limit = 10, search = '', options = {}) => {
   try {
     const response = await axios.get(
       `${BASE_AUTH_URL}/users`,
@@ -44,7 +46,10 @@ export const getUsers = async (page = 1, limit = 10, search = '') => {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
           'Expires': '0'
-        }
+        },
+        // Performance & annulation
+        timeout: 10000,
+        signal: options.signal
       }
     );
     
@@ -69,6 +74,10 @@ export const getUsers = async (page = 1, limit = 10, search = '') => {
       }
     };
   } catch (error) {
+    // Si la requête a été annulée, ne pas logger ni retourner un faux vide: on relance
+    if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError') {
+      throw error;
+    }
     console.error('Erreur lors de la récupération des utilisateurs:', error);
     return {
       data: [],
@@ -131,13 +140,24 @@ export const updateUserRoles = async (userId, roleIds) => {
  * Récupérer tous les rôles de l'application
  * @returns {Promise<Array>} - Liste des rôles
  */
-export const getRoles = async () => {
+export const getRoles = async (options = {}) => {
   try {
+    // Cache 5 minutes
+    const now = Date.now();
+    if (__rolesCache.data && now - __rolesCache.ts < 5 * 60 * 1000) {
+      return __rolesCache.data;
+    }
     const response = await axios.get(
       `${BASE_AUTH_URL}/roles/application/${APP_ID}`,
-      getAuthConfig()
+      {
+        ...getAuthConfig(),
+        timeout: 10000,
+        signal: options.signal
+      }
     );
-    return response.data.data || response.data || [];
+    const out = response.data.data || response.data || [];
+    __rolesCache = { data: out, ts: now };
+    return out;
   } catch (error) {
     console.error('Erreur lors de la récupération des rôles:', error);
     throw error;
@@ -358,7 +378,7 @@ export const markAllNotificationsAsRead = async () => {
  * @param {number} limit - Nombre d'éléments par page (défaut: 10, max: 100)
  * @returns {Promise<{users: Array, pagination: Object}>} - Liste des utilisateurs avec leurs rôles et infos de pagination
  */
-export const getAllUsersByApplicationRole = async (page = 1, limit = 10) => {
+export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search = '', options = {}) => {
   try {
     const response = await axios.get(
       `${BASE_AUTH_URL}/users`,
@@ -366,14 +386,17 @@ export const getAllUsersByApplicationRole = async (page = 1, limit = 10) => {
         ...getAuthConfig(),
         params: {
           page,
-          limit: Math.min(limit, 100) // Limite maximale de 100 éléments
+          limit: Math.min(limit, 100), // Limite maximale de 100 éléments
+          ...(search && { search })
         },
         headers: {
           ...getAuthConfig().headers,
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
           'Expires': '0'
-        }
+        },
+        timeout: 10000,
+        signal: options.signal
       }
     );
 
@@ -421,7 +444,10 @@ export const getAllUsersByApplicationRole = async (page = 1, limit = 10) => {
       }
     };
   } catch (error) {
-    console.error("Erreur lors de la récupération des utilisateurs:", error);
+    // Ne pas logger lorsqu'il s'agit d'une annulation de requête
+    if (!(error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError')) {
+      console.error("Erreur lors de la récupération des utilisateurs:", error);
+    }
     throw error; // On propage l'erreur pour la gérer dans le composant
   }
 };
