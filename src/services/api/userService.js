@@ -3,39 +3,290 @@ import { store } from '../store/store';
 
 // Utilisation de l'URL de base depuis les variables d'environnement
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const BASE_AUTH_URL = `${API_URL}/serviceauth`;
+// En dev, utilisez le proxy Vite pour éviter CORS: base relative
+const isDev = typeof window !== 'undefined' && window.location.origin.includes('localhost');
+const BASE_AUTH_URL = isDev ? '/serviceauth' : `${API_URL}/serviceauth`;
 const BASE_CITOYEN_URL = `${API_URL}/servicecitoyen`;
-// Récupérer le profil utilisateur
-export const getUserProfile = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    console.log('Token utilisé pour la requête:', token ? 'présent' : 'absent');
-    
-    if (!token) {
-      throw new Error('Aucun token trouvé dans le localStorage');
+const APP_ID = import.meta.env.VITE_APP_ID || 15; // Default to 15 if not set
+// Cache simple en mémoire
+let __rolesCache = { data: null, ts: 0 };
+// Petite aide utilitaire: GET avec retry/backoff pour erreurs transitoires (timeout/5xx)
+const axiosGetWithRetry = async (url, config = {}, { retries = 2, backoff = 800 } = {}) => {
+  let attempt = 0;
+  let lastErr;
+  while (attempt <= retries) {
+    try {
+      return await axios.get(url, config);
+    } catch (err) {
+      const status = err?.response?.status;
+      const isTimeout = err?.code === 'ECONNABORTED';
+      const is5xx = status >= 500 && status < 600;
+      if ((isTimeout || is5xx) && attempt < retries) {
+        const wait = backoff * Math.pow(2, attempt);
+        await new Promise(res => setTimeout(res, wait));
+        attempt += 1;
+        lastErr = err;
+        continue;
+      }
+      throw err;
     }
+  }
+  throw lastErr;
+};
+// Configuration de base pour les requêtes axios
+const getAuthConfig = () => {
+  const token = localStorage.getItem('authToken');
+  return {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    withCredentials: true
+  };
+};
+
+// ========== User Management ==========
+
+/**
+ * Récupérer la liste paginée des utilisateurs
+ * @param {number} page - Numéro de page (défaut: 1)
+ * @param {number} limit - Nombre d'éléments par page (défaut: 10)
+ * @param {string} search - Terme de recherche optionnel
+ * @returns {Promise<Object>} - Liste des utilisateurs et métadonnées de pagination
+ */
+export const getUsers = async (page = 1, limit = 10, search = '', options = {}) => {
+  try {
+    const response = await axiosGetWithRetry(
+      `${BASE_AUTH_URL}/users`,
+      {
+        ...getAuthConfig(),
+        params: {
+          page,
+          limit: Math.min(limit, 100),
+          ...(search && { search })
+        },
+        headers: {
+          ...getAuthConfig().headers,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        // Timeout plus élevé pour éviter ECONNABORTED lors de charges réseau
+        timeout: 30000,
+        signal: options.signal
+      }
+    );
     
-    console.log('Envoi de la requête vers:', `${API_URL}/auth/profile`);
+    console.log('Réponse API getUsers:', response.data);
     
-    const response = await axios.get(`${API_URL}/auth/profile`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      withCredentials: true
-    });
+    const users = response.data?.data || [];
+    const total = response.data?.total || 0;
     
-    console.log('Réponse de l\'API:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      data: response.data
-    });
-    
+    // Retourner directement les données sans double normalisation
+    return {
+      data: users,
+      users: users,
+      total: parseInt(total, 10) || 0,
+      page: parseInt(response.data?.page || page, 10),
+      limit: parseInt(response.data?.limit || limit, 10),
+      totalPages: Math.ceil((parseInt(total, 10) || 0) / parseInt(limit, 10)) || 1,
+      pagination: {
+        page: parseInt(response.data?.page || page, 10),
+        limit: parseInt(response.data?.limit || limit, 10),
+        total: parseInt(total, 10) || 0,
+        totalPages: Math.ceil((parseInt(total, 10) || 0) / parseInt(limit, 10)) || 1
+      }
+    };
+  } catch (error) {
+    // Si la requête a été annulée, ne pas logger ni retourner un faux vide: on relance
+    if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError') {
+      throw error;
+    }
+    console.error('Erreur lors de la récupération des utilisateurs:', error);
+    return {
+      data: [],
+      users: [],
+      total: 0,
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      totalPages: 0,
+      pagination: {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total: 0,
+        totalPages: 0
+      }
+    };
+  }
+};
+
+
+/**
+ * Récupérer les détails d'un utilisateur spécifique
+ * @param {string} userId - ID de l'utilisateur
+ * @returns {Promise<Object>} - Détails de l'utilisateur
+ */
+export const getUserById = async (userId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_AUTH_URL}/users/${userId}`,
+      getAuthConfig()
+    );
     return response.data;
   } catch (error) {
-    console.error('Erreur lors de la récupération du profil:', error);
+    console.error(`Erreur lors de la récupération de l'utilisateur ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Mettre à jour le rôle d'un utilisateur
+ * @param {string} userId - ID de l'utilisateur
+ * @param {Array<number>} roleIds - Tableau des IDs des rôles à attribuer
+ * @returns {Promise<Object>} - Réponse de l'API
+ */
+export const updateUserRoles = async (userId, roleIds) => {
+  try {
+    const response = await axios.put(
+      `${BASE_AUTH_URL}/users/${userId}/roles`,
+      { roleIds },
+      getAuthConfig()
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour des rôles pour l'utilisateur ${userId}:`, error);
+    throw error;
+  }
+};
+// ========== Role Management ==========
+
+/**
+ * Récupérer tous les rôles de l'application
+ * @returns {Promise<Array>} - Liste des rôles
+ */
+export const getRoles = async (options = {}) => {
+  try {
+    // Cache 5 minutes
+    const now = Date.now();
+    if (__rolesCache.data && now - __rolesCache.ts < 5 * 60 * 1000) {
+      return __rolesCache.data;
+    }
+    const response = await axiosGetWithRetry(
+      `${BASE_AUTH_URL}/roles/application/${APP_ID}`,
+      {
+        ...getAuthConfig(),
+        timeout: 30000,
+        signal: options.signal
+      }
+    );
+    const out = response.data.data || response.data || [];
+    __rolesCache = { data: out, ts: now };
+    return out;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des rôles:', error);
+    throw error;
+  }
+};
+/**
+ * Créer un nouveau rôle
+ * @param {Object} roleData - Données du rôle à créer
+ * @param {string} roleData.role_name - Nom du rôle
+ * @param {string} roleData.role_slug - Slug du rôle (optionnel, généré automatiquement si non fourni)
+ * @param {string} roleData.description - Description du rôle (optionnel)
+ * @returns {Promise<Object>} - Le rôle créé
+ */
+export const createRole = async (roleData) => {
+  try {
+    const response = await axios.post(
+      `${BASE_AUTH_URL}/roles`,
+      {
+        ...roleData,
+        app_id: APP_ID
+      },
+      getAuthConfig()
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la création du rôle:', error);
+    throw error;
+  }
+};
+
+/**
+ * Mettre à jour un rôle existant
+ * @param {number} roleId - ID du rôle à mettre à jour
+ * @param {Object} roleData - Nouvelles données du rôle
+ * @returns {Promise<Object>} - Le rôle mis à jour
+ */
+export const updateRole = async (roleId, roleData) => {
+  try {
+    const payload = { ...roleData, app_id: APP_ID };
+    const response = await axios.put(
+      `${BASE_AUTH_URL}/roles/${roleId}`,
+      payload,
+      getAuthConfig()
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour du rôle ${roleId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Supprimer un rôle
+ * @param {number} roleId - ID du rôle à supprimer
+ * @returns {Promise<Object>} - Réponse de l'API
+ */
+export const deleteRole = async (roleId) => {
+  try {
+    const response = await axios.delete(
+      `${BASE_AUTH_URL}/roles/${roleId}`,
+      getAuthConfig()
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Erreur lors de la suppression du rôle ${roleId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Récupérer les permissions d'un rôle
+ * @param {number} roleId - ID du rôle
+ * @returns {Promise<Array>} - Liste des permissions du rôle
+ */
+export const getRolePermissions = async (roleId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_AUTH_URL}/roles/${roleId}/permissions`,
+      getAuthConfig()
+    );
+    return response.data.data || [];
+  } catch (error) {
+    console.error(`Erreur lors de la récupération des permissions du rôle ${roleId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Mettre à jour les permissions d'un rôle
+ * @param {number} roleId - ID du rôle
+ * @param {Array<number>} permissionIds - Tableau des IDs des permissions à attribuer
+ * @returns {Promise<Object>} - Réponse de l'API
+ */
+export const updateRolePermissions = async (roleId, permissionIds) => {
+  try {
+    // Selon la spécification fournie, l'API utilise POST sur /roles/{id}/permissions
+    const response = await axios.post(
+      `${BASE_AUTH_URL}/roles/${roleId}/permissions`,
+      { permissionIds },
+      getAuthConfig()
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour des permissions du rôle ${roleId}:`, error);
     throw error;
   }
 };
@@ -148,59 +399,82 @@ export const markAllNotificationsAsRead = async () => {
   }
 };
 
-// Configuration de base pour les requêtes axios
-const getAuthConfig = () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    throw new Error('Aucun token d\'authentification trouvé');
-  }
-
-  return {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  };
-};
-
-export const getAllUsersByApplicationRole = async () => {
+/**
+ * Récupère tous les utilisateurs avec leurs rôles
+ * @param {number} page - Numéro de page (défaut: 1)
+ * @param {number} limit - Nombre d'éléments par page (défaut: 10, max: 100)
+ * @returns {Promise<{users: Array, pagination: Object}>} - Liste des utilisateurs avec leurs rôles et infos de pagination
+ */
+export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search = '', options = {}) => {
   try {
-    const config = getAuthConfig();
-    const appId = import.meta.env.VITE_APP_ID || 15;
-
-    // 1. Récupérer les utilisateurs de l'application
-    const response = await axios.get(
-      `${BASE_AUTH_URL}/users/application/${appId}?limit=100&page=1`,
-      config
+    const response = await axiosGetWithRetry(
+      `${BASE_AUTH_URL}/users`,
+      {
+        ...getAuthConfig(),
+        params: {
+          page,
+          limit: Math.min(limit, 100), // Limite maximale de 100 éléments
+          ...(search && { search })
+        },
+        headers: {
+          ...getAuthConfig().headers,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        timeout: 30000,
+        signal: options.signal
+      }
     );
 
-    // 2. Si pas de données, on retourne un tableau vide
-    if (!response.data || !response.data.data) {
-      return [];
-    }
+    console.log('Réponse de l\'API users:', response.data);
 
-    // 3. Récupérer les citoyens en parallèle
-    const users = response.data.data;
-    const usersWithCitizens = await Promise.all(
-      users.map(async (user) => {
-        if (!user.id_citizen) return { user, citoyen: null };
-        
-        try {
-          const res = await axios.get(
-            `${BASE_CITOYEN_URL}/citizens/getCitizenById/${user.id_citizen}`,
-            config
-          );
-          return { user, citoyen: res.data || null };
-        } catch (error) {
-          console.error('Erreur récupération citoyen:', error);
-          return { user, citoyen: null };
-        }
-      })
-    );
-
-    return usersWithCitizens;
+    // Extraire les données de la réponse
+    const users = response.data.data || [];
+    const total = response.data.total || 0;
+    
+    // Normaliser les données utilisateur
+    const normalizedUsers = users.map(user => {
+      // Extraire le rôle principal (on prend le premier rôle par défaut)
+      const mainRole = user.appUserRoles?.[0]?.role || {};
+      
+      return {
+        id: user.id || user.user_id,
+        keycloak_id: user.keycloak_id || user.user_keycloak_id,
+        email: user.email || user.user_email || '',
+        pseudo: user.username || user.user_pseudo || '',
+        phone: user.phone || user.user_phone || '',
+        id_citizen: user.id_citizen,
+        municipality_id: user.municipality_id,
+        role_id: mainRole.role_id,
+        role_name: mainRole.role_name || 'Aucun rôle',
+        role_slug: mainRole.role_slug,
+        roles: user.appUserRoles || [],
+        created_at: user.createdAt || user.created_at,
+        updated_at: user.updatedAt || user.updated_at,
+        last_login: user.last_login,
+        _raw: user
+      };
+    });
+    
+    // Retourner les données formatées dans la structure attendue par le composant
+    return {
+      data: normalizedUsers, // Pour la compatibilité avec le code existant
+      users: normalizedUsers,
+      total: parseInt(total, 10) || 0,
+      totalPages: Math.ceil((parseInt(total, 10) || 0) / parseInt(limit, 10)) || 1,
+      pagination: {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total: parseInt(total, 10) || 0,
+        totalPages: Math.ceil((parseInt(total, 10) || 0) / parseInt(limit, 10)) || 1
+      }
+    };
   } catch (error) {
-    console.error("Erreur lors de la récupération des utilisateurs:", error);
+    // Ne pas logger lorsqu'il s'agit d'une annulation de requête
+    if (!(error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError')) {
+      console.error("Erreur lors de la récupération des utilisateurs:", error);
+    }
     throw error; // On propage l'erreur pour la gérer dans le composant
   }
 };

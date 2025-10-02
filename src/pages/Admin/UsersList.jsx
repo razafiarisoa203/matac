@@ -5,97 +5,115 @@ import { getAllUsersByApplicationRole } from '../../services/api/userService';
 
 const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '15';
 
+// TTL du cache en ms (60s)
+const CACHE_TTL_MS = 60 * 1000;
+
 const UsersList = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  });
+
+  // Debounce de la recherche pour éviter des fetch à chaque frappe
   useEffect(() => {
-    const loadUsers = async () => {
-      setIsLoading(true);
+    const t = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // Chargement des utilisateurs avec dépendances stables
+  useEffect(() => {
+    let isMounted = true;
+    const cacheKey = `users_page_${pagination.page}_limit_${pagination.limit}_q_${debouncedSearchTerm || ''}`;
+    const readCache = () => {
+      try {
+        const raw = sessionStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.ts || !parsed.payload) return null;
+        if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+        return parsed.payload;
+      } catch { return null; }
+    };
+    const writeCache = (payload) => {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), payload }));
+      } catch {
+        // Le cache peut échouer (quota, navigation privée). On ignore silencieusement.
+      }
+    };
+    const fetchUsers = async () => {
+      // Essayer d'afficher immédiatement le cache
+      const cached = readCache();
+      if (cached && isMounted) {
+        setUsers(cached.users || []);
+        setPagination(prev => ({
+          ...prev,
+          page: cached.page ?? prev.page,
+          limit: cached.limit ?? prev.limit,
+          total: cached.total ?? prev.total,
+          totalPages: cached.totalPages ?? prev.totalPages,
+        }));
+        setIsLoading(false);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
       try {
-        const usersData = await getAllUsersByApplicationRole();
-        console.log('Données brutes de l\'API:', usersData);
-        
-        // Normaliser les données utilisateur
-        const normalizeUserData = (data) => {
-          if (!data || !Array.isArray(data)) {
-            console.error('Données utilisateur invalides:', data);
-            return [];
-          }
-          
-          return data.map(user => {
-            if (!user) {
-              console.warn('Utilisateur null ou undefined dans les données');
-              return null;
-            }
+        const { page, limit } = pagination;
+        const response = await getAllUsersByApplicationRole(page, limit, debouncedSearchTerm);
 
-            try {
-              // Vérifier si l'utilisateur a une propriété 'user' imbriquée
-              const hasNestedUser = user.user && typeof user.user === 'object';
-              
-              // Extraire les propriétés avec des valeurs par défaut
-              const baseUser = {
-                ...user,
-                id: user.id || (hasNestedUser ? user.user.user_id : null) || `user-${Math.random().toString(36).substr(2, 9)}`,
-                email: user.email || (hasNestedUser ? user.user.email : null) || 'email@inconnu.com',
-                firstname: user.firstname || (hasNestedUser ? user.user.firstname : null) || '',
-                lastname: user.lastname || (hasNestedUser ? user.user.lastname : null) || '',
-                role_id: user.role_id || (hasNestedUser ? user.user.role_id : null) || 93, // Client par défaut
-                role_name: user.role_name || (hasNestedUser ? user.user.role_name : null) || 'Client',
-                created_at: user.created_at || (hasNestedUser ? user.user.created_at : null) || new Date().toISOString(),
-                updated_at: user.updated_at || (hasNestedUser ? user.user.updated_at : null) || new Date().toISOString(),
-                last_login: user.last_login || (hasNestedUser ? user.user.last_login : null)
-              };
+        // Données
+        const usersData = response.data || response.users || [];
+        if (!isMounted) return;
+        setUsers(usersData);
 
-              // Si on a un objet user imbriqué, on le conserve pour la rétrocompatibilité
-              if (hasNestedUser) {
-                baseUser.user = {
-                  ...user.user,
-                  ...baseUser
-                };
-              }
-
-              return baseUser;
-            } catch (error) {
-              console.error('Erreur lors de la normalisation de l\'utilisateur:', error, user);
-              return null;
-            }
-          }).filter(Boolean); // Filtrer les utilisateurs invalides
+        // Pagination - ne mettre à jour que si changement réel
+        const next = {
+          page: response.page ?? page,
+          limit: response.limit ?? limit,
+          total: response.total || 0,
+          totalPages: response.totalPages || Math.ceil((response.total || 0) / (response.limit || limit || 10)) || 1,
         };
-        
-        const normalizedUsers = normalizeUserData(usersData);
-        
-        // Afficher les données brutes pour le débogage
-        console.log('Données utilisateur brutes:', usersData);
-        console.log('Utilisateurs normalisés:', normalizedUsers);
-        
-        // Afficher les formats de date pour le débogage
-        normalizedUsers.forEach((user, index) => {
-          console.log(`Utilisateur ${index}:`, {
-            id: user.id,
-            email: user.email,
-            created_at: user.created_at,
-            created_at_type: typeof user.created_at,
-            updated_at: user.updated_at,
-            last_login: user.last_login
-          });
+        setPagination(prev => (
+          prev.page === next.page &&
+          prev.limit === next.limit &&
+          prev.total === next.total &&
+          prev.totalPages === next.totalPages
+            ? prev
+            : next
+        ));
+        // Écrire dans le cache pour les prochains affichages
+        writeCache({
+          users: usersData,
+          ...next
         });
-        
-        setUsers(normalizedUsers);
       } catch (err) {
         console.error('Erreur lors du chargement des utilisateurs:', err);
-        setError('Impossible de charger les utilisateurs. Veuillez réessayer.');
+        if (isMounted) {
+          setError('Impossible de charger les utilisateurs. Veuillez réessayer.');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
-    loadUsers();
-  }, []);
+    fetchUsers();
+    return () => { 
+      isMounted = false; 
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page, pagination.limit, debouncedSearchTerm]);
+
+  // Plus de useEffect séparé qui dépend de loadUsers pour éviter les boucles
 
   // Afficher le chargement
   if (isLoading) {
@@ -200,9 +218,8 @@ const UsersList = () => {
             <ul className="divide-y divide-gray-200">
               {users.map((user, index) => {
                 const userKey = `user-${user.id}-${index}`; // Clé unique pour chaque élément de la liste
-                const photoUrl = user.citoyen?.citizen_photo?.includes('hello') 
-                  ? `https://gateway.tsirylab.com/serviceupload/file/preview/hello${user.citoyen.citizen_photo.split("hello")[1].replace("/","%2F")}`
-                  : null;
+                // Pour l'instant, on n'a pas de photo de profil dans les données du Swagger
+                const photoUrl = null;
                 
                 return (
                   <li key={userKey} className="hover:bg-gray-50">
@@ -217,18 +234,32 @@ const UsersList = () => {
                             )}
                           </div>
                           <div className="ml-4 min-w-0">
-                            <p className="text-sm font-medium text-blue-600 truncate">
-                              {user.user.user_email}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {user.email}
-                            </p>
+                            <div className="flex items-center">
+                              <p className="text-sm font-medium text-blue-600 truncate">
+                                {user.email}
+                              </p>
+                              {user.is_active === false && (
+                                <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-800 rounded-full">
+                                  Inactif
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center mt-1">
+                              <p className="text-xs text-gray-500 truncate">
+                                {user.pseudo || `${user.firstname} ${user.lastname}`.trim() || 'Utilisateur sans nom'}
+                              </p>
+                              {user.role_name && (
+                                <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                  {user.role_name}
+                                </span>
+                              )}
+                            </div>
                             <div className="text-xs text-gray-500 space-y-1 mt-1">
                               <div className="flex items-start">
                                 <span className="w-20 text-gray-400">Créé:</span>
                                 <span className="break-all">
                                   {(() => {
-                                    const dateStr = user.created_at || user.user?.created_at;
+                                    const dateStr = user.created_at;
                                     if (!dateStr) return 'N/A';
                                     
                                     try {
@@ -273,7 +304,7 @@ const UsersList = () => {
                                 <span className="w-20 text-gray-400">Dernière connexion:</span>
                                 <span className="break-all">
                                   {(() => {
-                                    const dateStr = user.last_login || user.user?.last_login;
+                                    const dateStr = user.last_login;
                                     if (!dateStr) return 'Jamais';
                                     
                                     try {

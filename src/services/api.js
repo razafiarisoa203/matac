@@ -7,7 +7,7 @@ export const TEMP_USER_ID = 'temp_user_id_123';
 const servicesApi = {
   // Tous les services utilisent l'URL de base avec leur chemin respectif
   territoire: `${import.meta.env.VITE_API_URL}/serviceterritoire-v2`,
-  auth: `${import.meta.env.VITE_API_URL}/serviceauth`,
+  auth: `${import.meta.env.VITE_API_URL}/serviceauth/auth`,
   citoyen: `${import.meta.env.VITE_API_URL}/servicecitoyen`,
   upload: `${import.meta.env.VITE_API_URL}/serviceupload`,
   alignement: `${import.meta.env.VITE_API_URL}/servicealignement`,
@@ -20,25 +20,50 @@ const createApi = (baseURL) =>
     headers: { 'Content-Type': 'application/json' },
   });
 
-// Ajout d’intercepteur pour le token
-const addInterceptor = (instance) => {
+  const addInterceptor = (instance) => {
+    instance.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+    return instance;
+  }; 
+
+// Configuration spéciale pour citoyenApi pour gérer les fichiers
+const createCitoyenApi = (baseURL) => {
+  const instance = axios.create({
+    baseURL,
+    // Ne pas définir le Content-Type ici, il sera défini automatiquement avec le bon boundary
+  });
+
+  // Intercepteur pour ajouter le token d'authentification
   instance.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('authToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      // Pour les requêtes FormData, laisser le navigateur définir le Content-Type avec le bon boundary
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+      }
       return config;
     },
     (error) => Promise.reject(error)
   );
+
   return instance;
 };
 
 // Instances axios par service
 const territoireApi = addInterceptor(createApi(servicesApi.territoire));
 const authApi = addInterceptor(createApi(servicesApi.auth));
-const citoyenApi = addInterceptor(createApi(servicesApi.citoyen));
+const citoyenApi = createCitoyenApi(servicesApi.citoyen); // Utilise la configuration spéciale
 const uploadApi = addInterceptor(createApi(servicesApi.upload));
 const alignementApi = addInterceptor(createApi(servicesApi.alignement));
 const notificationApi = addInterceptor(createApi(servicesApi.auth)); // Utilise le même endpoint que auth pour les notifications
@@ -129,12 +154,103 @@ export const citoyenService = {
   },
 
   async createCitizen(citizenData) {
-    const response = await authApi.post(
-      '/users/register-with-citizen-short',
-      citizenData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
-    return response.data;
+    try {
+      console.log('Début de createCitizen avec les données:', citizenData);
+      
+      // Créer un nouvel objet FormData
+      const formData = new FormData();
+      let fokotanyFormattedId = '';
+      
+      // Vérifier si c'est déjà un FormData
+      const isFormData = citizenData instanceof FormData;
+      console.log('Données reçues est un FormData:', isFormData);
+      
+      // Si c'est un FormData, le cloner, sinon ajouter les champs manuellement
+      if (isFormData) {
+        const entries = Array.from(citizenData.entries());
+        
+        // D'abord, collecter le fokotany_formatted_id s'il est présent
+        const fokotanyEntry = entries.find(([key]) => key === 'fokotany_formatted_id');
+        if (fokotanyEntry) {
+          fokotanyFormattedId = fokotanyEntry[1];
+        }
+        
+        // Ajouter tous les champs sauf fokotany_id qui sera ajouté après
+        for (const [key, value] of entries) {
+          if (key !== 'fokotany_id' && value !== null && value !== undefined) {
+            console.log(`Ajout de ${key}:`, value);
+            formData.append(key, value);
+          }
+        }
+        
+        // Ajouter fokotany_id avec la même valeur que fokotany_formatted_id
+        if (fokotanyFormattedId) {
+          console.log(`Ajout de fokotany_id:`, fokotanyFormattedId);
+          formData.append('fokotany_id', fokotanyFormattedId);
+        }
+      } else {
+        // Pour un objet standard, traiter fokotany_formatted_id en premier
+        if (citizenData.fokotany_formatted_id) {
+          fokotanyFormattedId = citizenData.fokotany_formatted_id;
+          formData.append('fokotany_formatted_id', fokotanyFormattedId);
+          formData.append('fokotany_id', fokotanyFormattedId);
+        }
+        
+        // Ajouter les autres champs
+        Object.entries(citizenData).forEach(([key, value]) => {
+          if (key !== 'fokotany_formatted_id' && key !== 'fokotany_id' && 
+              value !== undefined && value !== null) {
+            // Pour les champs de type fichier, toujours les ajouter même s'ils sont vides
+            if (key === 'citizen_photo' || (value instanceof File)) {
+              console.log(`Ajout du fichier ${key}:`, value.name || 'fichier vide');
+              formData.append(key, value);
+            } else if (value !== '') { // Ne pas ajouter les chaînes vides
+              console.log(`Ajout de ${key}:`, value);
+              formData.append(key, value);
+            }
+          }
+        });
+      }
+      
+      // Afficher le contenu de FormData pour débogage
+      console.log('Contenu de FormData:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      
+      console.log('Envoi de la requête POST à /citizens');
+      
+      // Utiliser l'instance citoyenApi configurée qui gère déjà le token et le Content-Type
+      const response = await citoyenApi.post('/citizens', formData);
+      
+      console.log('Réponse reçue:', response);
+      return response.data;
+      
+    } catch (error) {
+      console.error('Erreur dans createCitizen:', {
+        message: error.message,
+        code: error.code,
+        response: {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers
+        },
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      
+      // Créer une erreur plus détaillée
+      const apiError = new Error(error.response?.data?.message || 'Erreur lors de la création du citoyen');
+      apiError.status = error.response?.status;
+      apiError.details = error.response?.data;
+      
+      throw apiError;
+    }
   },
 };
 
@@ -228,13 +344,26 @@ export const territoireService = {
       }
       
       // Formater les données des fokotanys
-      return fokotanys.map(f => ({
-        id: f.fokotany_id || f.id || '',
-        fokotany_id: f.fokotany_id || f.id || '',
-        formatted_id: f.formatted_id || f.fokotany_id || f.id || '',
-        name: f.name || f.nom || `Fokotany ${f.fokotany_id || f.id || ''}`,
-        ...f
-      }));
+      return fokotanys.map(f => {
+        const fokotanyId = f.fokotany_id || f.id || '';
+        // Extraire le formatted_id de l'objet fokotany
+        const formattedId = f.formatted_id || f.formatted_id || fokotanyId;
+        
+        console.log('Fokotany data:', {
+          original: f,
+          id: fokotanyId,
+          formatted_id: formattedId
+        });
+        
+        return {
+          id: fokotanyId,
+          fokotany_id: fokotanyId,
+          formatted_id: formattedId,
+          name: f.name || f.nom || `Fokotany ${fokotanyId}`,
+          // Conserver toutes les propriétés d'origine
+          ...f
+        };
+      });
       
     } catch (error) {
       console.error(`[API] Erreur lors de la récupération des fokotanys:`, {
@@ -334,7 +463,14 @@ export const territoireService = {
 // Service Login
 export const loginService = {
   async login(loginData) {
-    const response = await authApi.post('/auth/login', loginData);
+    // ⚠️ on utilise authApi.post et pas axios.post avec une URL en dur
+    const response = await authApi.post('login', loginData);
+
+    if (response.data && response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+      authApi.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+    }
+
     return response.data;
   },
 };
@@ -342,16 +478,185 @@ export const loginService = {
 // Service Auth
 export const authService = {
   async forgotPassword(user_email) {
-    const response = await authApi.post('/auth/forgot-password', { user_email });
-    return response.data;
+    // Compatibilité: certains backends attendent "email" au lieu de "user_email"
+    const payload = { user_email, email: user_email };
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        // 1) Essayer d'abord sans Authorization sur URL absolue (évite intercepteur/token invalide)
+        const absUrl = `${import.meta.env.VITE_API_URL}/serviceauth/auth/forgot-password`;
+        const response = await axios.post(absUrl, payload, {
+          timeout: 30000,
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          withCredentials: true
+        });
+        // Selon les implémentations, on peut recevoir {success:true, message:..., data:...}
+        return response.data || { success: true };
+      } catch (error) {
+        lastError = error;
+        const isTimeout = error?.code === 'ECONNABORTED';
+        const is5xx = (error?.response?.status || 0) >= 500;
+        // Backoff exponentiel léger pour timeouts/5xx
+        if ((isTimeout || is5xx) && attempt < 2) {
+          const wait = 800 * Math.pow(2, attempt);
+          await new Promise(res => setTimeout(res, wait));
+          continue;
+        }
+        // 2) Fallback: tenter via instance authApi (peut injecter Authorization si nécessaire)
+        try {
+          const response2 = await authApi.post('/forgot-password', payload, { timeout: 30000 });
+          return response2.data || { success: true };
+        } catch (err2) {
+          lastError = err2;
+        }
+        // 3) Erreur fonctionnelle (ex: 400/404): propager avec un message clair
+        const msg = error?.response?.data?.message || error?.message || 'Impossible d\'envoyer le code pour le moment.';
+        const e = new Error(msg);
+        e.status = error?.response?.status;
+        e.code = error?.code;
+        throw e;
+      }
+    }
+    const msg = lastError?.response?.data?.message || 'Le service est indisponible. Veuillez réessayer dans un instant.';
+    const e = new Error(msg);
+    e.status = lastError?.response?.status;
+    e.code = lastError?.code;
+    throw e;
   },
   async getUserData(user_id) {
-    const response = await authApi.get(`/auth/user/${user_id}`);
+    const response = await authApi.get(`/user/${user_id}`);
     return response.data;
   },
   async getConnectedUser() {
-    const response = await authApi.get('/auth/profile');
+    const response = await authApi.get('/profile');
     return response.data;
+  },
+  async resetPassword(email, code, newPassword) {
+    if (!email) throw new Error('Email requis');
+    if (!code || String(code).length !== 6) throw new Error('Code de vérification invalide');
+    if (!newPassword || newPassword.length < 8) throw new Error('Mot de passe trop court');
+
+    const payload = {
+      // compat: différents backends
+      email,
+      user_email: email,
+      code,
+      verification_code: code,
+      new_password: newPassword,
+      password: newPassword,
+    };
+
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        // 1) URL absolue sans intercepteur
+        const absUrl = `${import.meta.env.VITE_API_URL}/serviceauth/auth/reset-password`;
+        const resp = await axios.post(absUrl, payload, {
+          timeout: 30000,
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          withCredentials: true,
+        });
+        return resp.data || { success: true };
+      } catch (error) {
+        lastError = error;
+        const isTimeout = error?.code === 'ECONNABORTED';
+        const is5xx = (error?.response?.status || 0) >= 500;
+        if ((isTimeout || is5xx) && attempt < 2) {
+          const wait = 800 * Math.pow(2, attempt);
+          await new Promise(res => setTimeout(res, wait));
+          continue;
+        }
+
+        // 2) Fallback via instance authApi relative
+        try {
+          const resp2 = await authApi.post('/reset-password', payload, { timeout: 30000 });
+          return resp2.data || { success: true };
+        } catch (err2) {
+          lastError = err2;
+        }
+
+        const msg = error?.response?.data?.message || error?.message || 'Impossible de réinitialiser le mot de passe.';
+        const e = new Error(msg);
+        e.status = error?.response?.status;
+        e.code = error?.code;
+        throw e;
+      }
+    }
+    const msg = lastError?.response?.data?.message || 'Service indisponible. Réessayez dans un instant.';
+    const e = new Error(msg);
+    e.status = lastError?.response?.status;
+    e.code = lastError?.code;
+    throw e;
+  },
+  async registerUser(userData) {
+    try {
+      // 1. First create the user
+      const userResponse = await axios.post('https://gateway.tsirylab.com/serviceauth/users', {
+        user_pseudo: userData.user_pseudo,
+        user_email: userData.user_email,
+        user_password: userData.user_password,
+        user_phone: userData.user_phone,
+        municipality_id: userData.municipality_id,
+        id_citizen: userData.id_citizen || null
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+
+      // 2. If user creation is successful and we have citizen data, create citizen profile
+      if (userResponse.data && userResponse.data.id && userData.citizenData) {
+        const formData = new FormData();
+        
+        // Required fields
+        const requiredFields = [
+          'citizen_name',
+          'citizen_lastname',
+          'citizen_national_card_number',
+          'citizen_adress',
+          'fokotany_formatted_id'
+        ];
+
+        // Check if all required fields are present
+        const missingFields = requiredFields.filter(field => !userData.citizenData[field]);
+        if (missingFields.length > 0) {
+          throw new Error(`Missing required citizen fields: ${missingFields.join(', ')}`);
+        }
+        
+        // Append file if it exists (required)
+        if (!userData.citizenData.citizen_photo) {
+          throw new Error('Citizen photo is required');
+        }
+        formData.append('citizen_photo', userData.citizenData.citizen_photo);
+        
+        // Append all citizen data
+        const citizenFields = [
+          'citizen_name', 'citizen_lastname', 'citizen_national_card_number',
+          'citizen_adress', 'citizen_city', 'fokotany_formatted_id',
+          'citizen_national_card_date', 'citizen_national_card_location'
+        ];
+        
+        citizenFields.forEach(field => {
+          if (userData.citizenData[field] !== undefined) {
+            formData.append(field, userData.citizenData[field]);
+          }
+        });
+        
+        // Create citizen profile
+        await axios.post('https://gateway.tsirylab.com/servicecitoyen/citizens', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+      }
+      
+      return userResponse.data;
+    } catch (error) {
+      console.error('Registration error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 };
 
@@ -409,6 +714,24 @@ export const alignmentService = {
 
 // Service Notification
 export const notificationService = {
+  async sendVerificationEmail(email, code) {
+    try {
+      const response = await axios.post('/servicenotification/email/send', {
+        to: email,
+        subject: 'Réinitialisation de votre mot de passe',
+        template: 'password-reset',
+        data: {
+          code: code,
+          expiration: '15 minutes'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'email de vérification:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
   async getAllNotifications() {
     try {
       const response = await notificationApi.get('/servicenotification/notifications');

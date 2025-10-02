@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import Login from "../pages/Authentification/Login";
 import UserRegisterPage from "../pages/Authentification/Register";
 import ForgotPassword from "../pages/Authentification/ForgotPassword";
+import ResetPassword from "../pages/Authentification/ResetPassword";
 
 // Pages principales
 import HomePage from "../pages/HomePage";
@@ -46,6 +47,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<UserRegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/permis" element={<PermisConstruction />} />
 
         {/* Protected */}

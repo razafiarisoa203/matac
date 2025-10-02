@@ -11,6 +11,7 @@ export default function RegistrationForm() {
     citizen_name: "",
     citizen_lastname: "",
     citizen_national_card_number: userCin || "",
+    citizen_photo: undefined, // Pas de photo par défaut
     citizen_adress: "",
     citizen_national_card_location: "",
     citizen_national_card_date: "",
@@ -20,7 +21,6 @@ export default function RegistrationForm() {
     user_password: "",
     user_phone: "",
     municipality_id: "",
-    citizen_photo: null,
   });
   
   const [errors, setErrors] = useState({});
@@ -87,7 +87,8 @@ export default function RegistrationForm() {
       setFormData(prev => ({
         ...prev,
         [name]: value,
-        fokotany_id: '' // Réinitialiser la sélection du fokotany
+        fokotany_id: '', // Réinitialiser la sélection du fokotany
+        fokotany_formatted_id: '' // Réinitialiser également le formatted_id
       }));
       
       // Charger les fokotanys pour la commune sélectionnée
@@ -110,11 +111,17 @@ export default function RegistrationForm() {
           if (fokotanysData.length === 1) {
             const singleFokotany = fokotanysData[0];
             const fokotanyId = singleFokotany.id || singleFokotany.fokotany_id;
-            console.log(`Sélection automatique du fokotany unique: ${fokotanyId}`);
+            const fokotanyFormattedId = singleFokotany.formatted_id || fokotanyId;
+            
+            console.log(`Sélection automatique du fokotany unique:`, {
+              id: fokotanyId,
+              formatted_id: fokotanyFormattedId
+            });
             
             setFormData(prev => ({
               ...prev,
-              fokotany_id: fokotanyId.toString()
+              fokotany_id: fokotanyId.toString(),
+              fokotany_formatted_id: fokotanyFormattedId.toString()
             }));
           }
         }
@@ -125,10 +132,41 @@ export default function RegistrationForm() {
       } finally {
         setIsLoading(prev => ({ ...prev, fokotanys: false }));
       }
-    } else {
-      setFormData((prev) => ({
+    } else if (name === 'fokotany_id' && value) {
+      // Mettre à jour le fokotany_id et le fokotany_formatted_id lors de la sélection manuelle
+      const selectedFokotany = fokotanys.find(f => {
+        const match = 
+          f.id === value || 
+          f.fokotany_id === value ||
+          f.id?.toString() === value.toString() ||
+          f.fokotany_id?.toString() === value.toString();
+        return match;
+      });
+      
+      if (!selectedFokotany) {
+        console.error('Aucun fokotany trouvé avec l\'ID:', value);
+        return;
+      }
+      
+      // Utiliser le formatted_id du fokotany sélectionné
+      const fokotanyFormattedId = selectedFokotany.formatted_id || selectedFokotany.id || value;
+      
+      console.log('Fokotany sélectionné:', {
+        id: value,
+        formatted_id: fokotanyFormattedId,
+        selectedFokotany
+      });
+      
+      setFormData(prev => ({
         ...prev,
-        [name]: value,
+        fokotany_id: value,
+        fokotany_formatted_id: fokotanyFormattedId
+      }));
+    } else {
+      // Pour tous les autres champs
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
       }));
     }
 
@@ -143,10 +181,24 @@ export default function RegistrationForm() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setFormData((prev) => ({
-      ...prev,
-      citizen_photo: file,
-    }));
+    if (file) {
+      console.log('Fichier sélectionné:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        isFile: file instanceof File
+      });
+      setFormData((prev) => ({
+        ...prev,
+        citizen_photo: file,
+      }));
+    } else {
+      console.log('Aucun fichier sélectionné');
+      setFormData((prev) => ({
+        ...prev,
+        citizen_photo: undefined, // Utiliser undefined au lieu de null
+      }));
+    }
   };
 
   const validateForm = () => {
@@ -160,7 +212,7 @@ export default function RegistrationForm() {
       "citizen_adress",
       "citizen_national_card_location",
       "citizen_national_card_date",
-      "fokotany_id",
+      "fokotany_id", // Ce champ est toujours utilisé dans le state du formulaire
       "user_pseudo",
       "user_email",
       "user_password",
@@ -224,16 +276,32 @@ export default function RegistrationForm() {
       formDataToSend.append('citizen_adress', formData.citizen_adress);
       formDataToSend.append('citizen_national_card_location', formData.citizen_national_card_location);
       formDataToSend.append('citizen_national_card_date', formData.citizen_national_card_date);
-      formDataToSend.append('fokotany_id', formData.fokotany_id);
+      // Ajouter les champs fokotany avec le formatted_id
+      if (formData.fokotany_formatted_id) {
+        formDataToSend.append('fokotany_formatted_id', formData.fokotany_formatted_id);
+        formDataToSend.append('fokotany_id', formData.fokotany_formatted_id);
+      } else if (formData.fokotany_id) {
+        // Si pour une raison quelconque fokotany_formatted_id n'est pas défini
+        formDataToSend.append('fokotany_id', formData.fokotany_id);
+        formDataToSend.append('fokotany_formatted_id', formData.fokotany_id);
+      }
       formDataToSend.append('user_pseudo', formData.user_pseudo);
       formDataToSend.append('user_email', formData.user_email);
       formDataToSend.append('user_password', formData.user_password);
       formDataToSend.append('user_phone', formData.user_phone);
       formDataToSend.append('municipality_id', formData.municipality_id);
       
-      // Ajouter le fichier photo s'il existe
+      // Toujours ajouter le champ citizen_photo, même s'il est vide
       if (formData.citizen_photo) {
+        console.log('Ajout de la photo au FormData:', {
+          name: formData.citizen_photo.name,
+          type: formData.citizen_photo.type,
+          size: formData.citizen_photo.size
+        });
         formDataToSend.append('citizen_photo', formData.citizen_photo);
+      } else {
+        console.log('Aucune photo sélectionnée, envoi d\'un champ vide');
+        formDataToSend.append('citizen_photo', ''); // Envoyer une chaîne vide si pas de photo
       }
 
       const formDataObj = {};
@@ -242,17 +310,63 @@ export default function RegistrationForm() {
       }
       console.log("FormData as object:", formDataObj);
       
-      // Envoyer les données avec FormData
-      const res = await citoyenService.createCitizen(formDataToSend);
-      console.log("Response:", res);
+      // Afficher les entrées du FormData pour débogage
+      console.log("Contenu du FormData avant envoi:");
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(key, value);
+      }
       
-      alert(t('registrationForm.successMessage'));
+      // Vérifier le token d'authentification
+      const token = localStorage.getItem('authToken');
+      console.log("Token d'authentification:", token ? 'Présent' : 'Manquant');
+      
+      // Envoyer les données avec FormData
+      try {
+        const res = await citoyenService.createCitizen(formDataToSend);
+        console.log("Réponse du serveur:", res);
+        alert(t('registrationForm.successMessage'));
+        // Réinitialiser le formulaire après succès
+        setFormData({
+          citizen_name: "",
+          citizen_lastname: "",
+          citizen_national_card_number: "",
+          citizen_photo: undefined, // Réinitialiser à undefined
+          citizen_adress: "",
+          citizen_national_card_location: "",
+          citizen_national_card_date: "",
+          fokotany_id: "",
+          user_pseudo: "",
+          user_email: "",
+          user_password: "",
+          user_phone: "",
+          municipality_id: ""
+        });
+      } catch (apiError) {
+        console.error("Erreur API détaillée:", {
+          message: apiError.message,
+          status: apiError.response?.status,
+          data: apiError.response?.data,
+          headers: apiError.response?.headers
+        });
+        throw apiError; // Relancer pour être attrapé par le catch externe
+      }
+      
       setIsSubmitting(false);
     
     } catch (error) {
-      console.error("Erreur lors de l'inscription: ", error);
+      console.error("Erreur lors de l'inscription: ", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       setIsSubmitting(false);
-      alert(t('registrationForm.errors.registrationFailed'));
+      
+      // Afficher un message d'erreur plus détaillé
+      const errorMessage = error.response?.data?.message || 
+                         error.message || 
+                         t('registrationForm.errors.registrationFailed');
+      
+      alert(`Échec de l'inscription: ${errorMessage}`);
     }
   };
 
