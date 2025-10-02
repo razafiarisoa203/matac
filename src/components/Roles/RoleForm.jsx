@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createRole, updateRole, getRolePermissions } from '../../services/api/userService';
+import { createRole, updateRole } from '../../services/api/userService';
 import { toast } from 'react-toastify';
 
 const RoleForm = ({ role = null, onSuccess, onCancel }) => {
@@ -8,33 +8,20 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
     role_slug: '',
     description: ''
   });
-  const [permissions, setPermissions] = useState([]);
-  const [selectedPermissions, setSelectedPermissions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (role) {
-      // If editing an existing role, populate the form
+      // Si édition, pré-remplir le formulaire
       setFormData({
         role_name: role.role_name || '',
         role_slug: role.role_slug || '',
         description: role.description || ''
       });
-      
-      // Load role permissions if editing
-      loadRolePermissions(role.role_id);
     }
   }, [role]);
 
-  const loadRolePermissions = async (roleId) => {
-    try {
-      const rolePermissions = await getRolePermissions(roleId);
-      setSelectedPermissions(rolePermissions.map(p => p.permission_id));
-    } catch (error) {
-      console.error('Error loading role permissions:', error);
-      toast.error('Erreur lors du chargement des permissions du rôle');
-    }
-  };
+  // Suppression de la gestion des permissions (non obligatoire)
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,23 +35,14 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
     }));
   };
 
-  const handlePermissionChange = (permissionId) => {
-    setSelectedPermissions(prev =>
-      prev.includes(permissionId)
-        ? prev.filter(id => id !== permissionId)
-        : [...prev, permissionId]
-    );
-  };
+  // Aucune gestion de permissions dans ce flux
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const roleData = {
-        ...formData,
-        permission_ids: selectedPermissions
-      };
+      const roleData = { ...formData };
 
       if (role) {
         // Update existing role
@@ -85,19 +63,7 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
     }
   };
 
-  // Mock permissions - replace with actual permissions from your API
-  const mockPermissions = [
-    { permission_id: 1, name: 'user_create', description: 'Créer des utilisateurs' },
-    { permission_id: 2, name: 'user_read', description: 'Voir les utilisateurs' },
-    { permission_id: 3, name: 'user_update', description: 'Modifier les utilisateurs' },
-    { permission_id: 4, name: 'user_delete', description: 'Supprimer des utilisateurs' },
-    { permission_id: 5, name: 'role_manage', description: 'Gérer les rôles' },
-  ];
-
-  // Load permissions (in a real app, this would be an API call)
-  useEffect(() => {
-    setPermissions(mockPermissions);
-  }, []);
+  // Aucune UI de permissions: non requis
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -168,40 +134,7 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
         </div>
       </div>
 
-      <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-        <div className="md:grid md:grid-cols-3 md:gap-6">
-          <div className="md:col-span-1">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Permissions</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Sélectionnez les permissions accordées à ce rôle.
-            </p>
-          </div>
-          <div className="mt-5 md:mt-0 md:col-span-2">
-            <div className="space-y-4">
-              {permissions.map((permission) => (
-                <div key={permission.permission_id} className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id={`permission-${permission.permission_id}`}
-                      name="permissions"
-                      type="checkbox"
-                      checked={selectedPermissions.includes(permission.permission_id)}
-                      onChange={() => handlePermissionChange(permission.permission_id)}
-                      className="focus:ring-green-500 h-4 w-4 text-green-600 border-gray-300 rounded"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label htmlFor={`permission-${permission.permission_id}`} className="font-medium text-gray-700">
-                      {permission.name}
-                    </label>
-                    <p className="text-gray-500">{permission.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Gestion des permissions retirée (non obligatoire) */}
 
       <div className="flex justify-end space-x-3">
         <button

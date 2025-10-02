@@ -3,7 +3,9 @@ import { store } from '../store/store';
 
 // Utilisation de l'URL de base depuis les variables d'environnement
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const BASE_AUTH_URL = `${API_URL}/serviceauth`;
+// En dev, utilisez le proxy Vite pour éviter CORS: base relative
+const isDev = typeof window !== 'undefined' && window.location.origin.includes('localhost');
+const BASE_AUTH_URL = isDev ? '/serviceauth' : `${API_URL}/serviceauth`;
 const BASE_CITOYEN_URL = `${API_URL}/servicecitoyen`;
 const APP_ID = import.meta.env.VITE_APP_ID || 15; // Default to 15 if not set
 // Cache simple en mémoire
@@ -275,7 +277,8 @@ export const getRolePermissions = async (roleId) => {
  */
 export const updateRolePermissions = async (roleId, permissionIds) => {
   try {
-    const response = await axios.put(
+    // Selon la spécification fournie, l'API utilise POST sur /roles/{id}/permissions
+    const response = await axios.post(
       `${BASE_AUTH_URL}/roles/${roleId}/permissions`,
       { permissionIds },
       getAuthConfig()

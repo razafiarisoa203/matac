@@ -6,6 +6,16 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
+      '/serviceauth': {
+        target: 'https://gateway.tsirylab.com',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/servicecitoyen': {
+        target: 'https://gateway.tsirylab.com',
+        changeOrigin: true,
+        secure: false,
+      },
       '/serviceterritoire': {
         target: 'https://gateway.tsirylab.com',
         changeOrigin: true,

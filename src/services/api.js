@@ -531,6 +531,63 @@ export const authService = {
     const response = await authApi.get('/profile');
     return response.data;
   },
+  async resetPassword(email, code, newPassword) {
+    if (!email) throw new Error('Email requis');
+    if (!code || String(code).length !== 6) throw new Error('Code de vérification invalide');
+    if (!newPassword || newPassword.length < 8) throw new Error('Mot de passe trop court');
+
+    const payload = {
+      // compat: différents backends
+      email,
+      user_email: email,
+      code,
+      verification_code: code,
+      new_password: newPassword,
+      password: newPassword,
+    };
+
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        // 1) URL absolue sans intercepteur
+        const absUrl = `${import.meta.env.VITE_API_URL}/serviceauth/auth/reset-password`;
+        const resp = await axios.post(absUrl, payload, {
+          timeout: 30000,
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          withCredentials: true,
+        });
+        return resp.data || { success: true };
+      } catch (error) {
+        lastError = error;
+        const isTimeout = error?.code === 'ECONNABORTED';
+        const is5xx = (error?.response?.status || 0) >= 500;
+        if ((isTimeout || is5xx) && attempt < 2) {
+          const wait = 800 * Math.pow(2, attempt);
+          await new Promise(res => setTimeout(res, wait));
+          continue;
+        }
+
+        // 2) Fallback via instance authApi relative
+        try {
+          const resp2 = await authApi.post('/reset-password', payload, { timeout: 30000 });
+          return resp2.data || { success: true };
+        } catch (err2) {
+          lastError = err2;
+        }
+
+        const msg = error?.response?.data?.message || error?.message || 'Impossible de réinitialiser le mot de passe.';
+        const e = new Error(msg);
+        e.status = error?.response?.status;
+        e.code = error?.code;
+        throw e;
+      }
+    }
+    const msg = lastError?.response?.data?.message || 'Service indisponible. Réessayez dans un instant.';
+    const e = new Error(msg);
+    e.status = lastError?.response?.status;
+    e.code = lastError?.code;
+    throw e;
+  },
   async registerUser(userData) {
     try {
       // 1. First create the user
