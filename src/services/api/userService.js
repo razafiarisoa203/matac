@@ -8,6 +8,29 @@ const BASE_CITOYEN_URL = `${API_URL}/servicecitoyen`;
 const APP_ID = import.meta.env.VITE_APP_ID || 15; // Default to 15 if not set
 // Cache simple en mémoire
 let __rolesCache = { data: null, ts: 0 };
+// Petite aide utilitaire: GET avec retry/backoff pour erreurs transitoires (timeout/5xx)
+const axiosGetWithRetry = async (url, config = {}, { retries = 2, backoff = 800 } = {}) => {
+  let attempt = 0;
+  let lastErr;
+  while (attempt <= retries) {
+    try {
+      return await axios.get(url, config);
+    } catch (err) {
+      const status = err?.response?.status;
+      const isTimeout = err?.code === 'ECONNABORTED';
+      const is5xx = status >= 500 && status < 600;
+      if ((isTimeout || is5xx) && attempt < retries) {
+        const wait = backoff * Math.pow(2, attempt);
+        await new Promise(res => setTimeout(res, wait));
+        attempt += 1;
+        lastErr = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+};
 // Configuration de base pour les requêtes axios
 const getAuthConfig = () => {
   const token = localStorage.getItem('authToken');
@@ -32,7 +55,7 @@ const getAuthConfig = () => {
  */
 export const getUsers = async (page = 1, limit = 10, search = '', options = {}) => {
   try {
-    const response = await axios.get(
+    const response = await axiosGetWithRetry(
       `${BASE_AUTH_URL}/users`,
       {
         ...getAuthConfig(),
@@ -47,8 +70,8 @@ export const getUsers = async (page = 1, limit = 10, search = '', options = {}) 
           'Pragma': 'no-cache',
           'Expires': '0'
         },
-        // Performance & annulation
-        timeout: 10000,
+        // Timeout plus élevé pour éviter ECONNABORTED lors de charges réseau
+        timeout: 30000,
         signal: options.signal
       }
     );
@@ -147,11 +170,11 @@ export const getRoles = async (options = {}) => {
     if (__rolesCache.data && now - __rolesCache.ts < 5 * 60 * 1000) {
       return __rolesCache.data;
     }
-    const response = await axios.get(
+    const response = await axiosGetWithRetry(
       `${BASE_AUTH_URL}/roles/application/${APP_ID}`,
       {
         ...getAuthConfig(),
-        timeout: 10000,
+        timeout: 30000,
         signal: options.signal
       }
     );
@@ -380,7 +403,7 @@ export const markAllNotificationsAsRead = async () => {
  */
 export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search = '', options = {}) => {
   try {
-    const response = await axios.get(
+    const response = await axiosGetWithRetry(
       `${BASE_AUTH_URL}/users`,
       {
         ...getAuthConfig(),
@@ -395,7 +418,7 @@ export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search 
           'Pragma': 'no-cache',
           'Expires': '0'
         },
-        timeout: 10000,
+        timeout: 30000,
         signal: options.signal
       }
     );
