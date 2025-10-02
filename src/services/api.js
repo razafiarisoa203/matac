@@ -478,8 +478,50 @@ export const loginService = {
 // Service Auth
 export const authService = {
   async forgotPassword(user_email) {
-    const response = await authApi.post('/forgot-password', { user_email });
-    return response.data;
+    // Compatibilité: certains backends attendent "email" au lieu de "user_email"
+    const payload = { user_email, email: user_email };
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        // 1) Essayer d'abord sans Authorization sur URL absolue (évite intercepteur/token invalide)
+        const absUrl = `${import.meta.env.VITE_API_URL}/serviceauth/auth/forgot-password`;
+        const response = await axios.post(absUrl, payload, {
+          timeout: 30000,
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          withCredentials: true
+        });
+        // Selon les implémentations, on peut recevoir {success:true, message:..., data:...}
+        return response.data || { success: true };
+      } catch (error) {
+        lastError = error;
+        const isTimeout = error?.code === 'ECONNABORTED';
+        const is5xx = (error?.response?.status || 0) >= 500;
+        // Backoff exponentiel léger pour timeouts/5xx
+        if ((isTimeout || is5xx) && attempt < 2) {
+          const wait = 800 * Math.pow(2, attempt);
+          await new Promise(res => setTimeout(res, wait));
+          continue;
+        }
+        // 2) Fallback: tenter via instance authApi (peut injecter Authorization si nécessaire)
+        try {
+          const response2 = await authApi.post('/forgot-password', payload, { timeout: 30000 });
+          return response2.data || { success: true };
+        } catch (err2) {
+          lastError = err2;
+        }
+        // 3) Erreur fonctionnelle (ex: 400/404): propager avec un message clair
+        const msg = error?.response?.data?.message || error?.message || 'Impossible d\'envoyer le code pour le moment.';
+        const e = new Error(msg);
+        e.status = error?.response?.status;
+        e.code = error?.code;
+        throw e;
+      }
+    }
+    const msg = lastError?.response?.data?.message || 'Le service est indisponible. Veuillez réessayer dans un instant.';
+    const e = new Error(msg);
+    e.status = lastError?.response?.status;
+    e.code = lastError?.code;
+    throw e;
   },
   async getUserData(user_id) {
     const response = await authApi.get(`/user/${user_id}`);

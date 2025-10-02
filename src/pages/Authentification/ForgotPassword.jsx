@@ -15,6 +15,27 @@ export default function ForgotPassword() {
   const inputRefs = useRef([]);
   const navigate = useNavigate();
 
+  const resendCode = async () => {
+    try {
+      setError("");
+      setMessage("");
+      setLoading(true);
+      if (!email || !/\S+@\S+\.\S+/.test(email)) {
+        throw new Error("Veuillez entrer une adresse email valide");
+      }
+      await authService.forgotPassword(email);
+      setShowVerification(true);
+      setMessage("Un nouveau code de vérification a été envoyé à votre adresse email.");
+      setResendEnabled(false);
+      setCountdown(60);
+    } catch (err) {
+      console.error('Erreur (renvoi code):', err);
+      setError(err.message || "Impossible d'envoyer le code. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Gérer le compte à rebours pour le renvoi du code
   useEffect(() => {
     let timer;
@@ -157,7 +178,7 @@ export default function ForgotPassword() {
                 <div className="text-sm text-center">
                   <button
                     type="button"
-                    onClick={handleSubmit}
+                    onClick={resendCode}
                     disabled={!resendEnabled || loading}
                     className={`text-green-600 hover:text-green-800 ${!resendEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
