@@ -5,8 +5,7 @@ import { toast } from 'react-toastify';
 const RoleForm = ({ role = null, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     role_name: '',
-    role_slug: '',
-    description: ''
+    role_slug: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -15,8 +14,7 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
       // Si édition, pré-remplir le formulaire
       setFormData({
         role_name: role.role_name || '',
-        role_slug: role.role_slug || '',
-        description: role.description || ''
+        role_slug: role.role_slug || ''
       });
     }
   }, [role]);
@@ -115,20 +113,7 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
                 </p>
               </div>
 
-              <div className="col-span-6">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={3}
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border border-gray-300 rounded-md"
-                  placeholder="Décrivez le rôle et ses permissions"
-                />
-              </div>
+              {/* Champ description supprimé (non présent en base) */}
             </div>
           </div>
         </div>

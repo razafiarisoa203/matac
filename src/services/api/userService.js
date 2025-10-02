@@ -221,9 +221,10 @@ export const createRole = async (roleData) => {
  */
 export const updateRole = async (roleId, roleData) => {
   try {
+    const payload = { ...roleData, app_id: APP_ID };
     const response = await axios.put(
       `${BASE_AUTH_URL}/roles/${roleId}`,
-      roleData,
+      payload,
       getAuthConfig()
     );
     return response.data;
