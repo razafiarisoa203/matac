@@ -44,15 +44,17 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
 
       if (role) {
         // Update existing role
-        await updateRole(role.role_id, roleData);
+        const updated = await updateRole(role.role_id, roleData);
         toast.success('Rôle mis à jour avec succès');
+        // Remonter l'élément mis à jour au parent
+        onSuccess && onSuccess({ type: 'update', role: updated?.data || updated });
       } else {
         // Create new role
-        await createRole(roleData);
+        const created = await createRole(roleData);
         toast.success('Rôle créé avec succès');
+        // Remonter l'élément créé au parent
+        onSuccess && onSuccess({ type: 'create', role: created?.data || created });
       }
-      
-      onSuccess();
     } catch (error) {
       console.error('Error saving role:', error);
       toast.error(error.response?.data?.message || 'Erreur lors de la sauvegarde du rôle');

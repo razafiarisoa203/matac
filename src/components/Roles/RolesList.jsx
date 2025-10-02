@@ -31,7 +31,8 @@ const RolesList = () => {
       try {
         await deleteRole(roleId);
         toast.success('Rôle supprimé avec succès');
-        fetchRoles();
+        // Mise à jour optimiste de la liste
+        setRoles(prev => prev.filter(r => r.role_id !== roleId));
       } catch (error) {
         console.error('Error deleting role:', error);
         toast.error(error.response?.data?.message || 'Erreur lors de la suppression du rôle');
@@ -44,10 +45,19 @@ const RolesList = () => {
     setShowForm(true);
   };
 
-  const handleFormSuccess = () => {
+  const handleFormSuccess = (payload) => {
+    // payload peut être { type: 'create'|'update', role }
+    if (payload?.type === 'create' && payload.role) {
+      setRoles(prev => [payload.role, ...prev]);
+    } else if (payload?.type === 'update' && payload.role) {
+      const updated = payload.role;
+      setRoles(prev => prev.map(r => (r.role_id === (updated.role_id || updated.id) ? { ...r, ...updated } : r)));
+    } else {
+      // Fallback: recharger si on n'a pas les données remontées
+      fetchRoles();
+    }
     setShowForm(false);
     setEditingRole(null);
-    fetchRoles();
   };
 
   const handleCancel = () => {
@@ -130,9 +140,7 @@ const RolesList = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Slug
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
-                  </th>
+                  {/* Colonne Description supprimée */}
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
@@ -153,11 +161,7 @@ const RolesList = () => {
                         {role.role_slug}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-500 max-w-xs truncate">
-                        {role.description || 'Aucune description'}
-                      </div>
-                    </td>
+                    {/* Colonne Description supprimée */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleEdit(role)}
