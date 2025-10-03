@@ -64,13 +64,18 @@ export const getUsers = async (page = 1, limit = 10, search = '', options = {}) 
         params: {
           page,
           limit: Math.min(limit, 100),
-          ...(search && { search })
+          ...(search && { search }),
+          // Contexte application côté serveur (si supporté)
+          applicationId: APP_ID,
+          app_id: APP_ID,
         },
         headers: {
           ...getAuthConfig().headers,
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          // Contexte application côté serveur (si supporté)
+          'X-Application-ID': APP_ID,
         },
         // Timeout plus élevé pour éviter ECONNABORTED lors de charges réseau
         timeout: 30000,
@@ -80,8 +85,20 @@ export const getUsers = async (page = 1, limit = 10, search = '', options = {}) 
     
     console.log('Réponse API getUsers:', response.data);
     
-    const users = response.data?.data || [];
-    const total = response.data?.total || 0;
+    // Filtrage de secours côté client: ne garder que les utilisateurs liés à APP_ID
+    const rawUsers = response.data?.data || [];
+    const users = rawUsers.filter(u => {
+      const roles = u.appUserRoles || [];
+      return roles.some(r => {
+        const role = r.role || {};
+        return (
+          Number(role.app_id) === Number(APP_ID) ||
+          Number(role.application_id) === Number(APP_ID) ||
+          Number(r.app_id) === Number(APP_ID)
+        );
+      });
+    });
+    const total = users.length || response.data?.total || 0;
     
     // Retourner directement les données sans double normalisation
     return {
@@ -414,13 +431,18 @@ export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search 
         params: {
           page,
           limit: Math.min(limit, 100), // Limite maximale de 100 éléments
-          ...(search && { search })
+          ...(search && { search }),
+          // Contexte application côté serveur (si supporté)
+          applicationId: APP_ID,
+          app_id: APP_ID,
         },
         headers: {
           ...getAuthConfig().headers,
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          // Contexte application côté serveur (si supporté)
+          'X-Application-ID': APP_ID,
         },
         timeout: 30000,
         signal: options.signal
@@ -429,9 +451,20 @@ export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search 
 
     console.log('Réponse de l\'API users:', response.data);
 
-    // Extraire les données de la réponse
-    const users = response.data.data || [];
-    const total = response.data.total || 0;
+    // Extraire et filtrer côté client pour APP_ID si le serveur ne filtre pas
+    const rawUsers = response.data.data || [];
+    const users = rawUsers.filter(u => {
+      const roles = u.appUserRoles || [];
+      return roles.some(r => {
+        const role = r.role || {};
+        return (
+          Number(role.app_id) === Number(APP_ID) ||
+          Number(role.application_id) === Number(APP_ID) ||
+          Number(r.app_id) === Number(APP_ID)
+        );
+      });
+    });
+    const total = users.length || response.data.total || 0;
     
     // Normaliser les données utilisateur
     const normalizedUsers = users.map(user => {

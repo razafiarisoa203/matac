@@ -252,6 +252,29 @@ export const citoyenService = {
       throw apiError;
     }
   },
+
+  // Helpers pour l'UI: retourner des options prêtes à l'emploi pour des <select>
+  async getCommunesOptions() {
+    const communes = await this.getCommunes();
+    return communes.map(c => ({
+      value: c.formatted_id || c.commune_id || c.id,
+      label: c.name,
+      formatted_id: c.formatted_id,
+      commune_id: c.commune_id,
+      _raw: c,
+    }));
+  },
+
+  async getFokotanyOptions(communeFormattedId) {
+    const fokotanys = await this.getFokotanys(communeFormattedId);
+    return fokotanys.map(f => ({
+      value: f.formatted_id || f.fokotany_id || f.id,
+      label: f.name,
+      formatted_id: f.formatted_id,
+      fokotany_id: f.fokotany_id,
+      _raw: f,
+    }));
+  },
 };
 
 // Service Upload
@@ -273,8 +296,8 @@ export const uploadService = {
 export const territoireService = {
   async getCommunes() {
     try {
-      console.log('[API] Récupération des communes...');
-      const response = await territoireApi.get('/communes/members');
+      console.log('[API] Récupération des communes (basic)...');
+      const response = await territoireApi.get('/communes/basic');
       
       // Vérifier la structure de la réponse
       if (!response.data) {
@@ -286,12 +309,12 @@ export const territoireService = {
       const data = response.data.data || response.data;
       const communes = Array.isArray(data) ? data : [data];
       
-      console.log(`[API] ${communes.length} communes récupérées`);
+      console.log(`[API] ${communes.length} communes récupérées (basic)`);
       return communes.map(c => ({
-        id: c.id || c.commune_id || '',
-        commune_id: c.id || c.commune_id || '',
-        formatted_id: c.id || c.commune_id || '',
-        name: c.nom || c.name || `Commune ${c.id || c.commune_id || ''}`,
+        id: c.id || c.commune_id || c.formatted_id || '',
+        commune_id: c.commune_id || c.id || c.formatted_id || '',
+        formatted_id: c.formatted_id || c.commune_id || c.id || '',
+        name: c.nom || c.name || c.commune_name || `Commune ${c.id || c.commune_id || c.formatted_id || ''}`,
         ...c
       }));
       
@@ -317,50 +340,46 @@ export const territoireService = {
         return [];
       }
 
-      console.log(`[API] Récupération des fokotanys pour la commune ${communeFormattedId}...`);
-      
-      // Récupérer d'abord la liste des communes avec leurs fokotanys
-      const communes = await this.getCommunes();
-      
-      // Trouver la commune correspondante
-      const commune = communes.find(c => 
-        c.formatted_id === communeFormattedId || 
-        c.commune_id?.toString() === communeFormattedId ||
-        c.id?.toString() === communeFormattedId
-      );
-      
-      if (!commune) {
-        console.warn(`[API] Aucune commune trouvée avec l'ID ${communeFormattedId}`);
+      let targetFormattedId = String(communeFormattedId).trim();
+      // Si ce n'est pas un formatted_id (12+ chiffres), tenter de le résoudre via la liste des communes
+      if (!/^[0-9]{10,}$/.test(targetFormattedId)) {
+        console.log(`[API] L'ID fourni (${communeFormattedId}) ne ressemble pas à un formatted_id. Résolution via getCommunes()...`);
+        const communes = await this.getCommunes();
+        const byId = communes.find(c => String(c.commune_id) === String(communeFormattedId) || String(c.id) === String(communeFormattedId));
+        if (byId?.formatted_id) {
+          targetFormattedId = byId.formatted_id;
+          console.log(`[API] Résolution réussie: commune_id ${communeFormattedId} -> formatted_id ${targetFormattedId}`);
+        } else {
+          console.warn(`[API] Impossible de résoudre en formatted_id pour la valeur ${communeFormattedId}. Requête avec la valeur brute (peut échouer).`);
+        }
+      }
+
+      console.log(`[API] Récupération des fokotanys via endpoint dédié pour la commune (formatted_id) ${targetFormattedId}...`);
+
+      const response = await territoireApi.get(`/fokotanys/commune/${targetFormattedId}`);
+
+      if (!response.data) {
+        console.warn('[API] Aucune donnée dans la réponse des fokotanys');
         return [];
       }
-      
-      // Récupérer les fokotanys de la commune
-      const fokotanys = commune.fokotanys || [];
-      
+
+      const data = response.data.data || response.data;
+      const fokotanys = Array.isArray(data) ? data : [data];
+
       if (fokotanys.length === 0) {
-        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId} (${commune.name})`);
+        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
       } else {
-        console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId} (${commune.name})`);
+        console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId}`);
       }
-      
-      // Formater les données des fokotanys
+
       return fokotanys.map(f => {
-        const fokotanyId = f.fokotany_id || f.id || '';
-        // Extraire le formatted_id de l'objet fokotany
-        const formattedId = f.formatted_id || f.formatted_id || fokotanyId;
-        
-        console.log('Fokotany data:', {
-          original: f,
-          id: fokotanyId,
-          formatted_id: formattedId
-        });
-        
+        const fokotanyId = f.fokotany_id || f.id || f.formatted_id || '';
+        const formattedId = f.formatted_id || f.fokotany_formatted_id || fokotanyId;
         return {
           id: fokotanyId,
           fokotany_id: fokotanyId,
           formatted_id: formattedId,
-          name: f.name || f.nom || `Fokotany ${fokotanyId}`,
-          // Conserver toutes les propriétés d'origine
+          name: f.name || f.nom || f.fokotany_name || `Fokotany ${fokotanyId}`,
           ...f
         };
       });
@@ -463,14 +482,23 @@ export const territoireService = {
 // Service Login
 export const loginService = {
   async login(loginData) {
-    // ⚠️ on utilise authApi.post et pas axios.post avec une URL en dur
-    const response = await authApi.post('login', loginData);
+    // Endpoint confirmé: /serviceauth/auth/login via l'instance authApi
+    const payload = {
+      user_email: loginData.user_email || loginData.email,
+      user_password: loginData.user_password || loginData.password,
+    };
 
-    if (response.data && response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
-      authApi.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+    const response = await authApi.post('login', payload, {
+      timeout: 30000,
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      withCredentials: true,
+    });
+
+    const token = response.data?.token || response.data?.data?.token || response.headers?.['x-auth-token'];
+    if (token) {
+      localStorage.setItem('authToken', token);
+      authApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
-
     return response.data;
   },
 };
@@ -590,69 +618,90 @@ export const authService = {
   },
   async registerUser(userData) {
     try {
-      // 1. First create the user
-      const userResponse = await axios.post('https://gateway.tsirylab.com/serviceauth/users', {
-        user_pseudo: userData.user_pseudo,
-        user_email: userData.user_email,
-        user_password: userData.user_password,
-        user_phone: userData.user_phone,
-        municipality_id: userData.municipality_id,
-        id_citizen: userData.id_citizen || null
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      // 1) Enregistrer via endpoint multipart (citoyen + utilisateur)
+      const API_BASE = import.meta.env.VITE_API_URL;
+      const token = localStorage.getItem('authToken');
 
-      // 2. If user creation is successful and we have citizen data, create citizen profile
-      if (userResponse.data && userResponse.data.id && userData.citizenData) {
-        const formData = new FormData();
-        
-        // Required fields
-        const requiredFields = [
-          'citizen_name',
-          'citizen_lastname',
-          'citizen_national_card_number',
-          'citizen_adress',
-          'fokotany_formatted_id'
-        ];
+      // Construire un FormData selon la spec
+      const fd = new FormData();
+      const c = userData.citizenData || userData; // accepter champs imbriqués ou plats
 
-        // Check if all required fields are present
-        const missingFields = requiredFields.filter(field => !userData.citizenData[field]);
-        if (missingFields.length > 0) {
-          throw new Error(`Missing required citizen fields: ${missingFields.join(', ')}`);
-        }
-        
-        // Append file if it exists (required)
-        if (!userData.citizenData.citizen_photo) {
-          throw new Error('Citizen photo is required');
-        }
-        formData.append('citizen_photo', userData.citizenData.citizen_photo);
-        
-        // Append all citizen data
-        const citizenFields = [
-          'citizen_name', 'citizen_lastname', 'citizen_national_card_number',
-          'citizen_adress', 'citizen_city', 'fokotany_formatted_id',
-          'citizen_national_card_date', 'citizen_national_card_location'
-        ];
-        
-        citizenFields.forEach(field => {
-          if (userData.citizenData[field] !== undefined) {
-            formData.append(field, userData.citizenData[field]);
-          }
-        });
-        
-        // Create citizen profile
-        await axios.post('https://gateway.tsirylab.com/servicecitoyen/citizens', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          }
-        });
+      // Champs citoyen requis
+      fd.append('citizen_name', c.citizen_name || '');
+      fd.append('citizen_lastname', c.citizen_lastname || '');
+      fd.append('citizen_national_card_number', c.citizen_national_card_number || '');
+      fd.append('citizen_adress', c.citizen_adress || '');
+      fd.append('citizen_national_card_location', c.citizen_national_card_location || '');
+      fd.append('citizen_national_card_date', c.citizen_national_card_date || '');
+      const fokotanyFormattedId = c.fokotany_formatted_id || userData.fokotany_formatted_id || c.fokotany_id || '';
+      fd.append('fokotany_formatted_id', fokotanyFormattedId);
+
+      if (c.citizen_photo) {
+        fd.append('citizen_photo', c.citizen_photo);
       }
-      
-      return userResponse.data;
+
+      // Champs utilisateur requis
+      fd.append('user_pseudo', userData.user_pseudo || '');
+      fd.append('user_email', userData.user_email || '');
+      fd.append('user_password', userData.user_password || '');
+      fd.append('user_phone', userData.user_phone || '');
+      fd.append('municipality_id', userData.municipality_id || '');
+      // Ne pas envoyer app_id/role_id ici: l'assignation se fait après création
+
+      // Appel avec petite logique de retry pour erreurs transitoires (504/502/timeout)
+      const maxRetries = 2;
+      let userResponse;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          userResponse = await axios.post(
+            `${API_BASE}/serviceauth/users/register-with-citizen-short`,
+            fd,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`,
+                'X-Application-ID': 15,
+              },
+              timeout: 30000,
+            }
+          );
+          break;
+        } catch (err) {
+          const status = err?.response?.status;
+          const isTimeout = err?.code === 'ECONNABORTED';
+          const isTransient = isTimeout || status === 504 || status === 502;
+          if (isTransient && attempt < maxRetries) {
+            const wait = 800 * Math.pow(2, attempt);
+            console.warn(`[REGISTER] Erreur transitoire (status=${status || err.code}), nouvelle tentative dans ${wait}ms...`);
+            await new Promise(res => setTimeout(res, wait));
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      // 2) Assigner automatiquement le rôle Client (27) pour l'application Matac (15)
+      const created = userResponse?.data || {};
+      const newUserId = created.id || created.user_id || created.data?.id || created.data?.user_id;
+      if (newUserId) {
+        try {
+          await axios.post(
+            `${API_BASE}/serviceauth/users/${newUserId}/roles`,
+            { role_ids: [27] },
+            {
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'X-Application-ID': 15,
+              }
+            }
+          );
+        } catch (roleErr) {
+          console.warn('Echec de l\'assignation automatique du rôle Client (27) app 15:', roleErr?.response?.data || roleErr?.message);
+          created.role_assignment_error = roleErr?.response?.data || roleErr?.message;
+        }
+      }
+
+      return created;
     } catch (error) {
       console.error('Registration error:', error.response?.data || error.message);
       throw error;

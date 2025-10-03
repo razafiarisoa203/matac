@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { territoireService } from "../../services/api";
+import { territoireService, authService, loginService } from "../../services/api";
 import { useSelector } from "react-redux";
-import { citoyenService } from '../../services/api';
 import { useTranslation } from "react-i18next";
 
 export default function RegistrationForm() {
@@ -80,13 +79,12 @@ export default function RegistrationForm() {
     
     // Si la commune change, on réinitialise le fokotany sélectionné
     if (name === 'municipality_id' && value) {
-      // Trouver la commune sélectionnée pour récupérer son formatted_id
-      const selectedCommune = communes.find(c => c.id === value || c.commune_id === value);
-      const communeFormattedId = selectedCommune?.formatted_id || value;
+      // Ici, 'value' DOIT être le formatted_id de la commune
+      const communeFormattedId = value;
       
       setFormData(prev => ({
         ...prev,
-        [name]: value,
+        municipality_id: communeFormattedId,
         fokotany_id: '', // Réinitialiser la sélection du fokotany
         fokotany_formatted_id: '' // Réinitialiser également le formatted_id
       }));
@@ -104,8 +102,18 @@ export default function RegistrationForm() {
           console.warn(`Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
           setApiError('Aucun fokotany disponible pour cette commune');
         } else {
-          console.log(`${fokotanysData.length} fokotanys chargés pour la commune ${communeFormattedId}`, fokotanysData);
-          setFokotanys(fokotanysData);
+          // Dédupliquer par formatted_id (ou fallback id) pour éviter les clés dupliquées
+          const seen = new Set();
+          const uniqueFks = [];
+          for (const f of fokotanysData) {
+            const key = String(f.formatted_id || f.fokotany_id || f.id || '');
+            if (!seen.has(key)) {
+              seen.add(key);
+              uniqueFks.push(f);
+            }
+          }
+          console.log(`${uniqueFks.length} fokotanys uniques chargés pour la commune ${communeFormattedId}`, uniqueFks);
+          setFokotanys(uniqueFks);
           
           // Si un seul fokotany est disponible, le sélectionner automatiquement
           if (fokotanysData.length === 1) {
@@ -135,12 +143,12 @@ export default function RegistrationForm() {
     } else if (name === 'fokotany_id' && value) {
       // Mettre à jour le fokotany_id et le fokotany_formatted_id lors de la sélection manuelle
       const selectedFokotany = fokotanys.find(f => {
-        const match = 
-          f.id === value || 
-          f.fokotany_id === value ||
-          f.id?.toString() === value.toString() ||
-          f.fokotany_id?.toString() === value.toString();
-        return match;
+        const valStr = value?.toString();
+        return (
+          f.formatted_id?.toString() === valStr ||
+          f.fokotany_id?.toString() === valStr ||
+          f.id?.toString() === valStr
+        );
       });
       
       if (!selectedFokotany) {
@@ -149,7 +157,7 @@ export default function RegistrationForm() {
       }
       
       // Utiliser le formatted_id du fokotany sélectionné
-      const fokotanyFormattedId = selectedFokotany.formatted_id || selectedFokotany.id || value;
+      const fokotanyFormattedId = selectedFokotany.formatted_id || selectedFokotany.fokotany_id || selectedFokotany.id || value;
       
       console.log('Fokotany sélectionné:', {
         id: value,
@@ -265,92 +273,55 @@ export default function RegistrationForm() {
 
     try {
       setIsSubmitting(true);
+      // Construire la payload pour authService.registerUser (le service gère le FormData multipart)
+      const userData = {
+        user_pseudo: formData.user_pseudo,
+        user_email: formData.user_email,
+        user_password: formData.user_password,
+        user_phone: formData.user_phone,
+        municipality_id: formData.municipality_id,
+        citizenData: {
+          citizen_name: formData.citizen_name,
+          citizen_lastname: formData.citizen_lastname,
+          citizen_national_card_number: formData.citizen_national_card_number,
+          citizen_adress: formData.citizen_adress,
+          citizen_national_card_location: formData.citizen_national_card_location,
+          citizen_national_card_date: formData.citizen_national_card_date,
+          fokotany_formatted_id: formData.fokotany_formatted_id || formData.fokotany_id,
+          citizen_photo: formData.citizen_photo,
+        },
+      };
 
-      // Créer un objet FormData pour gérer les fichiers et les données
-      const formDataToSend = new FormData();
-      
-      // Ajouter tous les champs texte au FormData
-      formDataToSend.append('citizen_name', formData.citizen_name);
-      formDataToSend.append('citizen_lastname', formData.citizen_lastname);
-      formDataToSend.append('citizen_national_card_number', formData.citizen_national_card_number);
-      formDataToSend.append('citizen_adress', formData.citizen_adress);
-      formDataToSend.append('citizen_national_card_location', formData.citizen_national_card_location);
-      formDataToSend.append('citizen_national_card_date', formData.citizen_national_card_date);
-      // Ajouter les champs fokotany avec le formatted_id
-      if (formData.fokotany_formatted_id) {
-        formDataToSend.append('fokotany_formatted_id', formData.fokotany_formatted_id);
-        formDataToSend.append('fokotany_id', formData.fokotany_formatted_id);
-      } else if (formData.fokotany_id) {
-        // Si pour une raison quelconque fokotany_formatted_id n'est pas défini
-        formDataToSend.append('fokotany_id', formData.fokotany_id);
-        formDataToSend.append('fokotany_formatted_id', formData.fokotany_id);
-      }
-      formDataToSend.append('user_pseudo', formData.user_pseudo);
-      formDataToSend.append('user_email', formData.user_email);
-      formDataToSend.append('user_password', formData.user_password);
-      formDataToSend.append('user_phone', formData.user_phone);
-      formDataToSend.append('municipality_id', formData.municipality_id);
-      
-      // Toujours ajouter le champ citizen_photo, même s'il est vide
-      if (formData.citizen_photo) {
-        console.log('Ajout de la photo au FormData:', {
-          name: formData.citizen_photo.name,
-          type: formData.citizen_photo.type,
-          size: formData.citizen_photo.size
-        });
-        formDataToSend.append('citizen_photo', formData.citizen_photo);
-      } else {
-        console.log('Aucune photo sélectionnée, envoi d\'un champ vide');
-        formDataToSend.append('citizen_photo', ''); // Envoyer une chaîne vide si pas de photo
-      }
+      // 1) Inscription (citoyen + utilisateur) via endpoint multipart
+      const registerRes = await authService.registerUser(userData);
+      console.log('Inscription réussie:', registerRes);
 
-      const formDataObj = {};
-      for (let [key, value] of formDataToSend.entries()) {
-        formDataObj[key] = value;
-      }
-      console.log("FormData as object:", formDataObj);
-      
-      // Afficher les entrées du FormData pour débogage
-      console.log("Contenu du FormData avant envoi:");
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(key, value);
-      }
-      
-      // Vérifier le token d'authentification
-      const token = localStorage.getItem('authToken');
-      console.log("Token d'authentification:", token ? 'Présent' : 'Manquant');
-      
-      // Envoyer les données avec FormData
+      // 2) Auto-login
       try {
-        const res = await citoyenService.createCitizen(formDataToSend);
-        console.log("Réponse du serveur:", res);
-        alert(t('registrationForm.successMessage'));
-        // Réinitialiser le formulaire après succès
-        setFormData({
-          citizen_name: "",
-          citizen_lastname: "",
-          citizen_national_card_number: "",
-          citizen_photo: undefined, // Réinitialiser à undefined
-          citizen_adress: "",
-          citizen_national_card_location: "",
-          citizen_national_card_date: "",
-          fokotany_id: "",
-          user_pseudo: "",
-          user_email: "",
-          user_password: "",
-          user_phone: "",
-          municipality_id: ""
-        });
-      } catch (apiError) {
-        console.error("Erreur API détaillée:", {
-          message: apiError.message,
-          status: apiError.response?.status,
-          data: apiError.response?.data,
-          headers: apiError.response?.headers
-        });
-        throw apiError; // Relancer pour être attrapé par le catch externe
+        await loginService.login({ user_email: formData.user_email, user_password: formData.user_password });
+        console.log('Connexion automatique réussie');
+      } catch (loginErr) {
+        console.warn('Connexion automatique échouée:', loginErr?.message || loginErr);
       }
-      
+
+      alert(t('registrationForm.successMessage'));
+      // Réinitialiser le formulaire après succès
+      setFormData({
+        citizen_name: "",
+        citizen_lastname: "",
+        citizen_national_card_number: "",
+        citizen_photo: undefined, // Réinitialiser à undefined
+        citizen_adress: "",
+        citizen_national_card_location: "",
+        citizen_national_card_date: "",
+        fokotany_id: "",
+        user_pseudo: "",
+        user_email: "",
+        user_password: "",
+        user_phone: "",
+        municipality_id: ""
+      });
+
       setIsSubmitting(false);
     
     } catch (error) {
@@ -557,7 +528,7 @@ export default function RegistrationForm() {
                       : t('registrationForm.selectPlaceholder')}
                   </option>
                   {communes.map((commune) => {
-                    const communeId = commune.id || commune.commune_id;
+                    const communeId = commune.formatted_id || commune.commune_id;
                     const communeName = commune.name || commune.nom || `Commune ${communeId}`;
                     
                     return (
@@ -608,19 +579,19 @@ export default function RegistrationForm() {
                           : t('registrationForm.selectFokotany')}
                   </option>
                   {fokotanys.length > 0 ? (
-                    fokotanys.map((fokotany) => {
-                      const fokotanyId = fokotany.id || fokotany.fokotany_id;
-                      const fokotanyName = fokotany.name || fokotany.nom || `Fokotany ${fokotanyId}`;
-                      
-                      return (
-                        <option 
-                          key={fokotanyId} 
-                          value={fokotanyId}
-                        >
-                          {fokotanyName}
-                        </option>
-                      );
-                    })
+                    fokotanys.map((fokotany, index) => {
+                    const fokotanyId = fokotany.formatted_id || fokotany.fokotany_id || fokotany.id;
+                    const fokotanyName = fokotany.name || fokotany.nom || `Fokotany ${fokotanyId}`;
+                    
+                    return (
+                      <option 
+                        key={`${fokotanyId}-${index}`} 
+                        value={fokotanyId}
+                      >
+                        {fokotanyName}
+                      </option>
+                    );
+                  })
                   ) : (
                     formData.municipality_id && !isLoading.fokotanys && !apiError && (
                       <option value="" disabled>{t('registrationForm.noFokotanyAvailable')}</option>
