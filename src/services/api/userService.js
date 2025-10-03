@@ -163,9 +163,10 @@ export const updateUserRoles = async (userId, roleIds) => {
 };
 
 /**
- * Assigner des rôles Matac (app_id=15) à un utilisateur
- * @param {string} userId - UUID de l'utilisateur
- * @param {Array<number>} roleIds - IDs des rôles à attribuer (ex: [27])
+ * Assigner des rôles à un utilisateur (remplace tous les rôles existants)
+ * @param {string} userId - ID de l'utilisateur
+ * @param {Array<number>} roleIds - IDs des rôles à attribuer
+ * @returns {Promise<Object>} - Réponse de l'API
  */
 export const assignUserRoles = async (userId, roleIds = []) => {
   if (!Array.isArray(roleIds) || roleIds.length === 0) {
@@ -173,19 +174,49 @@ export const assignUserRoles = async (userId, roleIds = []) => {
   }
   try {
     const config = getAuthConfig();
-    // Ajouter le contexte application si supporté
+    config.headers = {
+      ...config.headers,
+      'X-Application-ID': APP_ID,
+      'Content-Type': 'application/json'
+    };
+    console.log(`Assignation des rôles ${roleIds} à l'utilisateur ${userId}`);
+    const response = await axios.post(
+      `${BASE_AUTH_URL}/users/${userId}/roles`,
+      { role_ids: roleIds },
+      config
+    );
+    console.log('Réponse d\'assignation de rôles:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error(`Erreur lors de l'assignation des rôles (${roleIds}) pour l'utilisateur ${userId}:`, error?.response?.data || error?.message);
+    throw error;
+  }
+};
+
+/**
+ * Retirer des rôles à un utilisateur
+ * @param {string} userId - ID de l'utilisateur
+ * @param {Array<number>} roleIds - IDs des rôles à retirer
+ * @returns {Promise<Object>} - Réponse de l'API
+ */
+export const removeUserRoles = async (userId, roleIds = []) => {
+  if (!Array.isArray(roleIds) || roleIds.length === 0) {
+    throw new Error('roleIds must be a non-empty array');
+  }
+  try {
+    const config = getAuthConfig();
     config.headers = {
       ...config.headers,
       'X-Application-ID': APP_ID,
     };
-    const response = await axios.post(
+    const response = await axios.patch(
       `${BASE_AUTH_URL}/users/${userId}/roles`,
       { role_ids: roleIds },
       config
     );
     return response.data;
   } catch (error) {
-    console.error(`Erreur lors de l'assignation des rôles (${roleIds}) pour l'utilisateur ${userId}:`, error?.response?.data || error?.message);
+    console.error(`Erreur lors du retrait des rôles (${roleIds}) pour l'utilisateur ${userId}:`, error?.response?.data || error?.message);
     throw error;
   }
 };
@@ -202,6 +233,7 @@ export const getRoles = async (options = {}) => {
     if (__rolesCache.data && now - __rolesCache.ts < 5 * 60 * 1000) {
       return __rolesCache.data;
     }
+    console.log('Récupération des rôles pour app_id:', APP_ID);
     const response = await axiosGetWithRetry(
       `${BASE_AUTH_URL}/roles/application/${APP_ID}`,
       {
@@ -210,7 +242,12 @@ export const getRoles = async (options = {}) => {
         signal: options.signal
       }
     );
+    console.log('Réponse complète de l\'API rôles:', response);
+    console.log('response.data:', response.data);
+    console.log('response.data.data:', response.data.data);
     const out = response.data.data || response.data || [];
+    console.log('Rôles extraits (avant traitement):', out);
+    console.log('Nombre de rôles avant traitement:', out.length);
     __rolesCache = { data: out, ts: now };
     return out;
   } catch (error) {

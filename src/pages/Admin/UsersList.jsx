@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ArrowLeft, Loader2 } from 'lucide-react';
-import { getAllUsersByApplicationRole } from '../../services/api/userService';
+import { getAllUsersByApplicationRole, getRoles } from '../../services/api/userService';
 
 const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '15';
 
@@ -22,6 +22,27 @@ const UsersList = () => {
     total: 0,
     totalPages: 1
   });
+
+  // État pour les rôles
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
+
+  // Chargement des rôles au montage
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        console.log('Chargement des rôles pour le dropdown...');
+        const rolesData = await getRoles();
+        console.log('Rôles reçus:', rolesData);
+        setRoles(rolesData);
+        setRolesLoading(false);
+      } catch (error) {
+        console.error('Erreur lors du chargement des rôles:', error);
+        setRolesLoading(false);
+      }
+    };
+    loadRoles();
+  }, []);
 
   // Debounce de la recherche pour éviter des fetch à chaque frappe
   useEffect(() => {
@@ -466,9 +487,15 @@ const UsersList = () => {
                               }}
                             >
                               <option value="">Sélectionner un rôle</option>
-                              <option value="93">Client</option>
-                              <option value="94">Admin</option>
-                              <option value="100">Commune</option>
+                              {roles && roles.length > 0 ? (
+                                roles.map(role => (
+                                  <option key={role.role_id} value={role.role_id}>
+                                    {role.role_name}
+                                  </option>
+                                ))
+                              ) : (
+                                <option disabled>{rolesLoading ? 'Chargement...' : 'Aucun rôle disponible'}</option>
+                              )}
                           </select>
 
                             </div>
