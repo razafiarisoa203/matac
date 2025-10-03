@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUsers, updateUserRoles, getRoles } from '../../services/api/userService';
+import { getUsers, getRoles, assignUserRoles, removeUserRoles } from '../../services/api/userService';
 import { toast } from 'react-toastify';
 
 const UsersList = () => {
@@ -7,21 +7,35 @@ const UsersList = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [forceRender, setForceRender] = useState(0);
   const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
   const [editingRoles, setEditingRoles] = useState(null);
-  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [selectedRole, setSelectedRole] = useState('');
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   // Terme de recherche "debounced" pour éviter les requêtes à chaque frappe
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-  const limit = 10;
 
   // Chargement des rôles au montage
   useEffect(() => {
     const loadRoles = async () => {
       try {
+        console.log('Chargement des rôles commencé...');
         const rolesData = await getRoles();
+        console.log('Rôles reçus du service:', rolesData);
+        console.log('Nombre de rôles reçus:', rolesData.length);
+        console.log('Détail de chaque rôle:');
+        rolesData.forEach((role, index) => {
+          console.log(`  Rôle ${index + 1}:`, {
+            role_id: role.role_id,
+            role_name: role.role_name,
+            role_slug: role.role_slug
+          });
+        });
         setRoles(rolesData);
+        setRolesLoading(false);
+        setForceRender(prev => prev + 1); // Force re-render
+        console.log('Rôles définis dans le state et rôlesLoading=false');
       } catch (error) {
         console.error('Erreur lors du chargement des rôles:', error);
         toast.error('Erreur lors du chargement des rôles');
@@ -100,28 +114,53 @@ const UsersList = () => {
 
   // Gestion édition des rôles
   const handleRoleEdit = (user) => {
-    setEditingRoles(user.user_id);
-    setSelectedRoles(user.appUserRoles?.map(ur => ur.role.role_id) || []);
+    const userId = user.user_id || user.id;
+    console.log('=== DÉBUT ÉDITION RÔLE ===');
+    console.log('Utilisateur cliqué:', user);
+    console.log('userId calculé:', userId);
+    console.log('editingRoles avant:', editingRoles);
+    setEditingRoles(userId);
+    console.log('editingRoles après:', userId);
+    // Get current role or default to empty
+    const currentRoleId = user.appUserRoles?.[0]?.role?.role_id || '';
+    console.log('currentRoleId trouvé:', currentRoleId);
+    setSelectedRole(currentRoleId.toString());
+    console.log('selectedRole défini à:', currentRoleId.toString());
   };
 
   const handleRoleChange = (roleId) => {
-    setSelectedRoles(prev =>
-      prev.includes(roleId)
-        ? prev.filter(id => id !== roleId)
-        : [...prev, roleId]
-    );
+    setSelectedRole(roleId);
   };
 
   const saveUserRoles = async (userId) => {
     try {
-      await updateUserRoles(userId, selectedRoles);
-      toast.success('Rôles mis à jour avec succès');
-      setEditingRoles(null);
-      // Rafraîchir la liste sans changer la page
       setLoading(true);
+      console.log(`Sauvegarde du rôle ${selectedRole} pour l'utilisateur ${userId}`);
+
+      // Assigner le rôle sélectionné (ou retirer tous les rôles si vide)
+      if (selectedRole && selectedRole !== '') {
+        console.log(`Assignation du rôle ${selectedRole} à l'utilisateur ${userId}`);
+        await assignUserRoles(userId, [parseInt(selectedRole)]);
+      } else {
+        console.log('Aucun rôle sélectionné, suppression de tous les rôles');
+        // Si aucun rôle sélectionné, supprimer tous les rôles existants
+        const currentRoles = users.find(u => (u.user_id || u.id) === userId)?.appUserRoles?.map(ur => ur.role.role_id) || [];
+        if (currentRoles.length > 0) {
+          console.log(`Suppression des rôles ${currentRoles} pour l'utilisateur ${userId}`);
+          await removeUserRoles(userId, currentRoles);
+        }
+      }
+
+      toast.success('Rôle mis à jour avec succès');
+      setEditingRoles(null);
+      setSelectedRole('');
+
+      // Rafraîchir la liste des utilisateurs
+      console.log('Rafraîchissement de la liste des utilisateurs...');
       const response = await getUsers(page, limit, debouncedSearchTerm);
       const usersData = response.data || response.users || [];
       setUsers(usersData.map(u => u._raw || u));
+
       const newPagination = {
         page: response.page || page,
         limit: response.limit || limit,
@@ -129,15 +168,19 @@ const UsersList = () => {
         totalPages: response.totalPages || 1
       };
       setPagination(prev => ({ ...prev, ...newPagination }));
+
     } catch (error) {
-      console.error('Erreur lors de la mise à jour des rôles:', error);
-      toast.error('Erreur lors de la mise à jour des rôles');
+      console.error('Erreur lors de la mise à jour du rôle:', error);
+      toast.error(`Erreur lors de la mise à jour du rôle: ${error?.response?.data?.message || error?.message || 'Erreur inconnue'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const cancelEdit = () => setEditingRoles(null);
+  const cancelEdit = () => {
+    setEditingRoles(null);
+    setSelectedRole('');
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -181,47 +224,86 @@ const UsersList = () => {
                   <tr>
                     <td colSpan="5" className="px-6 py-4 text-center text-gray-500">Aucun utilisateur trouvé</td>
                   </tr>
-                ) : users.map(user => (
-                  <tr key={user.user_id} className="hover:bg-gray-50">
+                ) : users.map(user => {
+                  const userId = user.user_id || user.id;
+                  return (
+                  <tr key={userId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">{user.user_pseudo || 'Non défini'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{user.user_email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{user.user_phone || 'Non défini'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {editingRoles === user.user_id ? (
-                        <div className="space-y-2">
-                          {roles.map(role => (
-                            <div key={role.role_id} className="flex items-center">
-                              <input
-                                type="checkbox"
-                                id={`role-${user.user_id}-${role.role_id}`}
-                                checked={selectedRoles.includes(role.role_id)}
-                                onChange={() => handleRoleChange(role.role_id)}
-                                className="h-4 w-4 text-green-600 border-gray-300 rounded"
-                              />
-                              <label htmlFor={`role-${user.user_id}-${role.role_id}`} className="ml-2 text-sm">{role.role_name}</label>
+                      {(() => {
+                        console.log('=== RENDU CELLULE RÔLE ===');
+                        console.log('userId:', userId);
+                        console.log('editingRoles:', editingRoles);
+                        console.log('Condition editingRoles === userId:', editingRoles === userId);
+                        console.log('roles.length:', roles.length);
+                        console.log('selectedRole:', selectedRole);
+                        
+                        if (editingRoles === userId) {
+                          console.log('✅ MODE ÉDITION - Affichage dropdown');
+                          return (
+                            <div key={`role-dropdown-${userId}-${forceRender}`}>
+                              <select
+                                value={selectedRole || ''}
+                                onChange={(e) => {
+                                  console.log('Changement de rôle sélectionné:', e.target.value);
+                                  handleRoleChange(e.target.value);
+                                }}
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                              >
+                                <option value="">Aucun rôle</option>
+                                {roles && roles.length > 0 ? (
+                                  roles.map((role, index) => {
+                                    console.log(`Rendu option ${index + 1}:`, role.role_id, role.role_name);
+                                    return (
+                                      <option key={`role-option-${role.role_id}-${index}`} value={role.role_id}>
+                                        {role.role_name}
+                                      </option>
+                                    );
+                                  })
+                                ) : (
+                                  <option disabled>{rolesLoading ? 'Chargement des rôles...' : 'Aucun rôle disponible'}</option>
+                                )}
+                              </select>
+                              {console.log('Dropdown rendu avec', roles?.length || 0, 'rôles')}
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {user.appUserRoles?.map(ur => (
-                            <span key={ur.role.role_id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{ur.role.role_name}</span>
-                          )) || <span className="text-sm text-gray-500">Aucun rôle</span>}
-                        </div>
-                      )}
+                          );
+                        } else {
+                          console.log('📋 MODE AFFICHAGE - Affichage rôles utilisateur');
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {user.appUserRoles?.map(ur => (
+                                <span key={ur.role.role_id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{ur.role.role_name}</span>
+                              )) || <span className="text-sm text-gray-500">Aucun rôle</span>}
+                            </div>
+                          );
+                        }
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      {editingRoles === user.user_id ? (
+                      {editingRoles === userId ? (
                         <>
-                          <button onClick={() => saveUserRoles(user.user_id)} className="text-green-600 hover:text-green-900 mr-2">Enregistrer</button>
+                          <button onClick={() => saveUserRoles(userId)} className="text-green-600 hover:text-green-900 mr-2">Enregistrer</button>
                           <button onClick={cancelEdit} className="text-gray-600 hover:text-gray-900">Annuler</button>
                         </>
                       ) : (
-                        <button onClick={() => handleRoleEdit(user)} className="text-indigo-600 hover:text-indigo-900">Modifier les rôles</button>
+                        <button 
+                          onClick={() => {
+                            console.log('=== CLIC SUR MODIFIER RÔLES ===');
+                            console.log('user avant clic:', user);
+                            console.log('editingRoles avant:', editingRoles);
+                            handleRoleEdit(user);
+                          }} 
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Modifier les rôles
+                        </button>
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
 
