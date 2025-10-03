@@ -58,7 +58,7 @@ const getAuthConfig = () => {
 export const getUsers = async (page = 1, limit = 10, search = '', options = {}) => {
   try {
     const response = await axiosGetWithRetry(
-      `${BASE_AUTH_URL}/users`,
+      `${BASE_AUTH_URL}/users/application/15`,
       {
         ...getAuthConfig(),
         params: {
@@ -85,20 +85,9 @@ export const getUsers = async (page = 1, limit = 10, search = '', options = {}) 
     
     console.log('Réponse API getUsers:', response.data);
     
-    // Filtrage de secours côté client: ne garder que les utilisateurs liés à APP_ID
-    const rawUsers = response.data?.data || [];
-    const users = rawUsers.filter(u => {
-      const roles = u.appUserRoles || [];
-      return roles.some(r => {
-        const role = r.role || {};
-        return (
-          Number(role.app_id) === Number(APP_ID) ||
-          Number(role.application_id) === Number(APP_ID) ||
-          Number(r.app_id) === Number(APP_ID)
-        );
-      });
-    });
-    const total = users.length || response.data?.total || 0;
+    // L'endpoint /users/application/{APP_ID} est déjà filtré côté serveur.
+    const users = response.data?.data || [];
+    const total = response.data?.total ?? users.length ?? 0;
     
     // Retourner directement les données sans double normalisation
     return {
@@ -165,14 +154,38 @@ export const getUserById = async (userId) => {
  */
 export const updateUserRoles = async (userId, roleIds) => {
   try {
-    const response = await axios.put(
+    // Par compatibilité, rediriger vers assignUserRoles (POST + { role_ids: [...] })
+    return await assignUserRoles(userId, roleIds);
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour des rôles pour l'utilisateur ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Assigner des rôles Matac (app_id=15) à un utilisateur
+ * @param {string} userId - UUID de l'utilisateur
+ * @param {Array<number>} roleIds - IDs des rôles à attribuer (ex: [27])
+ */
+export const assignUserRoles = async (userId, roleIds = []) => {
+  if (!Array.isArray(roleIds) || roleIds.length === 0) {
+    throw new Error('roleIds must be a non-empty array');
+  }
+  try {
+    const config = getAuthConfig();
+    // Ajouter le contexte application si supporté
+    config.headers = {
+      ...config.headers,
+      'X-Application-ID': APP_ID,
+    };
+    const response = await axios.post(
       `${BASE_AUTH_URL}/users/${userId}/roles`,
-      { roleIds },
-      getAuthConfig()
+      { role_ids: roleIds },
+      config
     );
     return response.data;
   } catch (error) {
-    console.error(`Erreur lors de la mise à jour des rôles pour l'utilisateur ${userId}:`, error);
+    console.error(`Erreur lors de l'assignation des rôles (${roleIds}) pour l'utilisateur ${userId}:`, error?.response?.data || error?.message);
     throw error;
   }
 };
@@ -425,7 +438,7 @@ export const markAllNotificationsAsRead = async () => {
 export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search = '', options = {}) => {
   try {
     const response = await axiosGetWithRetry(
-      `${BASE_AUTH_URL}/users`,
+      `${BASE_AUTH_URL}/users/application/${APP_ID}`,
       {
         ...getAuthConfig(),
         params: {
@@ -449,25 +462,14 @@ export const getAllUsersByApplicationRole = async (page = 1, limit = 10, search 
       }
     );
 
-    console.log('Réponse de l\'API users:', response.data);
+    console.log('Réponse de l\'API users (application):', response.data);
 
-    // Extraire et filtrer côté client pour APP_ID si le serveur ne filtre pas
+    // L'endpoint /users/application/{APP_ID} est déjà filtré côté serveur
     const rawUsers = response.data.data || [];
-    const users = rawUsers.filter(u => {
-      const roles = u.appUserRoles || [];
-      return roles.some(r => {
-        const role = r.role || {};
-        return (
-          Number(role.app_id) === Number(APP_ID) ||
-          Number(role.application_id) === Number(APP_ID) ||
-          Number(r.app_id) === Number(APP_ID)
-        );
-      });
-    });
-    const total = users.length || response.data.total || 0;
-    
-    // Normaliser les données utilisateur
-    const normalizedUsers = users.map(user => {
+    const total = response.data.total ?? rawUsers.length ?? 0;
+
+    // Normaliser les données utilisateur de manière minimaliste pour l'UI Admin
+    const normalizedUsers = rawUsers.map(user => {
       // Extraire le rôle principal (on prend le premier rôle par défaut)
       const mainRole = user.appUserRoles?.[0]?.role || {};
       

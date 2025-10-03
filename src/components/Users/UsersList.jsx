@@ -100,7 +100,8 @@ const UsersList = () => {
 
   // Gestion édition des rôles
   const handleRoleEdit = (user) => {
-    setEditingRoles(user.user_id);
+    const userId = user.user_id || user.id;
+    setEditingRoles(userId);
     setSelectedRoles(user.appUserRoles?.map(ur => ur.role.role_id) || []);
   };
 
@@ -181,24 +182,26 @@ const UsersList = () => {
                   <tr>
                     <td colSpan="5" className="px-6 py-4 text-center text-gray-500">Aucun utilisateur trouvé</td>
                   </tr>
-                ) : users.map(user => (
-                  <tr key={user.user_id} className="hover:bg-gray-50">
+                ) : users.map(user => {
+                  const userId = user.user_id || user.id;
+                  return (
+                  <tr key={userId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">{user.user_pseudo || 'Non défini'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{user.user_email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{user.user_phone || 'Non défini'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {editingRoles === user.user_id ? (
+                      {editingRoles === userId ? (
                         <div className="space-y-2">
                           {roles.map(role => (
                             <div key={role.role_id} className="flex items-center">
                               <input
                                 type="checkbox"
-                                id={`role-${user.user_id}-${role.role_id}`}
+                                id={`role-${userId}-${role.role_id}`}
                                 checked={selectedRoles.includes(role.role_id)}
                                 onChange={() => handleRoleChange(role.role_id)}
                                 className="h-4 w-4 text-green-600 border-gray-300 rounded"
                               />
-                              <label htmlFor={`role-${user.user_id}-${role.role_id}`} className="ml-2 text-sm">{role.role_name}</label>
+                              <label htmlFor={`role-${userId}-${role.role_id}`} className="ml-2 text-sm">{role.role_name}</label>
                             </div>
                           ))}
                         </div>
@@ -211,9 +214,9 @@ const UsersList = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      {editingRoles === user.user_id ? (
+                      {editingRoles === userId ? (
                         <>
-                          <button onClick={() => saveUserRoles(user.user_id)} className="text-green-600 hover:text-green-900 mr-2">Enregistrer</button>
+                          <button onClick={() => saveUserRoles(userId)} className="text-green-600 hover:text-green-900 mr-2">Enregistrer</button>
                           <button onClick={cancelEdit} className="text-gray-600 hover:text-gray-900">Annuler</button>
                         </>
                       ) : (
@@ -221,7 +224,8 @@ const UsersList = () => {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
 
