@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { territoireService } from "../../services/api";
+import { territoireService } from "../../services/api/territoireService";
 import { useSelector } from "react-redux";
-import {citoyenService} from '../../services/api'
+import { citoyenService } from '../../services/api/citoyenService';
+import { useTranslation } from "react-i18next";
 
 export default function RegistrationForm() {
+  const { t } = useTranslation();
   const userCin = useSelector((state) => state.user.cin);
   const [formData, setFormData] = useState({
     citizen_name: "",
@@ -20,17 +22,115 @@ export default function RegistrationForm() {
     municipality_id: "",
     citizen_photo: null,
   });
-
+  
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [communes, setCommunes] = useState();
+  const [communes, setCommunes] = useState([]);
+  const [fokotanys, setFokotanys] = useState([]);
+  const [isLoading, setIsLoading] = useState({
+    communes: false,
+    fokotanys: false
+  });
+  const [apiError, setApiError] = useState(null);
 
-  const handleInputChange = (e) => {
+  const validateCinField = (cinValue) => {
+    const numericValue = (cinValue || '').replace(/\D/g, '');
+    
+    if (numericValue.length > 0 && numericValue.length !== 12) {
+      setErrors(prev => ({
+        ...prev,
+        citizen_national_card_number: t('registrationForm.errors.cinLength')
+      }));
+      return false;
+    } else if (errors.citizen_national_card_number) {
+      // Clear error if validation passes
+      const newErrors = { ...errors };
+      delete newErrors.citizen_national_card_number;
+      setErrors(newErrors);
+    }
+    return numericValue.length === 12;
+  };
+
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // Clear any previous API errors
+    if (apiError) setApiError(null);
+    
+    // For CIN field - only allow digits and exactly 12 characters
+    if (name === 'citizen_national_card_number') {
+      // Only allow digits and limit to 12 characters
+      const numericValue = value.replace(/\D/g, '').slice(0, 12);
+      
+      // Update the input value (only digits)
+      e.target.value = numericValue;
+      
+      // Update form data with the numeric value
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue
+      }));
+      
+      // Validate CIN length
+      validateCinField(numericValue);
+      
+      // Don't proceed with other validations for CIN field
+      return;
+    }
+    
+    // Si la commune change, on réinitialise le fokotany sélectionné
+    if (name === 'municipality_id' && value) {
+      // Trouver la commune sélectionnée pour récupérer son formatted_id
+      const selectedCommune = communes.find(c => c.id === value || c.commune_id === value);
+      const communeFormattedId = selectedCommune?.formatted_id || value;
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        fokotany_id: '' // Réinitialiser la sélection du fokotany
+      }));
+      
+      // Charger les fokotanys pour la commune sélectionnée
+      try {
+        setIsLoading(prev => ({ ...prev, fokotanys: true }));
+        setFokotanys([]); // Réinitialiser la liste pendant le chargement
+        setApiError(null); // Réinitialiser les erreurs précédentes
+        
+        console.log(`Chargement des fokotanys pour la commune ${communeFormattedId} (ID: ${value})...`);
+        const fokotanysData = await territoireService.getFokotanys(communeFormattedId);
+        
+        if (!fokotanysData || fokotanysData.length === 0) {
+          console.warn(`Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
+          setApiError('Aucun fokotany disponible pour cette commune');
+        } else {
+          console.log(`${fokotanysData.length} fokotanys chargés pour la commune ${communeFormattedId}`, fokotanysData);
+          setFokotanys(fokotanysData);
+          
+          // Si un seul fokotany est disponible, le sélectionner automatiquement
+          if (fokotanysData.length === 1) {
+            const singleFokotany = fokotanysData[0];
+            const fokotanyId = singleFokotany.id || singleFokotany.fokotany_id;
+            console.log(`Sélection automatique du fokotany unique: ${fokotanyId}`);
+            
+            setFormData(prev => ({
+              ...prev,
+              fokotany_id: fokotanyId.toString()
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des fokotanys:', error);
+        setApiError(error.message || 'Erreur lors du chargement des fokotanys. Veuillez réessayer.');
+        setFokotanys([]);
+      } finally {
+        setIsLoading(prev => ({ ...prev, fokotanys: false }));
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -70,7 +170,7 @@ export default function RegistrationForm() {
 
     requiredFields.forEach((field) => {
       if (!formData[field] || formData[field].toString().trim() === "") {
-        newErrors[field] = "Ce champ est requis";
+        newErrors[field] = t('registrationForm.errors.required');
       }
     });
 
@@ -79,18 +179,27 @@ export default function RegistrationForm() {
       formData.user_email &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.user_email)
     ) {
-      newErrors.user_email = "Format d'email invalide";
+      newErrors.user_email = t('registrationForm.errors.invalidEmail');
     }
 
     // Password validation
     if (formData.user_password && formData.user_password.length < 6) {
-      newErrors.user_password =
-        "Le mot de passe doit contenir au moins 6 caractères";
+      newErrors.user_password = t('registrationForm.errors.passwordLength');
     }
 
     // Phone validation
     if (formData.user_phone && !/^[0-9+\-\s()]+$/.test(formData.user_phone)) {
-      newErrors.user_phone = "Format de téléphone invalide";
+      newErrors.user_phone = t('registrationForm.errors.invalidPhone');
+    }
+
+    // CIN validation - must be exactly 12 digits and required
+    if (!formData.citizen_national_card_number || formData.citizen_national_card_number.trim() === '') {
+      newErrors.citizen_national_card_number = t('registrationForm.errors.required');
+    } else {
+      const cin = formData.citizen_national_card_number.replace(/\D/g, '');
+      if (cin.length !== 12) {
+        newErrors.citizen_national_card_number = t('registrationForm.errors.cinLength');
+      }
     }
 
     setErrors(newErrors);
@@ -98,58 +207,69 @@ export default function RegistrationForm() {
   };
 
   const handleSubmit = async () => {
-  if (!validateForm()) {
-    return;
-  }
-
-  try {
-    setIsSubmitting(true);
-
-    // Créer un objet FormData pour gérer les fichiers et les données
-    const formDataToSend = new FormData();
-    
-    // Ajouter tous les champs texte au FormData
-    formDataToSend.append('citizen_name', formData.citizen_name);
-    formDataToSend.append('citizen_lastname', formData.citizen_lastname);
-    formDataToSend.append('citizen_national_card_number', formData.citizen_national_card_number);
-    formDataToSend.append('citizen_adress', formData.citizen_adress);
-    formDataToSend.append('citizen_national_card_location', formData.citizen_national_card_location);
-    formDataToSend.append('citizen_national_card_date', formData.citizen_national_card_date);
-    formDataToSend.append('fokotany_id', formData.fokotany_id);
-    formDataToSend.append('user_pseudo', formData.user_pseudo);
-    formDataToSend.append('user_email', formData.user_email);
-    formDataToSend.append('user_password', formData.user_password);
-    formDataToSend.append('user_phone', formData.user_phone);
-    formDataToSend.append('municipality_id', formData.municipality_id);
-    
-    // Ajouter le fichier photo s'il existe
-    if (formData.citizen_photo) {
-      formDataToSend.append('citizen_photo', formData.citizen_photo);
+    if (!validateForm()) {
+      return;
     }
 
-     const formDataObj = {};
-    for (let [key, value] of formDataToSend.entries()) {
-      formDataObj[key] = value;
+    try {
+      setIsSubmitting(true);
+
+      // Créer un objet FormData pour gérer les fichiers et les données
+      const formDataToSend = new FormData();
+      
+      // Ajouter tous les champs texte au FormData
+      formDataToSend.append('citizen_name', formData.citizen_name);
+      formDataToSend.append('citizen_lastname', formData.citizen_lastname);
+      formDataToSend.append('citizen_national_card_number', formData.citizen_national_card_number);
+      formDataToSend.append('citizen_adress', formData.citizen_adress);
+      formDataToSend.append('citizen_national_card_location', formData.citizen_national_card_location);
+      formDataToSend.append('citizen_national_card_date', formData.citizen_national_card_date);
+      formDataToSend.append('fokotany_id', formData.fokotany_id);
+      formDataToSend.append('user_pseudo', formData.user_pseudo);
+      formDataToSend.append('user_email', formData.user_email);
+      formDataToSend.append('user_password', formData.user_password);
+      formDataToSend.append('user_phone', formData.user_phone);
+      formDataToSend.append('municipality_id', formData.municipality_id);
+      
+      // Ajouter le fichier photo s'il existe
+      if (formData.citizen_photo) {
+        formDataToSend.append('citizen_photo', formData.citizen_photo);
+      }
+
+      const formDataObj = {};
+      for (let [key, value] of formDataToSend.entries()) {
+        formDataObj[key] = value;
+      }
+      console.log("FormData as object:", formDataObj);
+      
+      // Envoyer les données avec FormData
+      const res = await citoyenService.createCitizen(formDataToSend);
+      console.log("Response:", res);
+      
+      alert(t('registrationForm.successMessage'));
+      setIsSubmitting(false);
+    
+    } catch (error) {
+      console.error("Erreur lors de l'inscription: ", error);
+      setIsSubmitting(false);
+      alert(t('registrationForm.errors.registrationFailed'));
     }
-    console.log("FormData as object:", formDataObj);
-    
-    // Envoyer les données avec FormData
-    const res = await citoyenService.createCitizen(formDataToSend);
-    console.log("Response:", res);
-    
-    alert("Inscription réussie !");
-    setIsSubmitting(false);
-    
-  } catch (error) {
-    console.error("Erreur lors de l'inscription: ", error);
-    setIsSubmitting(false);
-    alert("Erreur lors de l'inscription. Veuillez réessayer.");
-  }
-};
+  };
+
   useEffect(() => {
-    territoireService.getCommunes().then((data) => {
-      setCommunes(data);
-    });
+    const loadData = async () => {
+      try {
+        setIsLoading(prev => ({ ...prev, communes: true }));
+        const communesData = await territoireService.getCommunes();
+        setCommunes(communesData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des communes:', error);
+      } finally {
+        setIsLoading(prev => ({ ...prev, communes: false }));
+      }
+    };
+
+    loadData();
   }, []);
 
   return (
@@ -162,25 +282,21 @@ export default function RegistrationForm() {
               MINISTÈRE DE L'AMÉNAGEMENT DU TERRITOIRE
             </div>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-800 mb-2">
-            Inscription Citoyen
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('registrationForm.titles')}</h1>
           <p className="text-gray-600 text-sm">
-            Veuillez remplir tous les champs pour créer votre compte
+            {t('registrationForm.contactInfo')}
           </p>
         </div>
 
         <div className="space-y-6">
           {/* Section Informations personnelles */}
           <div className="p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">
-              Informations personnelles
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('registrationForm.personalInfo')}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nom <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.lastName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -190,7 +306,7 @@ export default function RegistrationForm() {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.citizen_name ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Votre nom"
+                  placeholder={t('registrationForm.fields.lastName')}
                 />
                 {errors.citizen_name && (
                   <p className="text-red-500 text-xs mt-1">
@@ -201,7 +317,7 @@ export default function RegistrationForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Prénom <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.firstName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -209,11 +325,9 @@ export default function RegistrationForm() {
                   value={formData.citizen_lastname}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_lastname
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    errors.citizen_lastname ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Votre prénom"
+                  placeholder={t('registrationForm.fields.firstName')}
                 />
                 {errors.citizen_lastname && (
                   <p className="text-red-500 text-xs mt-1">
@@ -224,18 +338,21 @@ export default function RegistrationForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Numéro CIN <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.cinNumber')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="citizen_national_card_number"
                   value={formData.citizen_national_card_number}
+                  onChange={handleInputChange}
+                  maxLength={12}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_national_card_number
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    errors.citizen_national_card_number ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Numéro de carte d'identité"
+                  placeholder={t('registrationForm.fields.cinNumber')}
+                  title={t('registrationForm.errors.cinLength')}
                 />
                 {errors.citizen_national_card_number && (
                   <p className="text-red-500 text-xs mt-1">
@@ -246,7 +363,7 @@ export default function RegistrationForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date CIN <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.cinIssueDate')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -254,9 +371,7 @@ export default function RegistrationForm() {
                   value={formData.citizen_national_card_date}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_national_card_date
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    errors.citizen_national_card_date ? "border-red-500" : "border-gray-300"
                   }`}
                 />
                 {errors.citizen_national_card_date && (
@@ -268,7 +383,7 @@ export default function RegistrationForm() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lieu de délivrance CIN <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.cinIssuePlace')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -276,11 +391,9 @@ export default function RegistrationForm() {
                   value={formData.citizen_national_card_location}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_national_card_location
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    errors.citizen_national_card_location ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Lieu de délivrance de la CIN"
+                  placeholder={t('registrationForm.fields.cinIssuePlace')}
                 />
                 {errors.citizen_national_card_location && (
                   <p className="text-red-500 text-xs mt-1">
@@ -291,7 +404,7 @@ export default function RegistrationForm() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Adresse <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.address')} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   name="citizen_adress"
@@ -301,7 +414,7 @@ export default function RegistrationForm() {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.citizen_adress ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Votre adresse complète"
+                  placeholder={t('registrationForm.fields.address')}
                 />
                 {errors.citizen_adress && (
                   <p className="text-red-500 text-xs mt-1">
@@ -312,26 +425,33 @@ export default function RegistrationForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Commune <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.municipality')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="municipality_id"
                   value={formData.municipality_id}
                   onChange={handleInputChange}
+                  disabled={isLoading.communes}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.municipality_id
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
+                    errors.municipality_id ? 'border-red-500' : 'border-gray-300'
+                  } ${isLoading.communes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder="Commune"
                 >
-                  <option value="">--Selectionner un commune--</option>
-                  {communes &&
-                    communes.map((c, i) => (
-                      <option value={c.commune_id} key={i}>
-                        {c.name}
+                  <option value="">
+                    {isLoading.communes 
+                      ? t('registrationForm.loading') 
+                      : t('registrationForm.selectPlaceholder')}
+                  </option>
+                  {communes.map((commune) => {
+                    const communeId = commune.id || commune.commune_id;
+                    const communeName = commune.name || commune.nom || `Commune ${communeId}`;
+                    
+                    return (
+                      <option value={communeId} key={communeId}>
+                        {communeName}
                       </option>
-                    ))}
+                    );
+                  })}
                 </select>
                 {errors.municipality_id && (
                   <p className="text-red-500 text-xs mt-1">
@@ -341,32 +461,64 @@ export default function RegistrationForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fokotany <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('registrationForm.fields.fokotany')} <span className="text-red-500">*</span>
+                  </label>
+                  {isLoading.fokotanys && (
+                    <span className="text-xs text-gray-500 inline-flex items-center">
+                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Chargement...
+                    </span>
+                  )}
+                </div>
                 <select
                   name="fokotany_id"
                   value={formData.fokotany_id}
                   onChange={handleInputChange}
+                  disabled={!formData.municipality_id || isLoading.fokotanys}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.fokotany_id ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="ID Fokotany"
+                    errors.fokotany_id ? 'border-red-500' : 'border-gray-300'
+                  } ${!formData.municipality_id || isLoading.fokotanys ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 >
-                  <option value="">--Selectionner un fokontany--</option>
-                  {communes ? (
-                    communes
-                      .find((c) => c.commune_id == formData.municipality_id)
-                      ?.fokotanys.map((f, i) => (
-                        <option value={f.fokotany_id} key={i}>
-                          {f.name}
+                  <option value="">
+                    {!formData.municipality_id 
+                      ? t('registrationForm.selectCommuneFirst')
+                      : isLoading.fokotanys 
+                        ? t('registrationForm.loadingFokotanys')
+                        : apiError
+                          ? t('registrationForm.errorLoadingFokotanys')
+                          : t('registrationForm.selectFokotany')}
+                  </option>
+                  {fokotanys.length > 0 ? (
+                    fokotanys.map((fokotany) => {
+                      const fokotanyId = fokotany.id || fokotany.fokotany_id;
+                      const fokotanyName = fokotany.name || fokotany.nom || `Fokotany ${fokotanyId}`;
+                      
+                      return (
+                        <option 
+                          key={fokotanyId} 
+                          value={fokotanyId}
+                        >
+                          {fokotanyName}
                         </option>
-                      ))
+                      );
+                    })
                   ) : (
-                    <></>
+                    formData.municipality_id && !isLoading.fokotanys && !apiError && (
+                      <option value="" disabled>{t('registrationForm.noFokotanyAvailable')}</option>
+                    )
                   )}
                 </select>
-                {errors.fokotany_id && (
+                {apiError && !isLoading.fokotanys && (
+                  <p className="text-yellow-600 text-xs mt-1">
+                    {apiError}
+                  </p>
+                )}
+                {errors.fokotany_id && !apiError && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.fokotany_id}
                   </p>
@@ -375,7 +527,7 @@ export default function RegistrationForm() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Photo du citoyen
+                  {t('registrationForm.fields.photos')}
                 </label>
                 <input
                   type="file"
@@ -390,14 +542,12 @@ export default function RegistrationForm() {
 
           {/* Section Compte utilisateur */}
           <div className="p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">
-              Informations du compte
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4 mt-8">{t('registrationForm.accountInfo')}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pseudo <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.pseudo')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -407,7 +557,7 @@ export default function RegistrationForm() {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.user_pseudo ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Votre pseudo"
+                  placeholder={t('registrationForm.fields.username')}
                 />
                 {errors.user_pseudo && (
                   <p className="text-red-500 text-xs mt-1">
@@ -418,7 +568,7 @@ export default function RegistrationForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.email')} <span className="text-red-500">{t('registrationForm.requiredField')}</span>
                 </label>
                 <input
                   type="email"
@@ -428,7 +578,7 @@ export default function RegistrationForm() {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.user_email ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="votre@email.com"
+                  placeholder={t('registrationForm.fields.email')}
                 />
                 {errors.user_email && (
                   <p className="text-red-500 text-xs mt-1">
@@ -439,7 +589,7 @@ export default function RegistrationForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mot de passe <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.password')} <span className="text-red-500">{t('registrationForm.requiredField')}</span>
                 </label>
                 <input
                   type="password"
@@ -449,7 +599,7 @@ export default function RegistrationForm() {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.user_password ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Mot de passe"
+                  placeholder={t('registrationForm.fields.password')}
                 />
                 {errors.user_password && (
                   <p className="text-red-500 text-xs mt-1">
@@ -460,7 +610,7 @@ export default function RegistrationForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Téléphone <span className="text-red-500">*</span>
+                  {t('registrationForm.fields.phone')} <span className="text-red-500">{t('registrationForm.requiredField')}</span>
                 </label>
                 <input
                   type="tel"
@@ -470,7 +620,7 @@ export default function RegistrationForm() {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.user_phone ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Numéro de téléphone"
+                  placeholder={t('registrationForm.fields.phone')}
                 />
                 {errors.user_phone && (
                   <p className="text-red-500 text-xs mt-1">
@@ -509,10 +659,10 @@ export default function RegistrationForm() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Inscription en cours...
+                {t('registrationForm.submitting')}
               </span>
             ) : (
-              "S'inscrire →"
+              `${t('registrationForm.submitButton')} →`
             )}
           </button>
 

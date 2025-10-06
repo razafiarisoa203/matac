@@ -11,8 +11,25 @@ export const validateField = (name, value, field) => {
     const telRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
     if (!telRegex.test(value)) return 'Format téléphone invalide';
   }
-  if (field.type === 'number' && value && isNaN(value)) {
-    return 'Valeur numérique requise';
-  }
+  if (field.type === 'number' && value) {
+    if (isNaN(value)) {
+        return 'Valeur numérique requise';
+    }
+    if (Number(value) < 0) {
+        return 'La valeur doit être un nombre positif';
+    }
+}
+  if (field.type === 'text' && value && field.pattern) {
+    const regex = new RegExp(field.pattern);
+    if (!regex.test(value)) {
+        return 'Format texte invalide';
+    }
+  if (field.type === 'text' && value && field.pattern === '^[A-Za-z0-9]+$') {
+    const regex = /^[A-Za-z0-9]+$/;
+    if (!regex.test(value)) {
+        return 'Valeur alphanumérique requise';
+    }
+}
+}
   return null;
 };

@@ -6,8 +6,8 @@ import HeaderDashboard from '../components/HeaderDashboard';
 import StatsCards from '../components/StatsCards';
 import SearchBar from '../components/SearchBar';
 import AlignmentTable from '../components/AlignmentTable';
-import { constructionService } from '../services/api'; // Import du service construction
-import axios from "axios";
+import { alignmentService } from '../services/api/alignmentService'; 
+import { constructionService } from '../services/api/constructionSercvice';
 
 const DashboardClient = () => {
   const [alignments, setAlignments] = useState([]);
@@ -42,15 +42,14 @@ const DashboardClient = () => {
   const fetchAlignments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3001/servicealignement/alignment");
+      const response = await alignmentService.getAllAlignment();
       setAlignments(response.data);
       console.log("Tous les alignements récupérés :", response.data);
     } catch (err) {
       setError(err.message || "Erreur de récupération des alignements");
     }
   };
-
-  // Fonction pour récupérer les constructions
+ // Fonction pour récupérer les construction
   const fetchConstructions = async () => {
     try {
       const response = await constructionService.getConstruction();
@@ -61,7 +60,7 @@ const DashboardClient = () => {
       setError(prev => prev + " | Erreur constructions: " + err.message);
     }
   };
-
+ 
   // Charger les données au montage du composant
   useEffect(() => {
     const loadData = async () => {

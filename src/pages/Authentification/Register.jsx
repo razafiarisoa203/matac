@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import usePageTitle from "../../hooks/usePageTitle";
 import CINVerificationStep from "../../components/Authentification/CINVerificationStep";
 import RegistrationForm from "../../components/Authentification/RegistrationForm";
-import { citoyenService } from "../../services/api";
+import { citoyenService } from "../../services/api/citoyenService";
 import Header from "../../components/Header";
 import "react-toastify/dist/ReactToastify.css";
 import bgImage from "../../assets/image/construction-bg.jpeg";
 import mdatLogo from "../../assets/logo/MDAT.jpeg";
-import { useDispatch } from "react-redux";
-import { setGlobalCIN } from "../../services/store/userSlice";
 
 
 export default function Register() {
@@ -19,7 +18,7 @@ export default function Register() {
   const [step, setStep] = useState("verification");
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState("");
-  const dispatch = useDispatch()
+  const { t } = useTranslation();
 
   const handleVerifyCIN = async (cin) => {
     console.log('handleVerifyCIN appelé avec CIN:', cin);
@@ -35,19 +34,18 @@ export default function Register() {
       }
 
       try {
-        console.log('Appel à checkCIN avec CIN:', cin);
         const verificationResult = await citoyenService.checkCIN(cin);
-        console.log('Réponse de checkCIN:', verificationResult);
-        
-        if (verificationResult.exists) {
+        console.log(verificationResult);
+        /**
+         * if (verificationResult) {
           console.log('CIN existe déjà, redirection vers /login');
           toast.info("Ce numéro CIN est déjà enregistré. Veuillez vous connecter.");
           navigate("/login");
         } else {
           console.log('CIN disponible, passage à l\'étape d\'inscription');
           setStep("registration");
-          dispatch(setGlobalCIN({cin}))
         }
+         */
       } catch (error) {
         console.error('Erreur lors de la vérification du CIN:', error);
         if (error.response && error.response.status === 404) {
@@ -107,12 +105,12 @@ export default function Register() {
 
               {/* Lien de connexion */}
               <div className="text-center text-sm text-gray-600 mt-6">
-                Vous avez déjà un compte ?{" "}
+                {t('register.haveAccount')} {" "}
                 <Link
                   to="/login"
                   className="font-medium text-green-600 hover:text-green-700"
                 >
-                  Se connecter
+                  {t('login.submit')}
                 </Link>
               </div>
 
@@ -125,7 +123,7 @@ export default function Register() {
                   <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
-                  Retour à l'accueil
+                  {t('login.backToHome')}
                 </button>
               </div>
             </div>

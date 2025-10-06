@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { User, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function CINVerificationStep({ onVerify, isVerifying, error: propError }) {
+  const { t } = useTranslation();
   const [cin, setCin] = useState("");
   const [localError, setLocalError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!cin.trim()) {
-      setLocalError("Veuillez saisir votre numéro CIN");
+      setLocalError(t('cinVerificationStep.error.required'));
       return;
     }
-    if (!/^[A-Za-z0-9]+$/.test(cin)) {
-      setLocalError("Le numéro CIN ne doit contenir que des lettres et des chiffres");
+    if (!/^[0-9]+$/.test(cin)) {
+      setLocalError(t('cinVerificationStep.error.invalidFormat'));
       return;
     }
     onVerify(cin);
@@ -33,16 +35,16 @@ export default function CINVerificationStep({ onVerify, isVerifying, error: prop
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Vérification d'identité</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('cinVerificationStep.title')}</h2>
         <p className="mt-2 text-gray-600">
-          Veuillez saisir votre numéro de carte d'identité nationale
+          {t('cinVerificationStep.subtitle')}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="cin" className="block text-sm font-medium text-gray-700 mb-1">
-            Numéro CIN <span className="text-red-500">*</span>
+            {t('cinVerificationStep.cinLabel')} <span className="text-red-500">{t('cinVerificationStep.requiredField')}</span>
           </label>
           <div className="relative rounded-md shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -54,7 +56,7 @@ export default function CINVerificationStep({ onVerify, isVerifying, error: prop
               value={cin}
               onChange={handleChange}
               className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              placeholder="Votre numéro CIN"
+              placeholder={t('cinVerificationStep.cinPlaceholder')}
               autoComplete="off"
             />
           </div>
@@ -72,10 +74,10 @@ export default function CINVerificationStep({ onVerify, isVerifying, error: prop
             className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isVerifying ? (
-              "Vérification en cours..."
+              t('cinVerificationStep.verifying')
             ) : (
               <>
-                Vérifier mon identité
+                {t('cinVerificationStep.submitButton')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -84,7 +86,7 @@ export default function CINVerificationStep({ onVerify, isVerifying, error: prop
       </form>
 
       <div className="text-center text-sm text-gray-500 mt-4">
-        <p>Cette vérification permet de sécuriser votre inscription.</p>
+        <p>{t('cinVerificationStep.securityMessage')}</p>
       </div>
     </div>
   );

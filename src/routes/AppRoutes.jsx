@@ -50,22 +50,21 @@ function App() {
         <Route path="/register" element={<UserRegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/permis" element={<PermisConstruction />} />
-
         {/* Protected */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <Dashboard />
-            </ProtectedRoute>
+           // </ProtectedRoute>
           }
         />
         <Route
           path="/dashboard-client"
           element={
-            <ProtectedRoute>
+           // <ProtectedRoute>
               <DashboardClient />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
 
@@ -73,9 +72,9 @@ function App() {
         <Route
           path="/alignement"
           element={
-            <ProtectedRoute>
+          //  <ProtectedRoute>
               <Allignement />
-            </ProtectedRoute>
+          //  </ProtectedRoute>
           }
         />
         {/* <Route
@@ -89,17 +88,17 @@ function App() {
         <Route
           path="/alignement-list"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <AlignmentListPage />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
         {/*<Route
           path="/alignements"
           element={
-            <ProtectedRoute>
+           // <ProtectedRoute>
               <AlignmentList />
-            </ProtectedRoute>
+           // </ProtectedRoute>
           }
         />*/}
         <Route
@@ -115,9 +114,9 @@ function App() {
         <Route
           path="/permis-list"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <ConstructionListPage />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
         <Route path="/permis-details/:id" element={
@@ -130,26 +129,26 @@ function App() {
         <Route
           path="/admin-dashboard"
           element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
+            // </ProtectedRoute>
               <AdminDashboard />
-            </ProtectedRoute>
           }
         />
         <Route
           path="/users"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <UsersList />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
     
         <Route
           path="/RoleManagement"
           element={
-            <ProtectedRoute>
+            //<ProtectedRoute>
               <RoleManagement />
-            </ProtectedRoute>
+            //</ProtectedRoute>
           }
         />
       </Routes>

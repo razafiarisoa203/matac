@@ -10,7 +10,7 @@ import DynamicPieceManager from './PermisConst/DynamicPieceManager';
 import InputField from './PermisConst/InputField';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { constructionService } from '../services/api';
+import { constructionService } from '../services/api/constructionSercvice';
 import { useFileUpload } from '../hooks/useFileUpload'; // Import du hook
 
 const PermisConstruction = () => {

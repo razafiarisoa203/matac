@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ArrowLeft, Loader2 } from 'lucide-react';
-import { getAllUsersByApplicationRole } from '../../services/api/userService';
+import axiosConfig from '../../services/api/axios.config';
 
-const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '13635';
+const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '15';
 
 const UsersList = () => {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const UsersList = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const usersData = await getAllUsersByApplicationRole();
+        const usersData = await axiosConfig.get(`/serviceauth/roles/application/${MATAC_APP_ID}`);
         console.log('Données brutes de l\'API:', usersData);
         
         // Normaliser les données utilisateur

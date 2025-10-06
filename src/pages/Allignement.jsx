@@ -2,9 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormData } from "../hooks/useFormData";
 import { useFileUpload } from "../hooks/useFileUpload";
-import { useRegionsCommunes } from "../hooks/useRegionsCommunes";
-import { authService, alignmentService, TEMP_USER_ID } from "../services/api";
-import axios from "axios";
+import { alignmentService } from "../services/api/alignmentService";
 import { validateTerrainForm } from "../utils/validation";
 import Sidebar from "../components/alignements/Sidebar";
 import Step1Implantation from "../components/alignements/Step1Implantation";
@@ -15,11 +13,11 @@ import Step5Alignement from "../components/alignements/Step5Alignement";
 import Step6Documents from "../components/alignements/Step6Documents";
 import NavigationButtons from "../components/alignements/NavigationButtons";
 import MessageDisplay from "../components/alignements/MessageDisplay";
-import { sendNotif } from "../services/api/userService";
+import { citoyenService } from "../services/api/citoyenService";
+
 
 function Allignement() {
   const navigate = useNavigate();
-  const { regions, communes, selectedRegion, selectedCommune, setSelectedRegion, setSelectedCommune } = useRegionsCommunes();
   const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
   const [statutTerrain, setStatutTerrain] = useState("titre");
   const [currentStep, setCurrentStep] = useState(1);
@@ -74,36 +72,41 @@ function Allignement() {
     nationalite2: "",
     age2: "",
   });
+  const [regions, setRegions] = useState([]);
+  const [communes, setCommunes] = useState([]);
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedCommune, setSelectedCommune] = useState("");
 
   const [isLoadingUserData, setIsLoadingUserData] = useState(false);
   const [userDataLoaded, setUserDataLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
+  const userData = JSON.parse(localStorage.getItem('user'));
+  const id_citizen = userData?.id_citizen;
+
   const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
     setIsLoadingUserData(true);
+
     try {
-      const userData = JSON.parse(localStorage.getItem('userData'));
-      if (!userData) {
-        console.log('No user data found in localStorage');
-        return;
-      }
-      const userInfo = userData.user || {};
-      const citizenData = userData.citizen || {};
+      // 🔹 On récupère les infos citoyen depuis le serviceCitoyen
+      const citizenData = await citoyenService.getCitizenData(id_citizen);
+
+      // 🔹 On formate les données
       const formattedData = {
         civilite: 'M',
-        nom: citizenData.citizen_lastname || '',
-        prenoms: citizenData.citizen_name || '',
-        cinPasseport: String(citizenData.citizen_national_card_number || ''),
-        fonction: citizenData.citizen_work || 'Particulier',
+        nom: citizenData?.citizen_lastname || '',
+        prenoms: citizenData?.citizen_name || '',
+        cinPasseport: String(citizenData?.citizen_national_card_number || ''),
+        fonction: citizenData?.citizen_work || 'Particulier',
         nationalite: 'Malagasy',
-        adresse: citizenData.citizen_adress || '',
-        email: userInfo.user_email || '',
+        adresse: citizenData?.citizen_adress || '',
+        email: citizenData?.user_email || '',
         telephone: '',
-        adresse_proprietaire: citizenData.citizen_adress || '',
-        contact_proprietaire: '',
-        email_proprietaire: userInfo.user_email || '',
+        adresse_proprietaire: citizenData?.citizen_adress || '',
+        contact_proprietaire: userData.user_phone || '',
+        email_proprietaire: userData?.user_email || '',
         age: '',
         nom_demandaire: '',
         prenom_mandataire: '',
@@ -112,12 +115,14 @@ function Allignement() {
         fonction_demandaire: '',
         age_demandaire: '',
         nationalite_demandaire: '',
-
       };
+
       setFormData(prev => ({ ...prev, ...formattedData }));
       setUserDataLoaded(true);
+
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('Erreur lors du chargement des données citoyen:', error);
+
       const fallbackData = {
         civilite: 'M',
         nom: '',
@@ -132,12 +137,15 @@ function Allignement() {
         email_proprietaire: '',
         age: ''
       };
+
       setFormData(prev => ({ ...prev, ...fallbackData }));
       setUserDataLoaded(true);
+
     } finally {
       setIsLoadingUserData(false);
     }
-  }, [isLoadingUserData, userDataLoaded, setFormData]);
+  }, [isLoadingUserData, userDataLoaded, id_citizen, setFormData]);
+
 
   useEffect(() => {
     const shouldAutoFill = statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire" && !userDataLoaded && !isLoadingUserData;
@@ -279,39 +287,6 @@ function Allignement() {
 
       // Envoyer au backend
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
-
-      // Gestion des fichiers joints
-      if (files?.length > 0) {
-        for (const file of files) {
-          if (!file.uploaded || !file.uploadResult) continue;
-
-          // Assurer que tous les champs ont des valeurs correctes
-          const pieceJointeData = {
-            nom_piece: file.name || "piece",
-            filename: file.uploadResult.filename || "unknown.txt",
-            mimetype: file.uploadResult.mimetype || "application/octet-stream",
-            size: file.uploadResult.size || 0,
-            url: file.uploadResult.url || "http://localhost:3000/uploads/default-file.txt",
-            id_align: alignmentResult.data.id_align || 0
-          };
-
-
-          /* Post direct en JSON
-          await axios.post(
-            "http://localhost:3001/servicealignement/piece-jointe/with-file-info",
-            pieceJointeData,
-            { headers: { "Content-Type": "application/json" } }
-          );*/
-        }
-      }
-
-      setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès !");
-      await sendNotif({
-        to: "hasinaedmondine55@gmail.com",
-        subject: "Nouvelle soumission de formulaire",
-        body: "Un utilisateur a soumis le formulaire avec succès.",
-        filePath: "" // obligatoire même si vide
-      });
       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 
       setTimeout(() => {
@@ -322,14 +297,12 @@ function Allignement() {
       }, 3000);
 
     } catch (error) {
-      console.error('Erreur lors de la soumission :', error.response?.data || error.message);
+      console.error(error.message);
       setSubmitMessage(`Erreur : ${error.response?.data?.message || error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
-
-
 
   const resetFormData = () => {
     const shouldPreserveData = statutProprietaire === "particulier" && qualiteDemandeur === "proprietaire";

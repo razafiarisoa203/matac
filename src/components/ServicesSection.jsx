@@ -12,7 +12,7 @@ const ServicesSection = () => {
   return (
     <div
       id="services"
-      className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col relative overflow-hidden py-16"
+      className="min-h-screen dark:bg-[#1a202c] flex flex-col relative overflow-hidden py-16"
     >
       {/* Éléments décoratifs d'arrière-plan */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
 import SearchBar from '../components/SearchBar';
-import { alignmentService } from '../services/api';
+import { alignmentService } from '../services/api/alignmentService';
 import { Eye, FileText, Download, AlertCircle, MapPin, ChevronRight, Plus } from 'lucide-react';
 import { Link } from "react-router-dom";
 

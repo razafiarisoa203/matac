@@ -1,13 +1,12 @@
-import axios from 'axios';
+import axiosConfig from './axios.config';
 
-const API_BASE_URL = import.meta.env.VITE_API_SERVICEUPLOAD || 'http://localhost:3000';
 
-export const uploadFile = async (file) => {
+export const uploadFile = async (file) => { 
   const formData = new FormData();
   formData.append('file', file);
 
   try {
-    const response = await axios.post(`${API_BASE_URL}/file/save`, formData, {
+    const response = await axiosConfig.post(`/serviceupload/file/save`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -22,4 +21,19 @@ export const uploadFile = async (file) => {
 
 export default {
   uploadFile,
+};
+
+// Service Upload(photo)
+export const uploadService = {
+  async uploadCitizenPhoto(photoFile) {
+    const formData = new FormData();
+    formData.append('file', photoFile);
+
+    const response = await axiosConfig.post(
+      '/serviceupload/api/upload/citizen-photo',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
 };

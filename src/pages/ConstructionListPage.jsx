@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
 import SearchBar from '../components/SearchBar';
-import { constructionService } from '../services/api';
+import { constructionService } from '../services/api/constructionSercvice';
 import { Eye, FileText, Download, AlertCircle, Building, ChevronRight, Plus } from 'lucide-react';
 import { Link } from "react-router-dom";
+import axios from "axios";
+
 
 const ConstructionListPage = () => {
   const [constructions, setConstructions] = useState([]);
@@ -49,6 +51,7 @@ const ConstructionListPage = () => {
       setLoading(false);
     }
   };
+
 
   // Charger les constructions au montage du composant
   useEffect(() => {

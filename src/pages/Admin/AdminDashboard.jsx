@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { Users, Shield, Settings, ArrowLeft } from 'lucide-react';
-import { getAllUsersByApplicationRole } from '../../services/api/userService';
+import { toast } from 'react-toastify';
+import axiosConfig from '../../services/api/axios.config';
+//import { getAllUsersByApplicationRole } from '../../services/api/userService';
 
 const AdminDashboard = () => {
   const location = useLocation();
@@ -21,7 +23,7 @@ const AdminDashboard = () => {
 
   // Effet pour charger le token au montage
   useEffect(() => {
-    const tokenFromState = location.state?.token || localStorage.getItem('token');
+    const tokenFromState = location.state?.token || localStorage.getItem('access_token');
     if (tokenFromState) {
       setToken(tokenFromState);
       localStorage.setItem('token', tokenFromState);
@@ -39,10 +41,10 @@ const AdminDashboard = () => {
     
     try {
       // Utilisation de la même méthode que dans UsersList
-      const usersData = await getAllUsersByApplicationRole();
+      //const usersData = await getAllUsersByApplicationRole();
       
       // Récupération des rôles
-      const rolesResponse = await axios.get('https://gateway.tsirylab.com/serviceauth/roles', {
+      const rolesResponse = await axiosConfig.get('/serviceauth/roles', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -86,8 +88,11 @@ const AdminDashboard = () => {
       commune: 0,
       active: 0,
       inactive: 0,
-      total: 3 // On a toujours 3 rôles : admin, client et commune
+      total: 0 // On a toujours 3 rôles : admin, client et commune
     };
+    
+    // Dictionnaire pour compter chaque rôle individuellement
+    const roleCounts = {};
     
     // Compter les utilisateurs par rôle et statut
     users.forEach(user => {
@@ -99,76 +104,89 @@ const AdminDashboard = () => {
       if (user.appUserRoles?.length > 0) {
         user.appUserRoles.forEach(role => {
           const appId = role.application_id || role.applicationId;
-          if (appId === 13635) {
+          if (appId === 15) {
             const roleId = role.role_id || role.role?.id || role.roleId;
-            if (roleId === 93) stats.client++;
-            else if (roleId === 94) stats.admin++;
-            else if (roleId === 100) stats.commune++;
+            
+            // Incrémenter le compteur pour ce rôle
+            roleCounts[roleId] = (roleCounts[roleId] || 0) + 1;
+            
+            // Mettre à jour les compteurs spécifiques
+            if (roleId === 27) stats.client++;      // Client
+            else if (roleId === 26) stats.admin++;   // Admin
+            else if (roleId === 100) stats.commune++; // Commune
           }
         });
       }
     });
     
-    console.log('\n=== RÉSULTATS DU COMPTAGE ===');
-    console.log('Admin:', stats.admin);
-    console.log('Client:', stats.client);
-    console.log('Commune:', stats.commune);
-    console.log('Actifs:', stats.active);
-    console.log('Inactifs:', stats.inactive);
-    console.log('Total rôles:', 3);
+    // Compter le nombre total de rôles uniques
+    stats.total = Object.keys(roleCounts).length;
+    
+    // Afficher le décompte détaillé des rôles
+    console.log('\n=== DÉCOMPTE DÉTAILLÉ DES RÔLES ===');
+    Object.entries(roleCounts).forEach(([roleId, count]) => {
+      console.log(`Rôle ${roleId}: ${count} utilisateur(s)`);
+    });
+    
+    console.log('\n=== RÉSUMÉ DES STATISTIQUES ===');
+    console.log('Admin (94):', stats.admin);
+    console.log('Client (93):', stats.client);
+    console.log('Commune (100):', stats.commune);
+    console.log('Utilisateurs actifs:', stats.active);
+    console.log('Utilisateurs inactifs:', stats.inactive);
+    console.log('Total de rôles uniques:', stats.total);
     
     return stats;
   }, [users]);
   
   // Obtenir les statistiques des utilisateurs
   const _userStats = useMemo(() => {
+    if (!users || !roles) return { admin: 0, client: 0, commune: 0, active: 0, inactive: 0, total: 0 };
     if (users.length > 0 && roles.length > 0) {
       return countUsersByRole();
     }
     return { admin: 0, client: 0, commune: 0, active: 0, inactive: 0, total: 0 };
-  }, [countUsersByRole, users.length, roles.length]);
+  }, [users, roles, countUsersByRole]);
   
   // Fonction pour attribuer un rôle à un utilisateur
   const assignRole = async (userId, roleId) => {
+    if (!token) {
+      toast.error('Session expirée. Veuillez vous reconnecter.');
+      return;
+    }
+
     try {
       setIsLoading(true);
+      const appId = import.meta.env.VITE_APP_ID || 15;
+      
       await axios.put(
-        `https://gateway.tsirylab.com/serviceauth/users/${userId}/roles`,
-        { role_id: roleId, application_id: 13635 },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${import.meta.env.VITE_API_URL}/serviceauth/users/${userId}/roles`,
+        { 
+          role_id: roleId, 
+          application_id: appId 
+        },
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
       
-      // Mettre à jour l'état local
-      const updatedUsers = users.map(user => {
-        if (user.id === userId) {
-          const updatedRoles = (user.appUserRoles || []).filter(
-            r => r.application_id !== 13635
-          );
-          
-          if (roleId) {
-            updatedRoles.push({
-              role_id: roleId,
-              application_id: 13635,
-              role: roles.find(r => r.id === roleId) || { id: roleId, name: 'Inconnu' }
-            });
-          }
-          
-          return { ...user, appUserRoles: updatedRoles };
-        }
-        return user;
-      });
-      
-      setUsers(updatedUsers);
-      localStorage.setItem('cachedUsers', JSON.stringify(updatedUsers));
-      
+      // Recharger les données après mise à jour
+      await fetchUsersAndRoles();
+      toast.success('Rôle mis à jour avec succès');
     } catch (error) {
       console.error('Erreur lors de la mise à jour du rôle:', error);
+      const errorMessage = error.response?.data?.message || 
+                         error.message || 
+                         'Erreur lors de la mise à jour du rôle';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Récupérer les activités récentes (commenté car non utilisé actuellement)
   // const _recentActivities = useMemo(() => {
   //   return users
   //     .sort((a, b) => new Date(b.lastLogin || b.createdAt) - new Date(a.lastLogin || a.createdAt))
@@ -196,10 +214,30 @@ const AdminDashboard = () => {
   
   // Effet pour charger les données au montage et quand le token change
   useEffect(() => {
-    if (token) {
-      console.log('Chargement des données avec le token:', token.substring(0, 10) + '...');
-      fetchUsersAndRoles();
+    if (!token) {
+      setError('Aucun token d\'authentification trouvé. Veuillez vous reconnecter.');
+      return;
     }
+
+    const loadData = async () => {
+      console.log('Chargement des données avec le token:', token.substring(0, 10) + '...');
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        await fetchUsersAndRoles();
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        const errorMessage = error.response?.data?.message || 
+                           error.message || 
+                           'Erreur lors du chargement des données. Veuillez réessayer.';
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [token, fetchUsersAndRoles]);
   
   // Effet pour afficher les données des rôles et utilisateurs quand elles changent
@@ -284,9 +322,11 @@ const AdminDashboard = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">{t('admin.stats.totalRoles')}</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('admin.stats.roles')}</dt>
                     <dd>
-                      <div className="text-lg font-medium text-gray-900">3</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {_userStats?.total || 0}
+                      </div>
                     </dd>
                   </dl>
                 </div>
@@ -343,13 +383,13 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {users.slice(0, 5).map((item, index) => {
+                {users.slice(0, 0).map((item, index) => {
                   const user = item.user || item;
                   const citoyen = item.citoyen || {};
                   const userKey = user.id || `user-${index}`;
-                  // Trouver le rôle principal de l'utilisateur pour l'application 13635
+                  // Trouver le rôle principal de l'utilisateur pour l'application 15
                   const userRole = user.appUserRoles?.find(
-                    role => role.application_id === 13635
+                    role => role.application_id === 15
                   )?.role;
                   return (
                     <li key={userKey} className="hover:bg-gray-50">

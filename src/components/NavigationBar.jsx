@@ -2,13 +2,35 @@ import { handleNavClick } from "../utils/scrollToSection";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { User, Globe, Menu, X } from "lucide-react";
+import { User, Globe, Menu, X, Sun, Moon } from "lucide-react";
 
 function NavigationBar() {
   const { t, i18n } = useTranslation();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("accueil");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
   
   // Mettre à jour le document title et la direction du texte en fonction de la langue
   useEffect(() => {
@@ -51,6 +73,17 @@ function NavigationBar() {
 
         {/* Bouton connexion & langue desktop */}
         <div className="hidden md:flex items-center space-x-4">
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 text-gray-700 hover:text-[#269745] dark:text-gray-200 dark:hover:text-white transition-colors"
+            aria-label={darkMode ? 'Désactiver le mode sombre' : 'Activer le mode sombre'}
+          >
+            {darkMode ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </button>
           <Link
             to="/login"
             className="bg-[#269745] text-white px-4 py-2 rounded-lg hover:bg-[#1e7e3a] flex items-center space-x-2 transition-colors duration-300"
@@ -62,7 +95,7 @@ function NavigationBar() {
           <div className="relative">
             <button
               onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-              className="flex items-center space-x-1 text-gray-800 hover:text-[#269745] transition-colors"
+              className="flex items-center space-x-1 text-gray-800 hover:text-[#269745] dark:text-green-500 dark:hover:text-green-400 transition-colors"
             >
               <Globe className="w-5 h-5" />
               <span className="text-sm font-medium">{i18n.language.toUpperCase()}</span>
@@ -83,8 +116,8 @@ function NavigationBar() {
                   onClick={() => changeLanguage('fr')}
                   className={`block px-4 py-2 text-sm w-full text-left ${
                     i18n.language === 'fr' 
-                      ? 'bg-gray-100 text-[#269745] font-medium' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-gray-100 dark:bg-gray-800 text-[#269745] dark:text-green-400 font-medium' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('languages.fr')}
@@ -93,8 +126,8 @@ function NavigationBar() {
                   onClick={() => changeLanguage('mg')}
                   className={`block px-4 py-2 text-sm w-full text-left ${
                     i18n.language === 'mg' 
-                      ? 'bg-gray-100 text-[#269745] font-medium' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-gray-100 dark:bg-gray-800 text-[#269745] dark:text-green-400 font-medium' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('languages.mg')}

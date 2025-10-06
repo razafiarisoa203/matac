@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
-import { alignmentService } from '../services/api';
+import { alignmentService } from '../services/api/alignmentService';
 import { 
   Eye, 
   Download, 
