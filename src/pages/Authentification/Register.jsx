@@ -5,13 +5,11 @@ import { useTranslation } from "react-i18next";
 import usePageTitle from "../../hooks/usePageTitle";
 import CINVerificationStep from "../../components/Authentification/CINVerificationStep";
 import RegistrationForm from "../../components/Authentification/RegistrationForm";
-import { citoyenService } from "../../services/api";
+import { citoyenService } from "../../services/api/citoyenService";
 import Header from "../../components/Header";
 import "react-toastify/dist/ReactToastify.css";
 import bgImage from "../../assets/image/construction-bg.jpeg";
 import mdatLogo from "../../assets/logo/MDAT.jpeg";
-import { useDispatch } from "react-redux";
-import { setGlobalCIN } from "../../services/store/userSlice";
 
 
 export default function Register() {
@@ -20,7 +18,6 @@ export default function Register() {
   const [step, setStep] = useState("verification");
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState("");
-  const dispatch = useDispatch();
   const { t } = useTranslation();
 
   const handleVerifyCIN = async (cin) => {
@@ -37,19 +34,18 @@ export default function Register() {
       }
 
       try {
-        console.log('Appel à checkCIN avec CIN:', cin);
         const verificationResult = await citoyenService.checkCIN(cin);
-        console.log('Réponse de checkCIN:', verificationResult);
+        console.log(verificationResult);
         
-        if (verificationResult.exists) {
+         if (verificationResult) {
           console.log('CIN existe déjà, redirection vers /login');
           toast.info("Ce numéro CIN est déjà enregistré. Veuillez vous connecter.");
           navigate("/login");
         } else {
           console.log('CIN disponible, passage à l\'étape d\'inscription');
           setStep("registration");
-          dispatch(setGlobalCIN({cin}))
         }
+         
       } catch (error) {
         console.error('Erreur lors de la vérification du CIN:', error);
         if (error.response && error.response.status === 404) {

@@ -1,29 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Users, Shield, Settings, ArrowLeft, UserPlus, Key } from 'lucide-react';
-import UsersList from './UsersList';
-import RolesList from '../../components/Roles/RolesList';
-
-// Bouton personnalisé avec Tailwind
-const Button = ({ children, onClick, variant = 'default', className = '', ...props }) => {
-  const baseStyles = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
-  
-  const variants = {
-    default: 'bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4',
-    outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4',
-    ghost: 'hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4',
-  };
-
-  return (
-    <button
-      className={`${baseStyles} ${variants[variant]} ${className}`}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { Users, Shield, Settings, ArrowLeft } from 'lucide-react';
+import { toast } from 'react-toastify';
+import axiosConfig from '../../services/api/axios.config';
+//import { getAllUsersByApplicationRole } from '../../services/api/userService';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -31,9 +14,234 @@ const AdminDashboard = () => {
   const [isLoading] = useState(false);
   const [error] = useState(null);
 
-  // Garder les composants montés pour éviter les remontages
-  const usersListComponent = useMemo(() => <UsersList />, []);
-  const rolesListComponent = useMemo(() => <RolesList />, []);
+  // Effet pour charger le token au montage
+  useEffect(() => {
+    const tokenFromState = location.state?.token || localStorage.getItem('access_token');
+    if (tokenFromState) {
+      setToken(tokenFromState);
+      localStorage.setItem('token', tokenFromState);
+    } else {
+      navigate('/login');
+    }
+  }, [location, navigate]);
+
+  // Fonction pour charger les données utilisateurs
+  const fetchUsersAndRoles = useCallback(async () => {
+    if (!token) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Utilisation de la même méthode que dans UsersList
+      //const usersData = await getAllUsersByApplicationRole();
+      
+      // Récupération des rôles
+      const rolesResponse = await axiosConfig.get('/serviceauth/roles', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const rolesData = Array.isArray(rolesResponse?.data) ? rolesResponse.data : [];
+      
+      // Mettre à jour l'état avec les données
+      setUsers(usersData);
+      setRoles(rolesData);
+      
+      // Mettre en cache les données
+      localStorage.setItem('cachedUsers', JSON.stringify(usersData));
+      localStorage.setItem('cachedRoles', JSON.stringify(rolesData));
+      
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      setError('Erreur lors du chargement des données');
+      
+      // Essayer de charger les données en cache en cas d'erreur
+      try {
+        const cachedUsers = localStorage.getItem('cachedUsers');
+        const cachedRoles = localStorage.getItem('cachedRoles');
+        
+        if (cachedUsers) setUsers(JSON.parse(cachedUsers));
+        if (cachedRoles) setRoles(JSON.parse(cachedRoles));
+      } catch (cacheError) {
+        console.error('Erreur lors du chargement du cache:', cacheError);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
+  
+  // Compter les utilisateurs par rôle et statut
+  const countUsersByRole = useCallback(() => {
+    console.log('=== DÉBUT DU COMPTAGE DES RÔLES ===');
+    console.log('Nombre total d\'utilisateurs:', users.length);
+    
+    const stats = {
+      admin: 0,
+      client: 0,
+      commune: 0,
+      active: 0,
+      inactive: 0,
+      total: 0 // On a toujours 3 rôles : admin, client et commune
+    };
+    
+    // Dictionnaire pour compter chaque rôle individuellement
+    const roleCounts = {};
+    
+    // Compter les utilisateurs par rôle et statut
+    users.forEach(user => {
+      // Compter les utilisateurs actifs/inactifs
+      if (user.isActive !== false) stats.active++;
+      else stats.inactive++;
+      
+      // Compter les rôles
+      if (user.appUserRoles?.length > 0) {
+        user.appUserRoles.forEach(role => {
+          const appId = role.application_id || role.applicationId;
+          if (appId === 15) {
+            const roleId = role.role_id || role.role?.id || role.roleId;
+            
+            // Incrémenter le compteur pour ce rôle
+            roleCounts[roleId] = (roleCounts[roleId] || 0) + 1;
+            
+            // Mettre à jour les compteurs spécifiques
+            if (roleId === 27) stats.client++;      // Client
+            else if (roleId === 26) stats.admin++;   // Admin
+            else if (roleId === 100) stats.commune++; // Commune
+          }
+        });
+      }
+    });
+    
+    // Compter le nombre total de rôles uniques
+    stats.total = Object.keys(roleCounts).length;
+    
+    // Afficher le décompte détaillé des rôles
+    console.log('\n=== DÉCOMPTE DÉTAILLÉ DES RÔLES ===');
+    Object.entries(roleCounts).forEach(([roleId, count]) => {
+      console.log(`Rôle ${roleId}: ${count} utilisateur(s)`);
+    });
+    
+    console.log('\n=== RÉSUMÉ DES STATISTIQUES ===');
+    console.log('Admin (94):', stats.admin);
+    console.log('Client (93):', stats.client);
+    console.log('Commune (100):', stats.commune);
+    console.log('Utilisateurs actifs:', stats.active);
+    console.log('Utilisateurs inactifs:', stats.inactive);
+    console.log('Total de rôles uniques:', stats.total);
+    
+    return stats;
+  }, [users]);
+  
+  // Obtenir les statistiques des utilisateurs
+  const _userStats = useMemo(() => {
+    if (!users || !roles) return { admin: 0, client: 0, commune: 0, active: 0, inactive: 0, total: 0 };
+    if (users.length > 0 && roles.length > 0) {
+      return countUsersByRole();
+    }
+    return { admin: 0, client: 0, commune: 0, active: 0, inactive: 0, total: 0 };
+  }, [users, roles, countUsersByRole]);
+  
+  // Fonction pour attribuer un rôle à un utilisateur
+  const assignRole = async (userId, roleId) => {
+    if (!token) {
+      toast.error('Session expirée. Veuillez vous reconnecter.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const appId = import.meta.env.VITE_APP_ID || 15;
+      
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/serviceauth/users/${userId}/roles`,
+        { 
+          role_id: roleId, 
+          application_id: appId 
+        },
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
+      
+      // Recharger les données après mise à jour
+      await fetchUsersAndRoles();
+      toast.success('Rôle mis à jour avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du rôle:', error);
+      const errorMessage = error.response?.data?.message || 
+                         error.message || 
+                         'Erreur lors de la mise à jour du rôle';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // const _recentActivities = useMemo(() => {
+  //   return users
+  //     .sort((a, b) => new Date(b.lastLogin || b.createdAt) - new Date(a.lastLogin || a.createdAt))
+  //     .slice(0, 5)
+  //     .map(user => ({
+  //       id: user.id,
+  //       name: user.name || user.email?.split('@')[0] || 'Utilisateur',
+  //       action: user.lastLogin ? 'Dernière connexion' : 'Compte créé',
+  //       date: user.lastLogin || user.createdAt
+  //     }));
+  // }, [users]);
+  
+  // Formater les dates pour l'affichage (commenté car non utilisé actuellement)
+  // const _formatDate = (dateString) => {
+  //   if (!dateString) return 'N/A';
+  //   const options = { 
+  //     year: 'numeric', 
+  //     month: 'short', 
+  //     day: 'numeric',
+  //     hour: '2-digit',
+  //     minute: '2-digit'
+  //   };
+  //   return new Date(dateString).toLocaleDateString(undefined, options);
+  // };
+  
+  // Effet pour charger les données au montage et quand le token change
+  useEffect(() => {
+    if (!token) {
+      setError('Aucun token d\'authentification trouvé. Veuillez vous reconnecter.');
+      return;
+    }
+
+    const loadData = async () => {
+      console.log('Chargement des données avec le token:', token.substring(0, 10) + '...');
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        await fetchUsersAndRoles();
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        const errorMessage = error.response?.data?.message || 
+                           error.message || 
+                           'Erreur lors du chargement des données. Veuillez réessayer.';
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [token, fetchUsersAndRoles]);
+  
+  // Effet pour afficher les données des rôles et utilisateurs quand elles changent
+  useEffect(() => {
+    if (roles.length > 0) {
+      console.log('Rôles chargés:', roles.map(r => ({ id: r.id, name: r.name })));
+    }
+    if (users.length > 0) {
+      console.log('Utilisateurs chargés:', users.length);
+    }
+  }, [roles, users]);
 
   if (isLoading) {
     return (

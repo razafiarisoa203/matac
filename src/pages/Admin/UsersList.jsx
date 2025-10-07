@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, ArrowLeft, Loader2 } from 'lucide-react';
-import { getAllUsersByApplicationRole, getRoles } from '../../services/api/userService';
+import axiosConfig from '../../services/api/axios.config';
 
 const MATAC_APP_ID = import.meta.env.VITE_APP_ID || '15';
 
@@ -89,8 +89,21 @@ const UsersList = () => {
       }
       setError(null);
       try {
-        const { page, limit } = pagination;
-        const response = await getAllUsersByApplicationRole(page, limit, debouncedSearchTerm);
+        const usersData = await axiosConfig.get(`/serviceauth/roles/application/${MATAC_APP_ID}`);
+        console.log('Données brutes de l\'API:', usersData);
+        
+        // Normaliser les données utilisateur
+        const normalizeUserData = (data) => {
+          if (!data || !Array.isArray(data)) {
+            console.error('Données utilisateur invalides:', data);
+            return [];
+          }
+          
+          return data.map(user => {
+            if (!user) {
+              console.warn('Utilisateur null ou undefined dans les données');
+              return null;
+            }
 
         // Données
         const usersData = response.data || response.users || [];

@@ -14,11 +14,14 @@ import DashboardClient from "../pages/DashboardClient";
 
 // Alignement
 import Allignement from "../pages/Allignement";
-import AlignmentList from "../pages/AlignmentList";
-import AlignmentDetails from "../pages/AlignmentDetails";
+//import AlignmentList from "../pages/AlignmentList";
+import AlignmentDetailsPage from "../pages/AlignmentDetailsPage";
+import AlignmentListPage from "../pages/AlignmentListPage";
 
 // Autres
 import PermisConstruction from "../components/PermisConstruction";
+import ConstructionListPage from "../pages/ConstructionListPage";
+import ConstructionDetailsPage from '../pages/ConstructionDetailsPage';
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -49,7 +52,6 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/permis" element={<PermisConstruction />} />
-
         {/* Protected */}
         <Route
           path="/dashboard"
@@ -77,22 +79,53 @@ function App() {
           //  </ProtectedRoute>
           }
         />
+        {/* <Route
+          path="/liste-demandes"
+          element={
+            <ProtectedRoute>
+              <AlignmentTable />
+            </ProtectedRoute>
+          }
+        /> */}
         <Route
+          path="/alignement-list"
+          element={
+            //<ProtectedRoute>
+              <AlignmentListPage />
+            //</ProtectedRoute>
+          }
+        />
+        {/*<Route
           path="/alignements"
           element={
            // <ProtectedRoute>
               <AlignmentList />
            // </ProtectedRoute>
           }
-        />
+        />*/}
         <Route
-          path="/alignements/:id"
+          path="/alignment-details/:id"
           element={
-            //<ProtectedRoute>
-              <AlignmentDetails />
-          //  </ProtectedRoute>
+            <ProtectedRoute>
+              <AlignmentDetailsPage />
+            </ProtectedRoute>
           }
         />
+
+        {/* Permis */}
+        <Route
+          path="/permis-list"
+          element={
+            //<ProtectedRoute>
+              <ConstructionListPage />
+            //</ProtectedRoute>
+          }
+        />
+        <Route path="/permis-details/:id" element={
+          <ProtectedRoute>
+            <ConstructionDetailsPage />
+          </ProtectedRoute>
+        } />
 
         {/* Admin */}
         <Route

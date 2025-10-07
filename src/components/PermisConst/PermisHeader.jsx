@@ -5,6 +5,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import { Navigate } from 'react-router-dom';
 
 const iconMap = {
     person: <PersonIcon fontSize="small" />,
@@ -15,7 +16,7 @@ const iconMap = {
 };
 
 const PermisHeader = ({ steps, currentStep, getStepProgress, onReset }) => (
-    <div className="bg-white shadow-sm border-b">
+    <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">

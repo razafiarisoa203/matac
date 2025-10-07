@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { territoireService, authService, loginService } from "../../services/api";
+import { territoireService } from "../../services/api/territoireService";
 import { useSelector } from "react-redux";
+import { citoyenService } from '../../services/api/citoyenService';
 import { useTranslation } from "react-i18next";
 
 export default function RegistrationForm() {
