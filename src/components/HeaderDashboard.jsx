@@ -1,60 +1,43 @@
 // HeaderDashboard.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Menu, User } from "lucide-react";
-import { useSelector } from "react-redux";
+import { citoyenService } from "../services/api/citoyenService";
 
 export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClick }) {
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
+  const [citizenData, setCitizenData] = useState({
+    nom: "Utilisateur",
+    email: "email@exemple.com",
+    telephone: "",
+  });
   const profileRef = useRef(null);
 
+  // 🔹 Récupérer les données utilisateur depuis localStorage
+  const userData = JSON.parse(localStorage.getItem("user"));
+  const id_citizen = userData?.id_citizen || null;
 
-  // Récupérer les données depuis Redux
-  const userState = useSelector((state) => state.user || {});
-  const citizens = userState.citizens || null;
-  const user = userState.user || null;
-
-
-  // Si Redux ne contient rien, on prend les données stockées dans le localStorage pour garder la session,
-  // Fallback localStorage
-  const [localStorageData, setLocalStorageData] = useState(null);
+  // 🔹 Charger les données citoyen (dans useEffect)
   useEffect(() => {
-    const storedData = localStorage.getItem("userData");
-    if (storedData) {
+    const fetchCitizenData = async () => {
       try {
-        setLocalStorageData(JSON.parse(storedData));
+        if (id_citizen) {
+          const data = await citoyenService.getCitizenData(id_citizen);
+          const formattedData = {
+            nom: `${data?.citizen_lastname || ""} ${data?.citizen_name || ""}`,
+            email: userData?.user_email || "",
+            telephone: userData?.user_phone || "",
+          };
+          setCitizenData(formattedData);
+        }
       } catch (error) {
-        console.error("Erreur parsing localStorage:", error);
+        console.error("Erreur lors du chargement des données citoyen:", error);
       }
-    }
-  }, []);
+    };
 
-  // Données à afficher(On décide quelles données afficher, priorisant Redux puis localStorage.)
-  const displayUser = user || localStorageData?.user || null;
-  const displayCitizens = citizens || localStorageData?.citizen || null;
+    fetchCitizenData();
+  }, [id_citizen, userData]);
 
-  //On choisit le nom à afficher selon ce qui est disponible.(Même logique pour email et telephone)
-  const displayName =
-    displayCitizens?.citizen_name ||
-    displayCitizens?.name ||
-    displayCitizens?.pseudo ||
-    displayUser?.name ||
-    "Utilisateur";
-
-  const email =
-    displayCitizens?.email ||
-    displayCitizens?.user_email ||
-    displayUser?.email ||
-    "email@exemple.com";
-
-  const telephone =
-    displayCitizens?.citizen_adress ||
-    displayCitizens?.adress ||
-    displayCitizens?.telephone ||
-    displayUser?.address ||
-    "";
-
-  // Fermer le menu si clic en dehors(Écoute les clics sur le document;
-  // Si le clic est en dehors du formulaire, le menu se ferme.)
+  // 🔹 Fermer le menu si clic en dehors
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -64,15 +47,14 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-//Gestion du clic sur le profil
-//Ouvre ou ferme le formulaire de profil.
-//Appelle la fonction onProfileClick si fournie.
+
+  // 🔹 Gestion du clic sur le profil
   const handleProfileClick = () => {
     setIsProfileFormOpen(!isProfileFormOpen);
     if (onProfileClick) onProfileClick();
   };
-//Initiales de l’utilisateur
-//Permet de générer les initiales à partir du nom pour l’avatar
+
+  // 🔹 Générer les initiales
   const getInitials = (name) => {
     if (!name) return "U";
     const words = name.trim().split(" ");
@@ -80,10 +62,10 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
       ? `${words[0][0]}${words[1][0]}`.toUpperCase()
       : name.slice(0, 2).toUpperCase();
   };
-//Vérification du nom valide
-//Vérifie que le nom affiché n’est pas juste une valeur par défaut
+
+  // 🔹 Vérification du nom valide
   const isValidName =
-    displayName && displayName !== "Utilisateur" && displayName.trim() !== "";
+    citizenData.nom && citizenData.nom !== "Utilisateur" && citizenData.nom.trim() !== "";
 
   return (
     <header className="fixed top-0 left-0 w-screen bg-green-50 text-white flex items-center justify-between px-6 h-16 z-50">
@@ -104,84 +86,72 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
       </div>
 
       <div className="relative">
-        {/* Bouton profil sans texte à côté */}
+        {/* Bouton profil */}
         <button
           onClick={handleProfileClick}
           className="flex items-center px-4 py-2 rounded-full bg-green-100 hover:bg-green-200"
         >
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-200">
             {isValidName ? (
-              <span className="text-black">{getInitials(displayName)}</span>
+              <span className="text-black">{getInitials(citizenData.nom)}</span>
             ) : (
               <User size={24} className="text-black" />
             )}
           </div>
         </button>
 
-        {/* Formulaire profil - affichage statique */}
         {isProfileFormOpen && (
           <div
             ref={profileRef}
-            className="absolute top-14 right-0 bg-white text-black shadow-xl rounded-xl p-6 w-[400px]"
+            className="absolute top-14 right-4 w-[420px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 animate-fadeIn"
           >
             {/* En-tête du profil */}
-            <div className="flex flex-col items-center mb-6 border-b pb-4">
-              <div className="w-20 h-20 flex items-center justify-center rounded-full bg-red-500 text-white text-3xl font-semibold shadow-md">
-                {displayName.charAt(0).toUpperCase() || "U"}
+            <div className="flex flex-col items-center border-b border-gray-200 pb-5">
+              <div className="relative">
+                <div className="w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-green-600 text-white text-3xl font-bold shadow-lg">
+                  {citizenData.nom.charAt(0).toUpperCase() || "U"}
+                </div>
+                <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-400 border-2 border-white rounded-full"></div>
               </div>
-              <div className="text-center mt-3">
-                <h2 className="text-lg font-semibold text-gray-800">{displayName}</h2>
-                <p className="text-sm text-gray-500">{email}</p>
+
+              <div className="text-center mt-4">
+                <h2 className="text-xl font-semibold text-gray-800">{citizenData.nom}</h2>
+                <p className="text-sm text-gray-500">{citizenData.email}</p>
               </div>
             </div>
 
-            {/* Formulaire statique (pas de sauvegarde) */}
-            <div className="space-y-4">
+            {/* Détails utilisateur (affichage statique) */}
+            <div className="mt-6 space-y-4">
               <div>
-                <label className="block text-sm mb-1">Nom</label>
-                <input
-                  type="text"
-                  value={displayName}
-                  readOnly
-                  className="w-full p-3 border rounded-lg bg-gray-100 cursor-not-allowed"
-                />
+                <label className="text-sm text-gray-500">Nom complet</label>
+                <div className="mt-1 text-base font-medium text-gray-800 px-3 py-2">
+                  {citizenData.nom || "—"}
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm mb-1">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  readOnly
-                  className="w-full p-3 border rounded-lg bg-gray-100 cursor-not-allowed"
-                />
+                <label className="text-sm text-gray-500">Adresse email</label>
+                <div className="mt-1 text-base font-medium text-gray-800 px-3 py-2">
+                  {citizenData.email || "—"}
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm mb-1">Telephone</label>
-                <input
-                  type="text"
-                  value={telephone}
-                  readOnly
-                  className="w-full p-3 border rounded-lg bg-gray-100 cursor-not-allowed"
-                />
+                <label className="text-sm text-gray-500">Numéro de téléphone</label>
+                <div className="mt-1 text-base font-medium text-gray-800 px-3 py-2">
+                  {citizenData.telephone || "—"}
+                </div>
               </div>
+            </div>
 
-              {/* Boutons */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
-                <button
-                  onClick={() => setIsProfileFormOpen(false)}
-                  className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  className="px-8 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition cursor-not-allowed opacity-70"
-                  disabled
-                >
-                  Modifier le profil
-                </button>
-              </div>
+            {/* Boutons */}
+            <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-gray-200">
+              <button
+                onClick={() => setIsProfileFormOpen(false)}
+                className="px-6 py-2 rounded-lg border border-gray-300 text-red-600 hover:bg-red-100 transition-all"
+              >
+                Fermer
+              </button>
             </div>
           </div>
         )}
