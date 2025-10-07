@@ -717,7 +717,7 @@ export default function RegistrationForm() {
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit button */}
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
