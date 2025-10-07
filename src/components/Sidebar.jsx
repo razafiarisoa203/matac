@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { authService } from '../services/api/authService';
+
 
 const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
   const location = useLocation();
@@ -38,11 +40,14 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
     },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout(); 
+      navigate('/'); 
+    } catch (error) {
+      console.error('Erreur de déconnexion :', error);
+    }
   };
-
   return (
     <div
       className={`

@@ -36,8 +36,8 @@ export default function Register() {
       try {
         const verificationResult = await citoyenService.checkCIN(cin);
         console.log(verificationResult);
-        /**
-         * if (verificationResult) {
+        
+         if (verificationResult) {
           console.log('CIN existe déjà, redirection vers /login');
           toast.info("Ce numéro CIN est déjà enregistré. Veuillez vous connecter.");
           navigate("/login");
@@ -45,7 +45,7 @@ export default function Register() {
           console.log('CIN disponible, passage à l\'étape d\'inscription');
           setStep("registration");
         }
-         */
+         
       } catch (error) {
         console.error('Erreur lors de la vérification du CIN:', error);
         if (error.response && error.response.status === 404) {

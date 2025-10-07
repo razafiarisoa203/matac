@@ -14,6 +14,9 @@ import Step6Documents from "../components/alignements/Step6Documents";
 import NavigationButtons from "../components/alignements/NavigationButtons";
 import MessageDisplay from "../components/alignements/MessageDisplay";
 import { citoyenService } from "../services/api/citoyenService";
+import { notificationService } from "../services/api/notificationService";
+
+
 
 
 function Allignement() {
@@ -85,7 +88,7 @@ function Allignement() {
   const userData = JSON.parse(localStorage.getItem('user'));
   const id_citizen = userData?.id_citizen;
 
-  const loadUserData = useCallback(async () => {
+  const loadUserData = useCallback(async () => { 
     if (isLoadingUserData || userDataLoaded) return;
     setIsLoadingUserData(true);
 
@@ -287,6 +290,13 @@ function Allignement() {
 
       // Envoyer au backend
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
+      setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès !");
+      await notificationService.sendNotif({
+        to: "hasinaedmondine55@gmail.com",
+        subject: "Nouvelle soumission de formulaire",
+        body: "Un utilisateur a soumis le formulaire avec succès.",
+        filePath: "" // obligatoire même si vide
+      });
       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 
       setTimeout(() => {

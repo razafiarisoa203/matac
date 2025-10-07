@@ -1,7 +1,26 @@
 import axiosConfig from "./axios.config";
 
-// Service Notification (CORRIGÉ)
 export const notificationService = {
+  // Envoi de notification à l'admin
+ async sendNotif({ to, subject, body, filePath = "" }) {
+    try {
+      const response = await axiosConfig.post(
+        '/servicenotification/email/send',
+        { to, subject, body, filePath }
+      );
+      console.log('Notification envoyée avec succès :', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Erreur lors de l'envoi de la notification :",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+
+
   async getAllNotifications() {
     try {
       const response = await axiosConfig.get('/servicenotification/notifications');
