@@ -17,8 +17,6 @@ import { citoyenService } from "../services/api/citoyenService";
 //import { notificationService } from "../services/api/notificationService";
 
 
-
-
 function Allignement() {
   const navigate = useNavigate();
   const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
