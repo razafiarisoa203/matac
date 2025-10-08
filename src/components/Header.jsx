@@ -1,45 +1,50 @@
 import { Menu, User, X, ChevronDown } from "lucide-react";
 
 // Header Component
+import MDAT from "../assets/logo/MDAT.jpeg";
+import OATF from "../assets/logo/OATF.jpg";
+import pnudlogo from "../assets/logo/pnudlogo.png";
+import REPUBLIQUE from "../assets/logo/REPUBLIQUE.png";
+import uf from "../assets/logo/logoUF.webp"
 const Header = () => {
   return (
-  <header className="w-full bg-white shadow-sm z-50">
+    <header className="w-full bg-white shadow-sm z-50">
       {/* Bandeau supérieur avec logo + texte vert */}
       <div className="w-full flex items-center justify-between bg-white">
         {/* Logos à gauche */}
         <div className="flex justify-around px-4 w-[30%]">
           <div className="w-12 h-20 flex items-center justify-center">
             <img
-              src="src/assets/logo/MDAT.jpeg"
-              alt="MDAT"
+              src={MDAT}
+              alt="MDAT logo "
               className="w-12 h-12 object-cover"
             />
           </div>
           <div className="w-12 h-20 flex items-center justify-center">
             <img
-              src="src/assets/logo/REPUBLIQUE.png"
-              alt="Republique"
+              src={REPUBLIQUE}
+              alt="Republique logo"
               className="w-12 h-12 object-cover"
             />
           </div>
           <div className="w-12 h-20 flex items-center justify-center">
             <img
-              src="src/assets/logo/OATF.jpg"
-              alt="OATF"
+              src={uf}
+              alt="logo uf"
               className="w-12 h-12 object-cover"
             />
           </div>
           <div className="w-12 h-20 flex items-center justify-center">
             <img
-              src="src/assets/logo/logoUF.webp"
+              src={OATF}
               alt="OATF"
               className="w-12 h-20 scale-65 object-cover"
             />
           </div>
           <div className="w-12 h-20 flex items-center justify-center">
             <img
-              src="src/assets/logo/pnudlogo.png"
-              alt="OATF"
+              src={pnudlogo}
+              alt="PNUD logo"
               className="w-12 h-20 scale-75 object-cover"
             />
           </div>
