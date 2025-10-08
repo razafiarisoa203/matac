@@ -291,12 +291,12 @@ function Allignement() {
       // Envoyer au backend
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
       setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès !");
-      await notificationService.sendNotif({
+      /*await notificationService.sendNotif({
         to: "hasinaedmondine55@gmail.com",
         subject: "Nouvelle soumission de formulaire",
         body: "Un utilisateur a soumis le formulaire avec succès.",
-        filePath: "" // obligatoire même si vide
-      });
+        filePath: "" 
+      });*/
       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 
       setTimeout(() => {
