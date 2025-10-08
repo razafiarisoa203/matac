@@ -14,7 +14,7 @@ import Step6Documents from "../components/alignements/Step6Documents";
 import NavigationButtons from "../components/alignements/NavigationButtons";
 import MessageDisplay from "../components/alignements/MessageDisplay";
 import { citoyenService } from "../services/api/citoyenService";
-import { notificationService } from "../services/api/notificationService";
+//import { notificationService } from "../services/api/notificationService";
 
 
 
