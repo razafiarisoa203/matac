@@ -204,4 +204,47 @@ export const authService = {
             throw e;
         }
     },
+
+    registerUser: async (userData) => {
+        try {
+            const formData = new FormData();
+            
+            // Ajouter les champs utilisateur
+            formData.append("user_pseudo", userData.user_pseudo);
+            formData.append("user_email", userData.user_email);
+            formData.append("user_password", userData.user_password);
+            formData.append("user_phone", userData.user_phone);
+            formData.append("municipality_id", userData.municipality_id);
+            
+            // Ajouter les champs citoyen
+            if (userData.citizenData) {
+                formData.append("citizen_name", userData.citizenData.citizen_name);
+                formData.append("citizen_lastname", userData.citizenData.citizen_lastname);
+                formData.append("citizen_national_card_number", userData.citizenData.citizen_national_card_number);
+                formData.append("citizen_adress", userData.citizenData.citizen_adress);
+                formData.append("citizen_national_card_location", userData.citizenData.citizen_national_card_location);
+                formData.append("citizen_national_card_date", userData.citizenData.citizen_national_card_date);
+                formData.append("fokotany_formatted_id", userData.citizenData.fokotany_formatted_id);
+                
+                // Ajouter la photo si elle existe
+                if (userData.citizenData.citizen_photo && userData.citizenData.citizen_photo instanceof File) {
+                    formData.append("citizen_photo", userData.citizenData.citizen_photo);
+                }
+            }
+
+            console.log('Envoi de la requête d\'inscription avec FormData...');
+            
+            // Utiliser le nouvel endpoint
+            const response = await axiosConfig.post("/serviceauth/users/register-with-citizen-short", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error("Erreur lors de l'inscription:", error);
+            throw error;
+        }
+    },
 };
