@@ -4,9 +4,15 @@ export const citoyenService = {
   async checkCIN(cin) {
     try {
       const response = await axiosConfig.get(`/servicecitoyen/citizens/${cin}`);
-      return response.data;
+      // Si on arrive ici, le CIN existe déjà
+      return { exists: true, data: response.data };
     } catch (error) {
-      return error;
+      // Si erreur 404, le CIN n'existe pas
+      if (error.response?.status === 404) {
+        return { exists: false };
+      }
+      // Pour toute autre erreur, on la lance
+      throw error;
     }
   },
 
