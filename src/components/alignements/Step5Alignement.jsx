@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
 const Step5Alignement = ({ formData, setFormData }) => {
-
   // Met à jour formData quand un champ change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -29,7 +28,9 @@ const Step5Alignement = ({ formData, setFormData }) => {
         if (!updated[field] || updated[field].trim() === "") {
           // Remplissage automatique avec un exemple simple
           updated[field] = `auto-${index + 1}`;
-          console.warn(`Champ vide rempli automatiquement: ${field} = auto-${index + 1}`);
+          console.warn(
+            `Champ vide rempli automatiquement: ${field} = auto-${index + 1}`
+          );
         }
       });
       return updated;

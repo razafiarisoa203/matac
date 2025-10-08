@@ -2,6 +2,32 @@ const Step2Demandeur = ({
   statutProprietaire, setStatutProprietaire, qualiteDemandeur, setQualiteDemandeur,
   formData, handleInputChange, isLoadingUserData, userDataLoaded, resetFormData, loadUserData
 }) => {
+  const filterLettersOnly = (value, fieldName) => {
+    // Allow only letters, spaces, apostrophes, hyphens
+    return value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s'-]/g, '');
+  };
+
+  const filterDigitsOnly = (value) => {
+    // Allow only digits
+    return value.replace(/[^0-9]/g, '');
+  };
+
+  const handleFilteredInputChange = (e) => {
+    const { name, value } = e.target;
+    let filteredValue = value;
+
+    if (['nom', 'prenoms', 'nationalite', 'nomRepresentant', 'prenomsRepresentant', 
+        'nom_demandaire', 'prenom_mandataire', 'nationalite_demandaire'].includes(name)) {
+      filteredValue = filterLettersOnly(value, name);
+    } else if (['cinPasseport', 'cinPasseportRepresentant', 'cin_passeport_demandaire', 
+                 'carteStatistique'].includes(name)) {
+      filteredValue = filterDigitsOnly(value);
+    }
+
+    // Update formData with filtered value
+    handleInputChange({ target: { name, value: filteredValue } });
+  };
+
   const handleQualiteDemandeurChange = (e) => {
     const newValue = e.target.value;
     setQualiteDemandeur(newValue);
@@ -36,6 +62,7 @@ const Step2Demandeur = ({
                 {["M", "Mme"].map((option) => (
                   <label key={option} className="flex items-center cursor-pointer p-2">
                     <input
+                      required
                       type="radio"
                       name="civilite"
                       value={option}
@@ -55,14 +82,18 @@ const Step2Demandeur = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+              <div className="flex-justify center">
               <input
+                required
                 type="text"
                 name="nom"
                 value={formData.nom}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez votre nom"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
+              </div>
               {formData.nom === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
               )}
@@ -70,12 +101,14 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms *</label>
               <input
+                required={true}
                 type="text"
                 name="prenoms"
                 value={formData.prenoms}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez vos prénoms"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.prenoms === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -84,12 +117,15 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport *</label>
               <input
+                required={true}
+                inputMode="numeric"
                 type="text"
                 name="cinPasseport"
                 value={formData.cinPasseport}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Numéro de CIN ou Passeport"
+                pattern="^[0-9]+$"
               />
               {formData.cinPasseport === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -98,6 +134,7 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Fonction</label>
               <input
+                required={true}
                 type="text"
                 name="fonction"
                 value={formData.fonction}
@@ -109,12 +146,14 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nationalité *</label>
               <input
+                required={true}
                 type="text"
                 name="nationalite"
                 value={formData.nationalite}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez votre nationalité"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nationalite === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -131,6 +170,7 @@ const Step2Demandeur = ({
                 {["M", "Mme"].map((option) => (
                   <label key={option} className="flex items-center cursor-pointer p-2">
                     <input
+                     required={true}
                       type="radio"
                       name="civilite"
                       value={option}
@@ -148,15 +188,17 @@ const Step2Demandeur = ({
                 )}
               </div>
             </div>
-            <div>
+            <div className="justify-center">
               <label className="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
               <input
+                required={true}
                 type="text"
                 name="nom"
                 value={formData.nom}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez votre nom"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nom === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -165,12 +207,14 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms *</label>
               <input
+                required={true}
                 type="text"
                 name="prenoms"
                 value={formData.prenoms}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez vos prénoms"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.prenoms === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -179,12 +223,15 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport *</label>
               <input
+                required={true}
+                inputMode="numeric"
                 type="text"
                 name="cinPasseport"
                 value={formData.cinPasseport}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Numéro de CIN ou Passeport"
+                pattern="^[0-9]+$"
               />
               {formData.cinPasseport === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -193,6 +240,7 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Fonction</label>
               <input
+                required={true}
                 type="text"
                 name="fonction"
                 value={formData.fonction}
@@ -204,12 +252,14 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nationalité *</label>
               <input
+                required={true}
                 type="text"
                 name="nationalite"
                 value={formData.nationalite}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez votre nationalité"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nationalite === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -223,6 +273,7 @@ const Step2Demandeur = ({
                   {["M", "Mme"].map((option) => (
                     <label key={option} className="flex items-center cursor-pointer p-2">
                       <input
+                        required={true}
                         type="radio"
                         name="civilite2"
                         value={option}
@@ -243,12 +294,14 @@ const Step2Demandeur = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
                 <input
+                  required={true}
                   type="text"
                   name="nom_demandaire"
                   value={formData.nom_demandaire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Entrez le nom"
+                  pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
                 />
                 {formData.nom_demandaire === "" && (
                   <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -257,13 +310,16 @@ const Step2Demandeur = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms *</label>
                 <input
+                  required={true}
                   type="text"
                   name="prenom_mandataire"
                   value={formData.prenom_mandataire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Entrez les prénoms"
+                  pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
                 />
+
                 {formData.prenom_mandataire === "" && (
                   <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
                 )}
@@ -271,12 +327,15 @@ const Step2Demandeur = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport *</label>
                 <input
+                  required={true}
+                  inputMode="numeric"
                   type="text"
                   name="cin_passeport_demandaire"
                   value={formData.cin_passeport_demandaire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Numéro de CIN ou Passeport"
+                  pattern="^[0-9]+$"
                 />
                 {formData.cin_passeport_demandaire === "" && (
                   <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -285,6 +344,7 @@ const Step2Demandeur = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Fonction</label>
                 <input
+                  required={true}
                   type="text"
                   name="fonction_demandaire"
                   value={formData.fonction_demandaire}
@@ -296,12 +356,14 @@ const Step2Demandeur = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nationalité *</label>
                 <input
+                  required={true}
                   type="text"
                   name="nationalite_demandaire"
                   value={formData.nationalite_demandaire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Entrez la nationalité"
+                  pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
                 />
                 {formData.nationalite_demandaire === "" && (
                   <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -310,12 +372,15 @@ const Step2Demandeur = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
                 <input
+                  required={true}
+                  inputMode="numeric"
                   type="number"
                   name="age_demandaire"
                   value={formData.age_demandaire}
                   onChange={handleInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Entrez l'âge"
+                  pattern="^[0-9]+$"
                 />
               </div>
             </div>
@@ -327,6 +392,7 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Raison sociale *</label>
               <input
+                required={true}
                 type="text"
                 name="raisonSociale"
                 value={formData.raisonSociale}
@@ -341,12 +407,15 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Numéro de carte statistique *</label>
               <input
+                required={true}
                 type="text"
                 name="carteStatistique"
                 value={formData.carteStatistique}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez le numéro de carte statistique"
+                inputMode="numeric"
+                pattern="^[0-9]+$"
               />
               {formData.carteStatistique === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -355,6 +424,7 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">NIF *</label>
               <input
+                required={true}
                 type="text"
                 name="nif"
                 value={formData.nif}
@@ -372,6 +442,7 @@ const Step2Demandeur = ({
                 {["M", "Mme", "Mlle"].map((option) => (
                   <label key={option} className="flex items-center cursor-pointer p-2">
                     <input
+                      required={true}
                       type="radio"
                       name="civiliteRepresentant"
                       value={option}
@@ -392,12 +463,14 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nom du représentant *</label>
               <input
+                required={true}
                 type="text"
                 name="nomRepresentant"
                 value={formData.nomRepresentant}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez le nom du représentant"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nomRepresentant === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -406,12 +479,14 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms du représentant *</label>
               <input
+                required={true}
                 type="text"
                 name="prenomsRepresentant"
                 value={formData.prenomsRepresentant}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Entrez les prénoms du représentant"
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.prenomsRepresentant === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -419,7 +494,8 @@ const Step2Demandeur = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Adresse du représentant *</label>
-              <input
+              <input 
+                required={true}
                 type="text"
                 name="adresseRepresentant"
                 value={formData.adresseRepresentant}
@@ -434,12 +510,15 @@ const Step2Demandeur = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport du représentant *</label>
               <input
+                required={true}
+                inputMode="numeric"
                 type="text"
                 name="cinPasseportRepresentant"
                 value={formData.cinPasseportRepresentant}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Numéro de CIN ou Passeport du représentant"
+                pattern="^[0-9]+$"
               />
               {formData.cinPasseportRepresentant === "" && (
                 <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
@@ -460,6 +539,7 @@ const Step2Demandeur = ({
           <div className="space-y-3">
             <label className="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
               <input
+                required={true}
                 type="radio"
                 name="statutProprietaire"
                 value="particulier"
@@ -471,6 +551,7 @@ const Step2Demandeur = ({
             </label>
             <label className="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
               <input
+                required={true}
                 type="radio"
                 name="statutProprietaire"
                 value="personne-morale"
@@ -491,6 +572,7 @@ const Step2Demandeur = ({
               }`}
             >
               <input
+                required={true}
                 type="radio"
                 name="qualiteDemandeur"
                 value="proprietaire"
@@ -509,7 +591,8 @@ const Step2Demandeur = ({
               )}
             </label>
             <label className="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
-              <input
+              <input 
+                required={true}
                 type="radio"
                 name="qualiteDemandeur"
                 value="mandataire"
