@@ -17,50 +17,51 @@ export default function Register() {
   const navigate = useNavigate();
   const [step, setStep] = useState("verification");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [verifiedCin, setVerifiedCin] = useState("");
   const [error, setError] = useState("");
   const { t } = useTranslation();
 
   const handleVerifyCIN = async (cin) => {
     console.log('handleVerifyCIN appelé avec CIN:', cin);
+    setIsVerifying(true);
+    setVerifiedCin(cin);
+    setError("");
+  
     try {
-      setIsVerifying(true);
-      setError("");
-      
-      // Vérifier d'abord si le CIN est valide
-      if (!cin || cin.trim() === '') {
-        console.log('CIN vide ou invalide');
+      // Vérifier si CIN vide
+      if (!cin || cin.trim() === "") {
         setError("Veuillez saisir un numéro CIN valide");
+        setIsVerifying(false);
         return;
       }
-
-      try {
-        const verificationResult = await citoyenService.checkCIN(cin);
-        console.log(verificationResult);
-        
-         if (verificationResult) {
-          console.log('CIN existe déjà, redirection vers /login');
-          toast.info("Ce numéro CIN est déjà enregistré. Veuillez vous connecter.");
-          navigate("/login");
-        } else {
-          console.log('CIN disponible, passage à l\'étape d\'inscription');
-          setStep("registration");
-        }
-         
-      } catch (error) {
-        console.error('Erreur lors de la vérification du CIN:', error);
-        if (error.response && error.response.status === 404) {
-          // CIN non trouvé, on peut continuer avec l'inscription
-          console.log('CIN non trouvé (404), passage à l\'inscription');
-          setStep("registration");
-        } else {
-          console.error("Erreur lors de la vérification du CIN:", error);
-          setError("Une erreur est survenue lors de la vérification du CIN. Veuillez réessayer.");
-        }
+  
+      const result = await citoyenService.checkCIN(cin);
+      console.log("Résultat de checkCIN:", result);
+  
+      // Si le CIN n'existe pas, on passe à l'inscription
+      if (!result.exists) {
+        console.log("CIN non trouvé → passage à l'inscription");
+        setStep("registration");
+        setIsVerifying(false);
+        return;
       }
-    } finally {
+  
+      // Si le CIN existe déjà, redirection vers la page de connexion
+      if (result.exists) {
+        console.log("CIN existe déjà → redirection vers /login");
+        toast.info("Ce numéro CIN est déjà enregistré. Veuillez vous connecter.");
+        setIsVerifying(false);
+        navigate("/login");
+        return;
+      }
+  
+    } catch (error) {
+      console.error("Erreur lors de la vérification du CIN:", error);
+      setError("Erreur serveur, veuillez réessayer plus tard.");
       setIsVerifying(false);
     }
   };
+  
 
   return (
     <div
@@ -94,14 +95,14 @@ export default function Register() {
 
               {/* Contenu de l'étape actuelle */}
               {step === "verification" ? (
-                <CINVerificationStep 
-                  onVerify={handleVerifyCIN} 
-                  isVerifying={isVerifying}
-                  error={error}
-                />
-              ) : (
-                <RegistrationForm />
-              )}
+  <CINVerificationStep 
+    onVerify={handleVerifyCIN} 
+    isVerifying={isVerifying}
+    error={error}
+  />
+) : (
+  <RegistrationForm cin={verifiedCin} />
+)}
 
               {/* Lien de connexion */}
               <div className="text-center text-sm text-gray-600 mt-6">
