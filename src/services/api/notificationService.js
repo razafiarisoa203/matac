@@ -1,10 +1,10 @@
 import axiosConfig from "./axios.config";
 
 export const notificationService = {
-  // Envoi de notification à l'admin
- async sendNotif({ to, subject, body, filePath = "" }) {
+  //Envoi de notification à l'admin
+ /*async sendNotif({ to, subject, body, filePath = "" }) {
     try {
-      const response = await axiosConfig.post(
+      const response = await axios.post(
         '/servicenotification/email/send',
         { to, subject, body, filePath }
       );
@@ -17,7 +17,7 @@ export const notificationService = {
       );
       throw error;
     }
-  },
+  },*/
 
 
 

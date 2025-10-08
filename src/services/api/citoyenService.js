@@ -18,7 +18,7 @@ export const citoyenService = {
 
   async getCitizenData(id_cit) {
     try {
-      const response = await axiosConfig.get(`/servicecitoyen/citizens/getCitizenById//${id_cit}`);
+      const response = await axiosConfig.get(`/servicecitoyen/citizens/getCitizenById/${id_cit}`);
       return response.data;
     } catch (error) {
       return error;
