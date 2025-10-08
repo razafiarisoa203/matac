@@ -1,57 +1,35 @@
 import axiosConfig from "./axios.config";
 
+const APP_ID = 15;
+
 // Service pour la gestion des rôles
 export const roleService = {
     // Récupérer tous les rôles pour l'application MATAC
     async getRoles() {
       try {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          throw new Error('Non authentifié');
-        }
-  
-        const matacAppId = import.meta.env.VITE_APP_ID;
-        const response = await axiosConfig.get(
-          'serviceauth/roles',
-          {
-            params: {
-              applicationId: matacAppId
-            },
-            timeout: 10000
-          }
-        );
-        if (!response.data || !Array.isArray(response.data.data)) {
-          throw new Error('Format de réponse inattendu pour les rôles');
-        }
-  
-        const roles = response.data.data;
-        return roles;
+        const token = localStorage.getItem('access_token');
+        if (!token) throw new Error('Non authentifié');
+        const response = await axiosConfig.get(`serviceauth/roles/application/${APP_ID}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        // Selon le backend, la réponse peut être dans data.data ou juste data
+        if (!response.data || !Array.isArray(response.data.data)) throw new Error('Format de réponse inattendu pour les rôles');
+        return response.data.data;
       } catch (error) {
         throw error;
       }
     },
   
     // Attribuer un rôle à un utilisateur pour l'application MATAC
-    async assignRole(userId, roleId) {
+    async assignUserRoles(userId, roleIds) {
       try {
-        if (!userId || !roleId) {
-          throw new Error('ID utilisateur et ID rôle sont requis');
-        }
-  
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          throw new Error('Non authentifié');
-        }
-  
-        const matacAppId = import.meta.env.VITE_APP_ID;
-        const response = await axiosConfig.post(
-          'serviceauth/roles/assign',
-          {
-            user_id: userId,
-            role_id: roleId,
-            application_id: matacAppId
-          }
-        );
+        const token = localStorage.getItem('access_token');
+        if (!token) throw new Error('Non authentifié');
+        if (!userId || !Array.isArray(roleIds) || roleIds.length === 0) throw new Error('userId et roleIds sont requis');
+        const payload = { role_ids: roleIds, application_id: APP_ID };
+        const response = await axiosConfig.post(`serviceauth/users/${userId}/roles`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         return response.data;
       } catch (error) {
         throw error;
@@ -265,7 +243,105 @@ export const roleService = {
         return [];
       }
     }, 
+
+    async createRole(data) {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) throw new Error('Non authentifié');
+        const payload = {
+          role_name: data.role_name,
+          role_slug: data.role_slug,
+          app_id: APP_ID // utilise 15, pas import.meta.env si jamais il n’est pas défini !
+        };
+        const response = await axiosConfig.post('serviceauth/roles', payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+
+  async updateRole(roleId, data) {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error('Non authentifié');
+      const response = await axiosConfig.put(`serviceauth/roles/${roleId}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async deleteRole(roleId) {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error('Non authentifié');
+      const response = await axiosConfig.delete(`serviceauth/roles/${roleId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async getRole(roleId) {
+      try {
+          const token = localStorage.getItem('authToken');
+          if (!token) throw new Error('Non authentifié');
+
+          const response = await axiosConfig.get(`serviceauth/roles/${roleId}`);
+          return response.data;
+      } catch (error) {
+          throw error;
+      }
+  },
+
+  /**
+ * Assigner des rôles à un utilisateur
+ * @param {string|number} userId
+ * @param {Array<number>} roleIds - tableau des IDs de rôles à assigner
+ */
+  async assignUserRoles(userId, roleIds) {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error('Non authentifié');
+      if (!userId || !Array.isArray(roleIds) || roleIds.length === 0) throw new Error('userId et roleIds sont requis');
+      const payload = { role_ids: roleIds, application_id: APP_ID };
+      const response = await axiosConfig.post(`serviceauth/users/${userId}/roles`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+/**
+ * Retirer des rôles à un utilisateur
+ * @param {string|number} userId
+ * @param {Array<number>} roleIds - tableau des IDs de rôles à retirer
+ */
+async removeUserRoles(userId, roleIds) {
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) throw new Error('Non authentifié');
+    if (!userId || !Array.isArray(roleIds) || roleIds.length === 0) throw new Error('userId et roleIds sont requis');
+    const payload = { role_ids: roleIds, application_id: APP_ID };
+    const response = await axiosConfig.patch(`serviceauth/users/${userId}/roles`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+  
 };
 
-export default roleService;
 
+export default roleService;

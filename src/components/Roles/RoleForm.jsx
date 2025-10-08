@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createRole, updateRole } from '../../services/api/userService';
+import { roleService } from '../../services/api/roleService';
 import { toast } from 'react-toastify';
 
 const RoleForm = ({ role = null, onSuccess, onCancel }) => {
@@ -11,7 +11,6 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
 
   useEffect(() => {
     if (role) {
-      // Si édition, pré-remplir le formulaire
       setFormData({
         role_name: role.role_name || '',
         role_slug: role.role_slug || ''
@@ -19,51 +18,39 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
     }
   }, [role]);
 
-  // Suppression de la gestion des permissions (non obligatoire)
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value,
-      // Auto-generate slug from role name
       ...(name === 'role_name' && {
         role_slug: value.toLowerCase().replace(/\s+/g, '-')
       })
     }));
   };
 
-  // Aucune gestion de permissions dans ce flux
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const roleData = { ...formData };
-
       if (role) {
-        // Update existing role
-        const updated = await updateRole(role.role_id, roleData);
+        // Update
+        const updated = await roleService.updateRole(role.role_id, roleData);
         toast.success('Rôle mis à jour avec succès');
-        // Remonter l'élément mis à jour au parent
         onSuccess && onSuccess({ type: 'update', role: updated?.data || updated });
       } else {
-        // Create new role
-        const created = await createRole(roleData);
+        // Create
+        const created = await roleService.createRole(roleData);
         toast.success('Rôle créé avec succès');
-        // Remonter l'élément créé au parent
         onSuccess && onSuccess({ type: 'create', role: created?.data || created });
       }
     } catch (error) {
-      console.error('Error saving role:', error);
       toast.error(error.response?.data?.message || 'Erreur lors de la sauvegarde du rôle');
     } finally {
       setLoading(false);
     }
   };
-
-  // Aucune UI de permissions: non requis
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,7 +82,6 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
                   className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                 />
               </div>
-
               <div className="col-span-6 sm:col-span-4">
                 <label htmlFor="role_slug" className="block text-sm font-medium text-gray-700">
                   Slug du rôle *
@@ -114,28 +100,17 @@ const RoleForm = ({ role = null, onSuccess, onCancel }) => {
                   Le slug est utilisé pour identifier le rôle dans le système. Il est généré automatiquement à partir du nom.
                 </p>
               </div>
-
-              {/* Champ description supprimé (non présent en base) */}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Gestion des permissions retirée (non obligatoire) */}
-
       <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-        >
+        <button type="button" onClick={onCancel}
+          className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
           Annuler
         </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading}
+          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50">
           {loading ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>
