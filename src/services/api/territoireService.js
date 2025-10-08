@@ -2,17 +2,31 @@ import axiosConfig from "./axios.config";
 
 //Recuperer tous commune
 export const territoireService = {
+  async getCommunes() {
+    try {
+      const response = await axiosConfig.get(`/serviceterritoire-v2/communes/basic?page=1&limit=100`);
+      // Gérer différents formats de réponse
+      const data = response.data?.data || response.data;
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('[API] Erreur lors de la récupération des communes:', error);
+      throw new Error('Impossible de charger les communes. Veuillez réessayer plus tard.');
+    }
+  },
+
   async getCommunesByRegion() {
     //formatted_id
-    const response = await axiosConfig.get(`/serviceterritoire-v2/communes/basic?page=1&limit=100`); //`/communes/region/${formatted_id}`
+    const response = await axiosConfig.get(`/serviceterritoire-v2/communes/basic?page=1&limit=100`);
     return response.data;
   },
-//Recuperer tous region
+
+  //Recuperer tous region
   async getRegions() {
     const response = await axiosConfig.get('/serviceterritoire-v2/regions?page=1&limit=100');
     return response.data;
   },
-//Fonkotany
+
+  //Fonkotany
   async getFokotanys(communeFormattedId) {
     try {
       if (!communeFormattedId) {
@@ -22,28 +36,17 @@ export const territoireService = {
 
       console.log(`[API] Récupération des fokotanys pour la commune ${communeFormattedId}...`);
 
-      // Récupérer d'abord la liste des communes avec leurs fokotanys
-      const communes = await this.getCommunes();
-
-      // Trouver la commune correspondante
-      const commune = communes.find(c =>
-        c.formatted_id === communeFormattedId ||
-        c.commune_id?.toString() === communeFormattedId ||
-        c.id?.toString() === communeFormattedId
-      );
-
-      if (!commune) {
-        console.warn(`[API] Aucune commune trouvée avec l'ID ${communeFormattedId}`);
-        return [];
-      }
-
-      // Récupérer les fokotanys de la commune
-      const fokotanys = commune.fokotanys || [];
+      // Utiliser l'endpoint direct pour récupérer les fokotanys par commune
+      const response = await axiosConfig.get(`/serviceterritoire-v2/fokotanys/commune/${communeFormattedId}`);
+      
+      // Gérer différents formats de réponse
+      const data = response.data?.data || response.data;
+      const fokotanys = Array.isArray(data) ? data : [];
 
       if (fokotanys.length === 0) {
-        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId} (${commune.name})`);
+        console.warn(`[API] Aucun fokotany trouvé pour la commune ${communeFormattedId}`);
       } else {
-        console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId} (${commune.name})`);
+        console.log(`[API] ${fokotanys.length} fokotanys récupérés pour la commune ${communeFormattedId}`);
       }
 
       // Formater les données des fokotanys
