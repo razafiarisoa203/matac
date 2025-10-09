@@ -6,7 +6,7 @@ const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubm
       {currentStep > 1 && (
         <button
           onClick={() => setCurrentStep(currentStep - 1)}
-          className="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-md hover:bg-gray-400"
+          className="px-4 py-2 bg-gray-300 text-white font-semibold rounded-md hover:bg-[#269745]"
         >
           Précédent
         </button>
@@ -19,7 +19,7 @@ const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubm
             className={`px-4 py-2 font-semibold rounded-md ${
               isNextDisabled
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-green-500 text-white hover:bg-green-600"
+                : "bg-[#269745] text-white hover:bg-green-600"
             }`}
           >
             Suivant

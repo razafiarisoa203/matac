@@ -14,7 +14,7 @@ const Sidebar = ({ steps, currentStep, handleStepClick }) => {
               onClick={() => handleStepClick(step.number)}
               className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left ${
                 step.number === currentStep
-                  ? "bg-green-500 text-white"
+                  ? "bg-[#269745]  text-white"
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >
