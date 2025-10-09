@@ -1,5 +1,5 @@
 // components/PermisConstruction.jsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { steps } from './PermisConst/stepsConfig';
 import { sidebarItems } from './PermisConst/sidebarItemsConfig';
 import { validateField } from './PermisConst/validation';
@@ -12,6 +12,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { constructionService } from '../services/api/constructionSercvice';
 import { useFileUpload } from '../hooks/useFileUpload'; // Import du hook
+import { toast } from 'react-toastify';
+import { alignmentService } from '../services/api/alignmentService';
 
 const PermisConstruction = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -126,6 +128,29 @@ const PermisConstruction = () => {
     });
   };
 
+  // ✅ Fonction corrigée : utilise getAlignmentById
+  const handleVerifyAlignementExiste = async (id_align) => {
+  if (!id_align) return null;
+
+  try {
+    const alignmentData = await alignmentService.getAlignmentById(id_align);
+    if (alignmentData && alignmentData.id_align) {
+      return alignmentData; 
+    } else {
+      toast.error('⚠️ Aucun alignement trouvé pour cet ID.');
+      return null;
+    }
+  } catch (error) {
+    console.error('Erreur lors de la vérification de l’alignement :', error);
+    if (error.response?.status === 404) {
+      toast.error('⚠️ Aucun alignement trouvé pour cet ID.');
+    } else {
+      toast.error('❌ Erreur serveur lors de la vérification.');
+    }
+    return null; // ✅ retourne null en cas d'erreur
+  }
+};
+
   // Fonction pour gérer la sélection de fichiers
   const handleFileSelect = async (fileType, selectedFiles) => {
     for (const file of selectedFiles) {
@@ -196,17 +221,6 @@ const PermisConstruction = () => {
         }
       });
     }
-
-    // Valider les pièces si section dynamique - OPTIONNEL
-    // if (section.isDynamic) {
-    //   if (pieces.length > 0) {
-    //     const pieceErrors = validatePieces(pieces);
-    //     Object.assign(newErrors, pieceErrors);
-    //     if (Object.keys(pieceErrors).length > 0) {
-    //       valid = true;
-    //     }
-    //   }
-    // }
 
     setErrors(newErrors);
     return valid;
@@ -455,7 +469,7 @@ const PermisConstruction = () => {
       );
     }
 
-    // Section normale avec champs de formulaire
+    // Section normale avec champs de formulaire → ✅ referenceAlignement traité comme un champ normal
     return (
       <div className="space-y-6">
         {commonHeader}
@@ -516,30 +530,66 @@ const PermisConstruction = () => {
     return total > 0 ? Math.round((done / total) * 100) : 0;
   };
 
+  // ✅ handleNext modifié : vérification automatique si dans la section "Référence alignement"
   const handleNext = async () => {
-    if (!validateCurrentSection()) {
-      return;
-    }
-
-    setCompletedSections(prev => ({
-      ...prev,
-      [`${currentStep}-${currentSection}`]: true
-    }));
-
-    const isLastStep = currentStep === steps.length;
-    const isLastSection = currentSection === (sidebarItems[currentStep]?.length || 1);
-
-    if (isLastStep && isLastSection) {
-      await handleSubmit();
-    } else {
-      const maxSections = sidebarItems[currentStep]?.length || 0;
-      if (currentSection < maxSections) {
-        setCurrentSection(currentSection + 1);
-      } else if (currentStep < steps.length) {
-        setCurrentStep(currentStep + 1);
-        setCurrentSection(1);
+      if (!validateCurrentSection()) {
+        return;
       }
-    }
+
+      const isInReferenceAlignementSection = currentStep === 1 && currentSection === 2;
+      if (isInReferenceAlignementSection && formData.referenceAlignement) {
+        // ✅ Récupère les données de l'alignement (ou false/null si invalide)
+        const alignmentData = await handleVerifyAlignementExiste(formData.referenceAlignement);
+
+        if (!alignmentData) {
+          setErrors(prev => ({
+            ...prev,
+            referenceAlignement: 'La référence d’alignement est invalide ou introuvable.'
+          }));
+          return;
+        }
+
+        // ✅ ICI : alignmentData est défini et contient les données de l'API
+        const {
+          nom_demandaire,
+          prenom_mandataire,
+          cin_passeport_demandaire,
+          adresse_demandaire
+        } = alignmentData;
+
+        const nomComplet = [prenom_mandataire, nom_demandaire]
+        .filter(part => part && part.trim() !== '') // Évite les valeurs vides/null
+        .join(' ');
+
+    // ✅ Mettre à jour formData
+    setFormData(prev => ({
+      ...prev,
+      nomProprietaire: nomComplet || prev.nomProprietaire || '',
+      cinProprietaire: cin_passeport_demandaire ? String(cin_passeport_demandaire) : prev.cinProprietaire || '',
+      adresseProprietaire: adresse_demandaire || prev.adresseProprietaire || ''
+    }));
+      }
+
+      // ✅ Marquer comme complété et avancer
+      setCompletedSections(prev => ({
+        ...prev,
+        [`${currentStep}-${currentSection}`]: true
+      }));
+
+      const isLastStep = currentStep === steps.length;
+      const isLastSection = currentSection === (sidebarItems[currentStep]?.length || 1);
+
+      if (isLastStep && isLastSection) {
+        await handleSubmit();
+      } else {
+        const maxSections = sidebarItems[currentStep]?.length || 0;
+        if (currentSection < maxSections) {
+          setCurrentSection(currentSection + 1);
+        } else if (currentStep < steps.length) {
+          setCurrentStep(currentStep + 1);
+          setCurrentSection(1);
+        }
+      }
   };
 
   const handlePrevious = () => {

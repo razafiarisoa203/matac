@@ -3,16 +3,14 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
-import { constructionService } from '../services/api/constructionSercvice';
+import { constructionService} from '../services/api/constructionSercvice';
 import { 
-  Eye, 
   Download, 
   AlertCircle, 
   Building, 
   ChevronRight, 
   ArrowLeft,
   User,
-  MapPin,
   Clock,
   FileText,
   Home,
@@ -370,7 +368,7 @@ const ConstructionDetailsPage = () => {
                     <div className="space-y-4">
                       <InfoRow label="Nature des travaux" value={construction.natureTravaux} />
                       <InfoRow label="Type d'affectation" value={construction.typeAffectation} />
-                      <InfoRow label="Référence alignement" value={construction.referenceAlignement} />
+                      <InfoRow label="Référence alignement" value={construction.referenceAlignement}/>
                       <InfoRow label="Zone d'implantation" value={construction.zoneImplantation} />
                       <InfoRow label="Matériaux utilisés" value={construction.materiaux} />
                     </div>
