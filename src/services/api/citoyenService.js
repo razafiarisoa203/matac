@@ -88,8 +88,8 @@ export const citoyenService = {
         console.log(`${key}:`, value);
       }
 
-      // Utiliser l'instance citoyenApi configurée qui gère déjà le token et le Content-Type
-      const response = await citoyenApi.post('/citizens', formData);
+      // Utiliser l'instance axiosConfig configurée qui gère déjà le token et le Content-Type
+      const response = await axiosConfig.post('/citizens', formData);
 
       return response.data;
 
