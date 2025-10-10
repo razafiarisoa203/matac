@@ -47,9 +47,13 @@ export const citoyenService = {
 
         // Ajouter tous les champs sauf fokotany_id qui sera ajouté après
         for (const [key, value] of entries) {
-          if (key !== 'fokotany_id' && value !== null && value !== undefined) {
+          if (key !== 'fokotany_id' && (value !== null && value !== undefined && value !== '')) {
             console.log(`Ajout de ${key}:`, value);
             formData.append(key, value);
+          } else if (key === 'citizen_photo') {
+            // Toujours ajouter citizen_photo même s'il est null/undefined/vide
+            console.log(`Ajout de citizen_photo:`, value || 'vide');
+            formData.append(key, value || '');
           }
         }
 

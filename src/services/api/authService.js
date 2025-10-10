@@ -255,8 +255,8 @@ export const authService = {
                         // Si c'est un fichier, l'ajouter directement
                         formData.append("citizen_photo", userData.citizenData.citizen_photo);
                     } else if (typeof userData.citizenData.citizen_photo === 'string') {
-                        // Si c'est une URL, l'ajouter comme texte
-                        formData.append("citizen_photo_url", userData.citizenData.citizen_photo);
+                        // Si c'est une URL (après upload), l'ajouter comme citizen_photo (pas citizen_photo_url)
+                        formData.append("citizen_photo", userData.citizenData.citizen_photo);
                     }
                 }
             }
