@@ -124,9 +124,12 @@ export default function RegistrationForm() {
       formDataToSend.append('municipality_id', formData.municipality_id);
       
       // Ajouter le fichier photo s'il existe
-      if (formData.citizen_photo) {
+      if (formData.citizen_photo && formData.citizen_photo instanceof File) {
         formDataToSend.append('citizen_photo', formData.citizen_photo);
       }
+      // Note: Don't append citizen_photo if no file is provided - the API should handle optional photos
+
+      console.log(formData.citizen_photo)
 
       // 1. Créer d'abord l'utilisateur
       const userResponse = await citoyenService.createCitizen(formDataToSend);

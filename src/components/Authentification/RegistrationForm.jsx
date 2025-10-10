@@ -306,7 +306,8 @@ export default function RegistrationForm({ cin }) {
           citizen_national_card_location: formData.citizen_national_card_location,
           citizen_national_card_date: formData.citizen_national_card_date,
           fokotany_formatted_id: formData.fokotany_formatted_id || formData.fokotany_id,
-          citizen_photo: photoUrl, // Use the uploaded photo URL instead of the file
+          // Send the photo file directly if available, otherwise don't include the field
+          ...(formData.citizen_photo && { citizen_photo: formData.citizen_photo }),
         },
       };
 
