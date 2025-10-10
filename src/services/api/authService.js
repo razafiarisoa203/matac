@@ -264,23 +264,14 @@ export const authService = {
 
     forgotPassword: async (email) => {
         try {
-            // Generate a 6-digit verification code
-            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
             // Call the auth endpoint to register the forgot password request
-            await axiosConfig.post("/serviceauth/auth/forgot-password", {
+            // This endpoint already sends the email automatically if the email exists
+            const response = await axiosConfig.post("/serviceauth/auth/forgot-password", {
                 user_email: email,
             });
 
-            // Send email with verification code
-            await authService.sendEmail(
-                email,
-                "Code de vérification - Réinitialisation de mot de passe",
-                `Votre code de vérification est : ${verificationCode}\n\nCe code expirera dans 10 minutes.\n\nSi vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.`
-            );
-
-            // Return the code so the frontend can use it for verification
-            return { success: true, code: verificationCode };
+            // The API response should indicate if email was sent
+            return { success: true, emailSent: response.data?.emailSent || true };
         } catch (error) {
             console.error("Error in forgot password process:", error);
             throw error;
