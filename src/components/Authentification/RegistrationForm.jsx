@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { authService } from "../../services/api/authService";
+import { uploadService } from "../../services/api/uploadService";
 
 export default function RegistrationForm({ cin }) {
   const { t } = useTranslation();
@@ -16,6 +16,7 @@ export default function RegistrationForm({ cin }) {
     citizen_national_card_location: "",
     citizen_national_card_date: "",
     fokotany_id: "",
+    fokotany_formatted_id: "", // Add this field to the initial state
     user_pseudo: "",
     user_email: "",
     user_password: "",
@@ -23,7 +24,7 @@ export default function RegistrationForm({ cin }) {
     municipality_id: "",
   });
   
-  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [communes, setCommunes] = useState([]);
   const [fokotanys, setFokotanys] = useState([]);
@@ -31,6 +32,7 @@ export default function RegistrationForm({ cin }) {
     communes: false,
     fokotanys: false
   });
+  const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState(null);
 
   const validateCinField = (cinValue) => {
@@ -53,9 +55,9 @@ export default function RegistrationForm({ cin }) {
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    
+
     // Clear any previous API errors
-    if (apiError) setApiError(null);
+    setApiError(null);
     
     // For CIN field - only allow digits and exactly 12 characters
     if (name === 'citizen_national_card_number') {
@@ -222,6 +224,7 @@ export default function RegistrationForm({ cin }) {
       "citizen_national_card_location",
       "citizen_national_card_date",
       "fokotany_id", // Ce champ est toujours utilisé dans le state du formulaire
+      "fokotany_formatted_id", // Add this field to required validation
       "user_pseudo",
       "user_email",
       "user_password",
@@ -274,7 +277,21 @@ export default function RegistrationForm({ cin }) {
 
     try {
       setIsSubmitting(true);
-      // Construire la payload pour authService.registerUser (le service gère le FormData multipart)
+      // 1) Upload photo first if exists
+      let photoUrl = null;
+      if (formData.citizen_photo && formData.citizen_photo instanceof File) {
+        try {
+          console.log('Téléchargement de la photo...');
+          const uploadResponse = await uploadService.uploadCitizenPhoto(formData.citizen_photo);
+          photoUrl = uploadResponse.url || uploadResponse.fileUrl || uploadResponse.data?.url;
+          console.log('Photo téléchargée avec succès:', photoUrl);
+        } catch (uploadError) {
+          console.error('Erreur lors du téléchargement de la photo:', uploadError);
+          // Continue with registration even if photo upload fails
+        }
+      }
+
+      // Construire la payload pour authService.registerUser
       const userData = {
         user_pseudo: formData.user_pseudo,
         user_email: formData.user_email,
@@ -289,15 +306,26 @@ export default function RegistrationForm({ cin }) {
           citizen_national_card_location: formData.citizen_national_card_location,
           citizen_national_card_date: formData.citizen_national_card_date,
           fokotany_formatted_id: formData.fokotany_formatted_id || formData.fokotany_id,
-          citizen_photo: formData.citizen_photo,
+          citizen_photo: photoUrl, // Use the uploaded photo URL instead of the file
         },
       };
 
-      // 1) Inscription (citoyen + utilisateur) via endpoint multipart
+      // 2) Inscription (citoyen + utilisateur) via endpoint multipart
       const registerRes = await authService.registerUser(userData);
       console.log('Inscription réussie:', registerRes);
 
-      // 2) Auto-login
+      // 2) Assigner le rôle par défaut (client = 27)
+      try {
+        if (registerRes.user_id) {
+          await authService.assignUserRoles(registerRes.user_id, [27]);
+          console.log('Rôle client assigné avec succès');
+        }
+      } catch (roleError) {
+        console.warn('Erreur lors de l\'assignation du rôle:', roleError?.message || roleError);
+        // Ne pas bloquer le processus d'inscription si l'assignation du rôle échoue
+      }
+
+      // 3) Auto-login
       try {
         await authService.login(formData.user_email, formData.user_password);
         console.log('Connexion automatique réussie');
@@ -316,6 +344,7 @@ export default function RegistrationForm({ cin }) {
         citizen_national_card_location: "",
         citizen_national_card_date: "",
         fokotany_id: "",
+        fokotany_formatted_id: "", // Add this field to the reset
         user_pseudo: "",
         user_email: "",
         user_password: "",
@@ -334,11 +363,16 @@ export default function RegistrationForm({ cin }) {
       setIsSubmitting(false);
       
       // Afficher un message d'erreur plus détaillé
-      const errorMessage = error.response?.data?.message || 
-                         error.message || 
+      const errorMessage = error.response?.data?.message ||
+                         error.message ||
                          t('registrationForm.errors.registrationFailed');
-      
-      alert(`Échec de l'inscription: ${errorMessage}`);
+
+      // Vérifier si c'est une erreur de conflit (utilisateur existant)
+      if (errorMessage.includes("existe déjà") || errorMessage.includes("already exists")) {
+        alert(`⚠️ ${errorMessage}\n\nSi vous avez déjà un compte, veuillez vous connecter à la place.`);
+      } else {
+        alert(`❌ Échec de l'inscription: ${errorMessage}`);
+      }
     }
   };
 
@@ -673,20 +707,38 @@ export default function RegistrationForm({ cin }) {
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('registrationForm.fields.password')} <span className="text-red-500">{t('registrationForm.requiredField')}</span>
                 </label>
-                <input
-                  type="password"
-                  name="user_password"
-                  value={formData.user_password}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.user_password ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder={t('registrationForm.fields.password')}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="user_password"
+                    value={formData.user_password}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                      errors.user_password ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder={t('registrationForm.fields.password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? (
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {errors.user_password && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.user_password}
