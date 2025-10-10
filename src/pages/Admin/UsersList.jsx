@@ -13,6 +13,7 @@ const UsersList = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log("----------------------object")
     const loadUsers = async () => {
       setIsLoading(true);
       setError(null);

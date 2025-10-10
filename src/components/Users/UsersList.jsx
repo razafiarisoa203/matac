@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { roleService } from '../../services/api/roleService';
 import { getUsers } from '../../services/api/userService';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const UsersList = () => {
   const [users, setUsers] = useState([]);
@@ -16,6 +17,48 @@ const UsersList = () => {
   const [selectedRole, setSelectedRole] = useState('');
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [photos, setPhotos] = useState({}); // { [id_citizen]: photo_url }
+
+  useEffect(() => {
+    users.forEach((user) => {
+      if (user.id_citizen && !photos[user.id_citizen]) {
+        axios
+          .get(`https://gateway.tsirylab.com/serviceauth/users/user-citizen/${user.id_citizen}`)
+          .then((res) => {
+            const photoPath = res.data.citizen?.citizen_photo;
+            let fullPhotoUrl = null;
+
+            if (photoPath) {
+              // If the path already includes the full URL, use it as is
+              if (photoPath.startsWith('http')) {
+                fullPhotoUrl = photoPath.split("hello/").join("preview/hello%2F");
+              } else if (photoPath.includes('hello')) {
+                // Handle the original pattern: extract part after "hello" and URL encode
+                const pathAfterHello = photoPath.split('hello')[1];
+                if (pathAfterHello) {
+                  const encodedPath = pathAfterHello.replace(/\//g, '%2F');
+                  fullPhotoUrl = `https://gateway.tsirylab.com/serviceupload/file/preview/hello${encodedPath}`;
+                }
+              } else {
+                // Fallback: assume it's a simple filename and construct URL
+                fullPhotoUrl = `https://gateway.tsirylab.com/serviceupload/file/preview/${photoPath.replace(/^\//, '')}`;
+              }
+            }
+
+                console.log("-------",fullPhotoUrl)
+            console.log(`Photo URL construite pour user ${user.id_citizen}:`, { photoPath, fullPhotoUrl });
+            setPhotos((prev) => ({
+              ...prev,
+              [user.id_citizen]: fullPhotoUrl,
+            }));
+          })
+          .catch((err) => {
+            console.error("Erreur fetch photo:", err);
+            setPhotos((prev) => ({ ...prev, [user.id_citizen]: null }));
+          });
+      }
+    });
+  }, [users]);
 
   // Chargement des rôles au montage
   useEffect(() => {
@@ -196,16 +239,23 @@ const UsersList = () => {
                 ) : (
                   users.map(user => {
                     const userId = user.user_id || user.id;
+                    const photoUrl = photos[user.id_citizen];
+                    
+                    
                     return (
                       <tr key={userId} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {user.citizen_photo ? (
+                          {photoUrl ? (
                             <img
-                              src={user.citizen_photo}
+                              src={photoUrl}
                               alt={`Photo de ${user.user_pseudo}`}
                               className="h-10 w-10 rounded-full object-cover"
                               onError={(e) => {
+                                console.error('Erreur de chargement de l\'image:', photoUrl);
                                 e.target.style.display = 'none';
+                              }}
+                              onLoad={() => {
+                                console.log('Image chargée avec succès:', photoUrl);
                               }}
                             />
                           ) : (
