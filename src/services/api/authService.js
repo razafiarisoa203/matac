@@ -205,6 +205,29 @@ export const authService = {
         }
     },
 
+    assignUserRoles: async (userId, roleIds) => {
+        try {
+            const token = authService.getToken();
+            if (!token) throw new Error("No authentication token found");
+
+            const response = await axiosConfig.post(
+                `/serviceauth/users/${userId}/roles`,
+                { role_ids: roleIds },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error("Erreur lors de l'assignation des rôles:", error);
+            throw error;
+        }
+    },
+
     registerUser: async (userData) => {
         try {
             const formData = new FormData();
@@ -224,16 +247,33 @@ export const authService = {
                 formData.append("citizen_adress", userData.citizenData.citizen_adress);
                 formData.append("citizen_national_card_location", userData.citizenData.citizen_national_card_location);
                 formData.append("citizen_national_card_date", userData.citizenData.citizen_national_card_date);
-                formData.append("fokotany_formatted_id", userData.citizenData.fokotany_formatted_id);
+                formData.append("fokotany_formatted_id", parseInt(userData.citizenData.fokotany_formatted_id));
                 
                 // Ajouter la photo si elle existe
-                if (userData.citizenData.citizen_photo && userData.citizenData.citizen_photo instanceof File) {
-                    formData.append("citizen_photo", userData.citizenData.citizen_photo);
+                if (userData.citizenData.citizen_photo) {
+                    if (userData.citizenData.citizen_photo instanceof File) {
+                        // Si c'est un fichier, l'ajouter directement
+                        formData.append("citizen_photo", userData.citizenData.citizen_photo);
+                    } else if (typeof userData.citizenData.citizen_photo === 'string') {
+                        // Si c'est une URL, l'ajouter comme texte
+                        formData.append("citizen_photo_url", userData.citizenData.citizen_photo);
+                    }
                 }
             }
 
             console.log('Envoi de la requête d\'inscription avec FormData...');
-            
+            console.log('Données utilisateur:', {
+                user_pseudo: userData.user_pseudo,
+                user_email: userData.user_email,
+                user_password: userData.user_password,
+                user_phone: userData.user_phone,
+                municipality_id: userData.municipality_id
+            });
+            console.log('Données citoyen:', {
+                ...userData.citizenData,
+                fokotany_formatted_id: parseInt(userData.citizenData.fokotany_formatted_id)
+            });
+
             // Utiliser le nouvel endpoint
             const response = await axiosConfig.post("/serviceauth/users/register-with-citizen-short", formData, {
                 headers: {
@@ -244,6 +284,53 @@ export const authService = {
             return response.data;
         } catch (error) {
             console.error("Erreur lors de l'inscription:", error);
+            console.error("Données reçues:", error.response?.data);
+            
+            // Handle specific error cases
+            if (error.response?.status === 409) {
+                const errorData = error.response.data;
+                if (errorData.message?.includes("Keycloak")) {
+                    throw new Error("Un utilisateur avec cette adresse email ou ce nom d'utilisateur existe déjà. Veuillez utiliser une autre adresse email ou contacter l'administrateur si vous pensez que c'est une erreur.");
+                }
+            }
+
+            if (error.response?.status === 400) {
+                const errorData = error.response.data;
+                if (errorData.message?.includes("Keycloak") && errorData.message?.includes("409")) {
+                    throw new Error("Un utilisateur avec cette adresse email existe déjà dans le système. Veuillez utiliser une autre adresse email ou contacter l'administrateur.");
+                }
+            }
+
+            throw error;
+        }
+    },
+
+    resetPassword: async (email, token, newPassword) => {
+        try {
+            const response = await axiosConfig.post("/serviceauth/auth/reset-password", {
+                user_email: email,
+                token: token,
+                newPassword: newPassword,
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error resetting password:", error);
+            throw error;
+        }
+    },
+
+    forgotPassword: async (email) => {
+        try {
+            // Call the auth endpoint to register the forgot password request
+            // This endpoint already sends the email automatically if the email exists
+            const response = await axiosConfig.post("/serviceauth/auth/forgot-password", {
+                user_email: email,
+            });
+
+            // The API response should indicate if email was sent
+            return { success: true, emailSent: response.data?.emailSent || true };
+        } catch (error) {
+            console.error("Error in forgot password process:", error);
             throw error;
         }
     },
