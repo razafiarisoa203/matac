@@ -1,25 +1,35 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+// import { useTranslation } from 'react-i18next';
+// import { useSelector } from 'react-redux';
+import UsersList from '../../components/Users/UsersList';
+import RolesList from '../../components/Roles/RolesList';
 import { Users, Shield, Settings, ArrowLeft } from 'lucide-react';
-import { toast } from 'react-toastify';
+import KeyIcon from '@mui/icons-material/Key';
+import ShieldIcon from '@mui/icons-material/Shield';
+import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import axiosConfig from '../../services/api/axios.config';
 //import { getAllUsersByApplicationRole } from '../../services/api/userService';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('users');
-  const [isLoading] = useState(false);
-  const [error] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [token, setToken] = useState(() => {
+    // On initialise le token au montage
+    return location.state?.token || localStorage.getItem('access_token');
+  });
 
   // Effet pour charger le token au montage
   useEffect(() => {
     const tokenFromState = location.state?.token || localStorage.getItem('access_token');
     if (tokenFromState) {
       setToken(tokenFromState);
-      localStorage.setItem('token', tokenFromState);
+      localStorage.setItem('access_token', tokenFromState); // attention, clé cohérente !
     } else {
       navigate('/login');
     }
@@ -44,11 +54,10 @@ const AdminDashboard = () => {
       const rolesData = Array.isArray(rolesResponse?.data) ? rolesResponse.data : [];
       
       // Mettre à jour l'état avec les données
-      setUsers(usersData);
+      setUsers([]);
       setRoles(rolesData);
       
       // Mettre en cache les données
-      localStorage.setItem('cachedUsers', JSON.stringify(usersData));
       localStorage.setItem('cachedRoles', JSON.stringify(rolesData));
       
     } catch (error) {
@@ -142,43 +151,43 @@ const AdminDashboard = () => {
   }, [users, roles, countUsersByRole]);
   
   // Fonction pour attribuer un rôle à un utilisateur
-  const assignRole = async (userId, roleId) => {
-    if (!token) {
-      toast.error('Session expirée. Veuillez vous reconnecter.');
-      return;
-    }
+  // const assignRole = async (userId, roleId) => {
+  //   if (!token) {
+  //     toast.error('Session expirée. Veuillez vous reconnecter.');
+  //     return;
+  //   }
 
-    try {
-      setIsLoading(true);
-      const appId = import.meta.env.VITE_APP_ID || 15;
+  //   try {
+  //     setIsLoading(true);
+  //     const appId = import.meta.env.VITE_APP_ID || 15;
       
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/serviceauth/users/${userId}/roles`,
-        { 
-          role_id: roleId, 
-          application_id: appId 
-        },
-        { 
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
-        }
-      );
+  //     await axios.put(
+  //       `${import.meta.env.VITE_API_URL}/serviceauth/users/${userId}/roles`,
+  //       { 
+  //         role_id: roleId, 
+  //         application_id: appId 
+  //       },
+  //       { 
+  //         headers: { 
+  //           'Authorization': `Bearer ${token}`,
+  //           'Content-Type': 'application/json'
+  //         } 
+  //       }
+  //     );
       
-      // Recharger les données après mise à jour
-      await fetchUsersAndRoles();
-      toast.success('Rôle mis à jour avec succès');
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du rôle:', error);
-      const errorMessage = error.response?.data?.message || 
-                         error.message || 
-                         'Erreur lors de la mise à jour du rôle';
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     // Recharger les données après mise à jour
+  //     await fetchUsersAndRoles();
+  //     toast.success('Rôle mis à jour avec succès');
+  //   } catch (error) {
+  //     console.error('Erreur lors de la mise à jour du rôle:', error);
+  //     const errorMessage = error.response?.data?.message || 
+  //                        error.message || 
+  //                        'Erreur lors de la mise à jour du rôle';
+  //     toast.error(errorMessage);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
   
   // const _recentActivities = useMemo(() => {
   //   return users
@@ -260,23 +269,23 @@ const AdminDashboard = () => {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Button 
+            <button 
               variant="ghost"
               onClick={() => navigate(-1)} 
               className="mr-4 text-gray-500 hover:text-gray-700"
             >
               <ArrowLeft className="h-6 w-6" />
-            </Button>
+            </button>
             Administration
           </h1>
           <div className="flex items-center space-x-4">
-            <Button
+            <button
               variant="outline"
               onClick={() => navigate('/admin/settings')}
             >
               <Settings className="h-5 w-5 mr-2" />
               Paramètres
-            </Button>
+            </button>
           </div>
         </div>
       </header>
@@ -326,24 +335,24 @@ const AdminDashboard = () => {
                     ? 'border-b-2 border-blue-500 text-blue-600' 
                     : 'text-gray-500 hover:text-gray-700'}`}
                 >
-                  <Key className="h-4 w-4" />
+                  <KeyIcon className="h-4 w-4" />
                   Permissions
                 </button>
               </div>
               
               <div className="ml-4 flex-shrink-0">
                 {activeTab === 'users' && (
-                  <Button onClick={() => navigate('/admin/users/new')}>
-                    <UserPlus className="h-4 w-4 mr-2" />
+                  <button onClick={() => navigate('/admin/users/new')}>
+                    <PersonAddAltIcon className="h-4 w-4 mr-2" />
                     Nouvel utilisateur
-                  </Button>
+                  </button>
                 )}
                 
                 {activeTab === 'roles' && (
-                  <Button onClick={() => navigate('/admin/roles/new')}>
-                    <Shield className="h-4 w-4 mr-2" />
+                  <button onClick={() => navigate('/admin/roles/new')}>
+                    <ShieldIcon className="h-4 w-4 mr-2" />
                     Nouveau rôle
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
@@ -351,13 +360,14 @@ const AdminDashboard = () => {
             {/* Utiliser display: none au lieu de conditional rendering */}
             <div style={{ display: activeTab === 'users' ? 'block' : 'none' }}>
               <div className="bg-white shadow rounded-lg p-6">
-                {usersListComponent}
+                
+                <UsersList />
               </div>
             </div>
             
             <div style={{ display: activeTab === 'roles' ? 'block' : 'none' }}>
               <div className="bg-white shadow rounded-lg p-6">
-                {rolesListComponent}
+                <RolesList />
               </div>
             </div>
             
