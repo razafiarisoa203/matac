@@ -41,6 +41,7 @@ const AlignmentListPage = () => {
     try {
       setLoading(true);
       const response = await alignmentService.getAllAlignment();
+      console.log("alignement:",response)
       setAlignments(response.data || response);
       console.log("Alignements récupérés :", response.data || response);
     } catch (err) {

@@ -4,6 +4,7 @@ const Step6Documents = ({ files, isUploadingFile, fileInputRef, handleFileUpload
   const handleRemoveFile = (index) => {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
+  
 
   return (
     <>
@@ -31,6 +32,57 @@ const Step6Documents = ({ files, isUploadingFile, fileInputRef, handleFileUpload
           >
             {isUploadingFile ? "Chargement..." : "Ajouter un fichier"}
           </button>
+          
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="w-64 text-sm font-medium text-gray-700"> plan official </label>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept=".pdf,.jpg,.png,.jpeg,.doc,.docx"
+            onChange={async (e) => {
+              if (e.target.files[0]) {
+                const newFile = e.target.files[0];
+                await handleFileUpload(newFile);
+              }
+              e.target.value = "";
+            }}
+            
+          />
+          <button
+            className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => fileInputRef.current.click()}
+            disabled={isUploadingFile}
+          >
+            {isUploadingFile ? "Chargement..." : "Ajouter un fichier"}
+          </button>
+          
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="w-64 text-sm font-medium text-gray-700"> certificat situation juridique</label>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept=".pdf,.jpg,.png,.jpeg,.doc,.docx"
+            onChange={async (e) => {
+              if (e.target.files[0]) {
+                const newFile = e.target.files[0];
+                await handleFileUpload(newFile);
+              }
+              e.target.value = "";
+            }}
+            
+          />
+          <button
+            className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => fileInputRef.current.click()}
+            disabled={isUploadingFile}
+          >
+            {isUploadingFile ? "Chargement..." : "Ajouter un fichier"}
+          </button>
+          
         </div>
         <div className="mt-4">
           {files.length > 0 ? (
