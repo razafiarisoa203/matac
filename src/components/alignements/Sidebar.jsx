@@ -1,11 +1,13 @@
 import React from 'react';
 
+import { useTranslation } from 'react-i18next';
 const Sidebar = ({ steps, currentStep, handleStepClick }) => {
+   const { t } = useTranslation();
   return (
     <div className="w-80 border-transparent bg-gray-50">
       <div className="p-6">
         <h3 className="text-lg font-medium text-gray-700 mb-6">
-          INFORMATION GENERALE
+          {t('alignment.information')}
         </h3>
         <div className="space-y-4">
           {steps.map((step) => (

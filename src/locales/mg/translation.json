@@ -346,6 +346,74 @@
     "date": "Daty",
     "location": "Toerana",
     "description": "Famaritana",
-    "attachments": "Rakitsoratra"
+    "attachments": "Rakitsoratra",
+    "boutton":"teo aloha",
+    "suivant":"Manaraka",
+    "soumi":"Alefaso",
+    "soumission":"fandefasana",
+    "information":"FAMPAHAFANTARANA ANKAPOBENY",
+
+    "erreur_chargement_regions": "Hadisoana tamin'ny fametrahana ny faritra",
+    "erreur_chargement_communes": "Hadisoana tamin'ny fametrahana ny kaominina",
+    "choix_implantation": "Safidy momba ny fametrahana",
+    "specifiez_region": "Farito ny Faritra",
+    "selectionnez_region": "Safidio ny Faritra",
+    "specifiez_commune": "Farito ny Kaominina",
+    "selectionnez_commune": "Safidio ny Kaominina",
+
+    "chargement_info": "Mametraka ny fampahalalana momba ny mpampiasa…",
+    "info_chargees": "✓ Fampahalalana momba ny mpampiasa efa voapetraka ho azy",
+    "civilite": "Anaram-pitondrana *",
+     "monsieur": "Andriamatoa",
+    "madame": "Ramatoa",
+    "mademoiselle": "Ramatoa kely",
+    "champ_requis": "Tsy maintsy fenoina ity saha ity",
+    "nom": "Anarana *",
+    "prenoms": "Fanampin'anarana *",
+    "cin_passeport": "Karatra maha-olona na Pasipaoro *",
+    "fonction": " Asa atao",
+    "nationalite": "Firenena *",
+    "identite_demandeur_mandataire": "Mombamomba ny mpangataka solontena",
+    "mandataire": "Solontena",
+    "age": "Taona",
+    "personne_morale": "Orinasa",
+    "raison_sociale": "Anarana ara-barotra *",
+    "num_carte_stat": "Nomeraon'ny karatra statistika *",
+    "nif": "NIF *",
+    "civilite_representant": "Fomba fanao / Anarana fanao amin'ny solontena *",
+    "nom_representant": "Anaran'ny solontena *",
+    "prenoms_representant": "Fanampin'anaran'ny solontena *",
+    "adresse_representant": "Adiresin'ny solontena *",
+    "cin_passeport_representant": "Karatra maha-olona na Pasipaoro an'ny solontena *",
+    "statut_proprietaire": "Farito ny sata misy amin'ny tompony *",
+    "particulier": "Olona tsotra",
+    "personne_morale_2": "Orinasa / Olona ara-dalàna",
+    "qualite_demandeur": "Farito ny kalitaon'ny mpangataka *",
+    "non_disponible": "(tsy misy)",
+
+    "entrez_prenoms": "Ampidiro ny fanampin'ny anarana",
+    "numero_cin_ou_passeport": "Laharana CIN na Pasipaoro",
+    "entrez_fonction": "Ampidiro ny asanao (tsy voatery)",
+    "entrez_nationalite": "Ampidiro ny zom-pirenenao",
+    "entrez_nom": "Ampidiro ny anarana",
+    "entrez_les_prenoms": "Ampidiro ny anaran’ny faharoa",
+    "entrez_age": "Ampidiro ny taonanao",
+    "entrez_nif": "Ampidiro ny NIF",
+
+        
+    "entrez_raison_sociale": "Ampidiro ny anaran’ny orinasa",
+    "entrez_numero_carte_statistique": "Ampidiro ny laharan’ny kara statistika",
+    "numero_carte_statistique": "Laharana kara statistika",
+    "entrez_nom_representant": "Ampidiro ny anaran’ny solontena",
+    "entrez_prenoms_representant": "Ampidiro ny fanampin'ny anaran’ny solontena",
+    "entrez_adresse_representant": "Ampidiro ny adiresin’ny solontena",
+     "entrez_cin_passeport_representant": "Ampidiro ny laharan'ny CIN na Pasipaoro an'ny solontena",
+       "renseignement": "Fampahalalana momba ny mpangataka"
   }
-}
+   
+
+   
+  
+
+  }
+

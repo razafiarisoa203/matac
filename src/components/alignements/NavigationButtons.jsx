@@ -1,6 +1,7 @@
+import { useTranslation } from 'react-i18next';
 const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubmit, isSubmitting, selectedRegion, selectedCommune }) => {
   const isNextDisabled = currentStep === 1 && (!selectedRegion || !selectedCommune);
-
+  const { t } = useTranslation();
   return (
     <div className="flex justify-between mt-8">
       {currentStep > 1 && (
@@ -8,7 +9,7 @@ const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubm
           onClick={() => setCurrentStep(currentStep - 1)}
           className="px-4 py-2 bg-gray-300 text-white font-semibold rounded-md hover:bg-[#269745]"
         >
-          Précédent
+          {t('alignment.boutton')}
         </button>
       )}
       <div className="flex gap-4">
@@ -22,7 +23,7 @@ const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubm
                 : "bg-[#269745] text-white hover:bg-green-600"
             }`}
           >
-            Suivant
+            {t('alignment.suivant')}
           </button>
         )}
         {currentStep === 6 && (
@@ -35,7 +36,7 @@ const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubm
                 : "bg-green-500 text-white hover:bg-green-600"
             }`}
           >
-            {isSubmitting ? "Soumission..." : "Soumettre"}
+            {isSubmitting ? t('alignment.soumission') : t('alignment.soumi')}
           </button>
         )}
       </div>
