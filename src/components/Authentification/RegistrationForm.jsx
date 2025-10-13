@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
 import { useSelector } from "react-redux";
-import { citoyenService } from '../../services/api/citoyenService';
 import { useTranslation } from "react-i18next";
+import { authService } from "../../services/api/authService";
 
-export default function RegistrationForm() {
+export default function RegistrationForm({ cin }) {
   const { t } = useTranslation();
-  const userCin = useSelector((state) => state.user.cin);
+
   const [formData, setFormData] = useState({
     citizen_name: "",
     citizen_lastname: "",
-    citizen_national_card_number: userCin || "",
+    citizen_national_card_number: cin || "",
     citizen_photo: undefined, // Pas de photo par défaut
     citizen_adress: "",
     citizen_national_card_location: "",
@@ -299,7 +299,7 @@ export default function RegistrationForm() {
 
       // 2) Auto-login
       try {
-        await loginService.login({ user_email: formData.user_email, user_password: formData.user_password });
+        await authService.login(formData.user_email, formData.user_password);
         console.log('Connexion automatique réussie');
       } catch (loginErr) {
         console.warn('Connexion automatique échouée:', loginErr?.message || loginErr);
@@ -752,7 +752,6 @@ export default function RegistrationForm() {
             )}
           </button>
 
-          {/* Footer Links */}
         </div>
       </div>
     </div>

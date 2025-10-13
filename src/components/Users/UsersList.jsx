@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getUsers, getRoles, assignUserRoles, removeUserRoles } from '../../services/api/userService';
+import { roleService } from '../../services/api/roleService';
+import { getUsers } from '../../services/api/userService';
 import { toast } from 'react-toastify';
 
 const UsersList = () => {
@@ -8,6 +9,7 @@ const UsersList = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [forceRender, setForceRender] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
   const [editingRoles, setEditingRoles] = useState(null);
@@ -21,7 +23,7 @@ const UsersList = () => {
     const loadRoles = async () => {
       try {
         console.log('Chargement des rôles commencé...');
-        const rolesData = await getRoles();
+        const rolesData = await roleService.getRoles();
         console.log('Rôles reçus du service:', rolesData);
         console.log('Nombre de rôles reçus:', rolesData.length);
         console.log('Détail de chaque rôle:');
@@ -140,14 +142,14 @@ const UsersList = () => {
       // Assigner le rôle sélectionné (ou retirer tous les rôles si vide)
       if (selectedRole && selectedRole !== '') {
         console.log(`Assignation du rôle ${selectedRole} à l'utilisateur ${userId}`);
-        await assignUserRoles(userId, [parseInt(selectedRole)]);
+        await roleService.assignUserRoles(userId, [parseInt(selectedRole)]);
       } else {
         console.log('Aucun rôle sélectionné, suppression de tous les rôles');
         // Si aucun rôle sélectionné, supprimer tous les rôles existants
         const currentRoles = users.find(u => (u.user_id || u.id) === userId)?.appUserRoles?.map(ur => ur.role.role_id) || [];
         if (currentRoles.length > 0) {
           console.log(`Suppression des rôles ${currentRoles} pour l'utilisateur ${userId}`);
-          await removeUserRoles(userId, currentRoles);
+          await roleService.removeUserRoles(userId, currentRoles);
         }
       }
 
