@@ -13,7 +13,7 @@ const DashboardClient = () => {
   const [alignments, setAlignments] = useState([]);
   const [constructions, setConstructions] = useState([]); // Nouvel état pour les constructions
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('tous');
@@ -56,17 +56,20 @@ const DashboardClient = () => {
       setLoading(false);
     }
   };
+
   // Fonction pour récupérer les construction
   const fetchConstructions = async () => {
-    try {
-      const response = await constructionService.getConstruction(mandataireId);
-      setConstructions(response.data || response);
-      console.log("Toutes les constructions récupérées :", response.data || response);
-    } catch (err) {
-      console.error("Erreur de récupération des constructions:", err);
-      setError(prev => prev + " | Erreur constructions: " + err.message);
-    }
-  };
+      try {
+        // Ton service retourne déjà un tableau de constructions
+        const constructions = await constructionService.getConstructionMandataire(mandataireId);
+
+        setConstructions(constructions);
+        console.log("Constructions récupérées :", constructions);
+      } catch (err) {
+        setError(err.message || "Erreur de récupération des permis de construction");
+        console.error("Erreur:", err);
+      } 
+    };
 
   // Charger les données au montage du composant
   useEffect(() => {
@@ -86,10 +89,11 @@ const DashboardClient = () => {
   // Fonction pour obtenir le badge de statut
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'en_cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
+      'reçu': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
+      'en cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
       'approuve': { color: 'bg-green-100 text-green-800 border-green-200', text: 'Approuvé' },
       'rejete': { color: 'bg-red-100 text-red-800 border-red-200', text: 'Rejeté' },
-      'en_attente': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente' }
+      'en attente': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente' }
     };
     const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: status || 'Inconnu' };
     return (
@@ -134,7 +138,7 @@ const DashboardClient = () => {
       nom: alignment.qualite_demandeur || 'N/A',
       adresse: alignment.terrain?.adresse || 'N/A',
       date: alignment.created_at,
-      status: alignment.statut_alignement || " ",
+      status: alignment.status || 'Reçus',
       data: alignment
     }));
 
@@ -145,7 +149,7 @@ const DashboardClient = () => {
       nom: construction.nomProprietaire || 'N/A',
       adresse: construction.adresseProprietaire || 'N/A',
       date: construction.created_at,
-      status: construction.status || 'en_attente', // Ajouter un champ status dans votre entité Construction si nécessaire
+      status: construction.statut_construction || ' ', // Ajouter un champ status dans votre entité Construction si nécessaire
       data: construction
     }));
 
@@ -162,7 +166,7 @@ const DashboardClient = () => {
       request.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.adresse?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const normalizedStatus = request.status || 'en_attente';
+    const normalizedStatus = request.status || 'en attente';
     const matchesStatus = selectedStatus === 'tous' || normalizedStatus === selectedStatus;
 
     const matchesType = selectedType === 'tous' || request.type === selectedType;

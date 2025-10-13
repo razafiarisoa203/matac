@@ -2,22 +2,11 @@ import axiosConfig from "./axios.config";
 
 // Service Construction (complété)
 export const constructionService = {
-
-  // Récupérer toutes les constructions
-  async getConstruction() {
-    try {
-      const response = await axiosConfig.get(`/serviceconstruction/construction`);
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des constructions:', error);
-      throw error;
-    }
-  },
     // Récupérer toutes les constructions par id mandataire
     async getConstructionMandataire(id_mandataire) {
       try {
         const response = await axiosConfig.get(`/serviceconstruction/construction/by-mandataire/${id_mandataire}`);
-        return response.data;
+        return response.data.constructions || [];
       } catch (error) {
         console.error('Erreur lors de la récupération des constructions:', error);
         throw error;
@@ -74,6 +63,16 @@ export const constructionService = {
     async getConstructionById(id) {
       try {
         const response = await axiosConfig.get(`/serviceconstruction/construction/${id}`);
+        return response.data;
+      } catch (error) {
+        console.error('Erreur lors de la récupération de la construction:', error);
+        throw error;
+      }
+    },
+
+    async getConstructionByReferenceAlignement(referenceAlignement) {
+      try {
+        const response = await axiosConfig.get(`/serviceconstruction/construction/by-reference/${referenceAlignement}`);
         return response.data;
       } catch (error) {
         console.error('Erreur lors de la récupération de la construction:', error);

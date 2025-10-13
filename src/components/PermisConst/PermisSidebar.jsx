@@ -1,5 +1,4 @@
 // components/PermisConst/PermisSidebar.jsx
-import React from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import PersonIcon from '@mui/icons-material/Person';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
