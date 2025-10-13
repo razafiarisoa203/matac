@@ -1,23 +1,28 @@
 import axiosConfig from "./axios.config";
 //import axios from "axios";
 
-
-// Récupération tous les alignements 
 export const alignmentService = {
 
- /* //Création d’un alignement
-  createAlignment: async (donneAlignment) => {
+  /* //Création d’un alignement
+   createAlignment: async (donneAlignment) => {
+     try {
+       const response = await axios.post('http://localhost:3001/servicealignement/alignment', donneAlignment);
+       return response.data;
+     } catch (error) {
+       console.error('Erreur lors de la création de l\'alignement:', error);
+       throw error;
+     }
+   },*/
+
+// Récupération tous les alignements par id utilisateur connecter
+  getAllAlignment: async (mandataire = null) => {
     try {
-      const response = await axios.post('http://localhost:3001/servicealignement/alignment', donneAlignment);
+      const response = await axiosConfig.get(`/servicealignement/alignment?mandataire=${mandataire}`);
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la création de l\'alignement:', error);
+      console.error("Erreur lors de la récupération des alignements:", error);
       throw error;
     }
-  },*/
-
-  getAllAlignment: async () => {
-    return axiosConfig.get('/servicealignement/alignment');
   },
 
   // Création d’un alignement
@@ -30,13 +35,12 @@ export const alignmentService = {
       throw error;
     }
   },
-
   //Recuperer un terrain par ID
   getTerrainById: async (id) => {
-    try{
+    try {
       const response = await axiosConfig.get(`/servicealignement/terrain/${id}`);
       return response.data;
-    }catch(error) {
+    } catch (error) {
       console.error('Erreur lors de la récupération de terrain:', error)
       throw error;
     }
@@ -44,10 +48,10 @@ export const alignmentService = {
 
   //Recuperer un terrain par numero titre
   getTerrainByTitre: async (num_titre) => {
-    try{
+    try {
       const response = await axiosConfig.get(`/servicealignement/terrain/by-num-titre/${num_titre}`);
       return response.data;
-    }catch(error) {
+    } catch (error) {
       console.error('Erreur lors de la récupération de terrain:', error)
       throw error;
     }

@@ -2,10 +2,21 @@ import axiosConfig from "./axios.config";
 
 // Service Construction (complété)
 export const constructionService = {
-    // Récupérer toutes les constructions
-    async getConstruction() {
+
+  // Récupérer toutes les constructions
+  async getConstruction() {
+    try {
+      const response = await axiosConfig.get(`/serviceconstruction/construction`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des constructions:', error);
+      throw error;
+    }
+  },
+    // Récupérer toutes les constructions par id mandataire
+    async getConstructionMandataire(id_mandataire) {
       try {
-        const response = await axiosConfig.get('/serviceconstruction/construction');
+        const response = await axiosConfig.get(`/serviceconstruction/construction/by-mandataire/${id_mandataire}`);
         return response.data;
       } catch (error) {
         console.error('Erreur lors de la récupération des constructions:', error);
@@ -261,7 +272,7 @@ export const constructionService = {
         uploadedFilesInfo: this.prepareUploadedFilesInfo(uploadedFiles),
   
         // IDs requis (à adapter selon votre logique)
-        id_align: 1, // À remplacer par l'ID d'alignement réel
+        id_align: formData.referenceAlignement, // À remplacer par l'ID d'alignement réel
         id_terrain: 1 // À remplacer par l'ID de terrain réel
       };
   

@@ -255,14 +255,13 @@ function Allignement() {
         status_proprietaire: statutProprietaire || " ",
         qualite_demandeur: qualiteDemandeur || " ",
         nif: "000000000000",
-        id_cert_sit_jur: `CERT-${Date.now()}`,
+        id_cert_sit_jur: `CERT-${Date.now()}`,//{certjurd, `CERT-${Date.now()}.pdf`}
         id_plan_off: `PLAN-${Date.now()}`,
         id_terrain: formData.id_terrain, //  terrainResult
-
         // Champs obligatoires côté DB
-        nom_demandaire: formData.nom_demandaire || "Nom",
-        prenom_mandataire: formData.prenom_mandataire || "Prénom",
-        cin_passeport_demandaire: formData.cin_passeport_demandaire || "000000000000"
+        nom_demandaire: formData.nom || " ",
+        prenom_mandataire: formData.prenoms || " ",
+        cin_passeport_demandaire: formData.cinPasseport || " "
       };
 
 
@@ -274,6 +273,7 @@ function Allignement() {
 
       // Envoyer au backend
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
+      console.log("alignementCreate:",alignmentResult)
       setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès !");
       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 

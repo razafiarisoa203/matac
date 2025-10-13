@@ -155,7 +155,6 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
             </div>
           </div>
         )}
-
       </div>
     </header>
   );
