@@ -84,6 +84,26 @@ export default function RegistrationForm({ cin }) {
       return;
     }
     
+    if (name === "user_phone") {
+      // Supprimer tout ce qui n'est pas un chiffre et limiter à 10 caractères
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+    
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numericValue,
+      }));
+    
+      // Clear error si présent
+      if (errors[name]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+    
+      return; // ne pas continuer avec les autres validations
+    }
+
     // Si la commune change, on réinitialise le fokotany sélectionné
     if (name === 'municipality_id' && value) {
       // Ici, 'value' DOIT être le formatted_id de la commune
@@ -763,6 +783,9 @@ export default function RegistrationForm({ cin }) {
                   name="user_phone"
                   value={formData.user_phone}
                   onChange={handleInputChange}
+                  maxLength={10}
+                  inputMode="numeric"
+                 pattern="[0-9]*"
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.user_phone ? "border-red-500" : "border-gray-300"
                   }`}
