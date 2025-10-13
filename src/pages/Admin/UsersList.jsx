@@ -13,6 +13,7 @@ const UsersList = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log("----------------------object")
     const loadUsers = async () => {
       setIsLoading(true);
       setError(null);
@@ -200,21 +201,54 @@ const UsersList = () => {
             <ul className="divide-y divide-gray-200">
               {users.map((user, index) => {
                 const userKey = `user-${user.id}-${index}`; // Clé unique pour chaque élément de la liste
-                const photoUrl = user.citoyen?.citizen_photo?.includes('hello') 
+
+                console.log('=== DÉBOGAGE UTILISATEUR ===');
+                console.log('Utilisateur:', user.id, user.email);
+                console.log('Données citoyen complètes:', user.citoyen);
+                console.log('Photo path:', user.citoyen?.citizen_photo);
+                console.log('Citizen ID:', user.citoyen?.citizen_id);
+
+                const photoUrl = user.citoyen?.citizen_photo?.includes('hello')
                   ? `https://gateway.tsirylab.com/serviceupload/file/preview/hello${user.citoyen.citizen_photo.split("hello")[1].replace("/","%2F")}`
                   : null;
-                
+
+                console.log('URL photo construite:', photoUrl);
+
                 return (
                   <li key={userKey} className="hover:bg-gray-50">
                     <div className="px-4 py-4 sm:px-6">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            {photoUrl ? (
-                              <img src={photoUrl} className="h-10 w-10 rounded-full object-cover" alt="" />
-                            ) : (
-                              <Users className="h-5 w-5 text-blue-600" />
-                            )}
+                            {(() => {
+                              // Log détaillé pour déboguer l'affichage des photos
+                              console.log('=== AFFICHAGE PHOTO ===');
+                              console.log('Photo URL:', photoUrl);
+                              console.log('Photo path brut:', user.citoyen?.citizen_photo);
+
+                              if (photoUrl) {
+                                console.log('Tentative de chargement de l\'image:', photoUrl);
+                                return (
+                                  <img
+                                    src={photoUrl}
+                                    className="h-10 w-10 rounded-full object-cover"
+                                    alt={`Photo de ${user.user.user_email}`}
+                                    onError={(e) => {
+                                      console.error('❌ ERREUR: Image failed to load:', photoUrl);
+                                      console.error('Target src:', e.target.src);
+                                      e.target.style.display = 'none';
+                                    }}
+                                    onLoad={(e) => {
+                                      console.log('✅ Image loaded successfully:', photoUrl);
+                                    }}
+                                    loading="lazy"
+                                  />
+                                );
+                              } else {
+                                console.log('⚠️ Aucune URL de photo disponible');
+                                return <Users className="h-5 w-5 text-blue-600" />;
+                              }
+                            })()}
                           </div>
                           <div className="ml-4 min-w-0">
                             <p className="text-sm font-medium text-blue-600 truncate">

@@ -2,11 +2,11 @@ import axiosConfig from "./axios.config";
 
 // Service Construction (complété)
 export const constructionService = {
-    // Récupérer toutes les constructions
-    async getConstruction() {
+    // Récupérer toutes les constructions par id mandataire
+    async getConstructionMandataire(id_mandataire) {
       try {
-        const response = await axiosConfig.get('/serviceconstruction/construction');
-        return response.data;
+        const response = await axiosConfig.get(`/serviceconstruction/construction/by-mandataire/${id_mandataire}`);
+        return response.data.constructions || [];
       } catch (error) {
         console.error('Erreur lors de la récupération des constructions:', error);
         throw error;

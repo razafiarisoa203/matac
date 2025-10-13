@@ -7,7 +7,7 @@ import SearchBar from '../components/SearchBar';
 import { constructionService } from '../services/api/constructionSercvice';
 import { Eye, FileText, Download, AlertCircle, Building, ChevronRight, Plus } from 'lucide-react';
 import { Link } from "react-router-dom";
-import axios from "axios";
+//import axios from "axios";
 
 
 const ConstructionListPage = () => {
@@ -20,6 +20,13 @@ const ConstructionListPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const navigate = useNavigate();
+
+  // Fonction pour récupérer les alignements par ID utilisateur connecter
+
+  const userData = JSON.parse(localStorage.getItem('user'));
+    const id_citizen = userData?.id_citizen;
+  
+  const idMandataire = id_citizen; // ou un ID si tu veux filtrer
 
   // Gestion du responsive (sidebar)
   useEffect(() => {
@@ -41,9 +48,11 @@ const ConstructionListPage = () => {
   const fetchConstructions = async () => {
     try {
       setLoading(true);
-      const response = await constructionService.getConstruction();
-      setConstructions(response.data || response);
-      console.log("Constructions récupérées :", response.data || response);
+      // Ton service retourne déjà un tableau de constructions
+      const constructions = await constructionService.getConstructionMandataire(idMandataire);
+
+      setConstructions(constructions);
+      console.log("Constructions récupérées :", constructions);
     } catch (err) {
       setError(err.message || "Erreur de récupération des permis de construction");
       console.error("Erreur:", err);
@@ -51,6 +60,7 @@ const ConstructionListPage = () => {
       setLoading(false);
     }
   };
+
 
 
   // Charger les constructions au montage du composant
