@@ -59,6 +59,21 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
     onClose();
   };
 
+  const handleCommuneAccess = () => {
+    const token = authService.getToken();
+    if (!token) {
+      alert("Aucun token trouvé. Veuillez vous reconnecter.");
+      return;
+    }
+  
+    // URL du projet B en local
+    const projectBUrl = "http://localhost:5174";
+  
+    // Ouvrir le projet B avec le token
+    window.open(`${projectBUrl}/auth?token=${token}`, "_blank");
+  };
+  
+
   const handleContinueAsClient = () => {
     console.log('AdminAccessDialog - Continuation en tant que client');
     if (authService.stayAsClient) {
@@ -123,8 +138,8 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+    <div className="fixed inset-0 bg-black bg-black flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl">
         <div className="flex items-center mb-4">
           <div className="flex-shrink-0">
             <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
@@ -164,6 +179,12 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             Interface d'administration
+          </button>
+          <button
+            onClick={handleCommuneAccess}
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Interface commune
           </button>
         </div>
       </div>

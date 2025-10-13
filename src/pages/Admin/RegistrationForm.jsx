@@ -1,19 +1,74 @@
 import { useEffect, useState } from "react";
-import { territoireService, roleService } from "../../services/api";
-import { citoyenService } from '../../services/api';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { territoireService } from "../../services/api";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-export default function RegistrationForm() {
+/* ===== Service d'inscription ===== */
+const authService = {
+  registerUser: async (data) => {
+    try {
+      const formData = new FormData();
+
+      // Infos citoyen
+      formData.append("citizen_name", data.citizen_name);
+      formData.append("citizen_lastname", data.citizen_lastname);
+      formData.append("citizen_national_card_number", data.citizen_national_card_number);
+      formData.append("citizen_adress", data.citizen_adress);
+      formData.append("citizen_national_card_location", data.citizen_national_card_location);
+      formData.append("citizen_national_card_date", data.citizen_national_card_date);
+      formData.append("fokotany_formatted_id", data.fokotany_formatted_id);
+      formData.append("municipality_id", data.municipality_id);
+
+      // Utilisateur
+      formData.append("user_pseudo", data.user_pseudo);
+      formData.append("user_email", data.user_email);
+      formData.append("user_password", data.user_password);
+      formData.append("user_phone", data.user_phone);
+
+      // Photo
+      if (data.citizen_photo) {
+        formData.append("citizen_photo", data.citizen_photo);
+      }
+
+      // Rôle(s)
+      // ✅ Important : envoyer les rôles un par un, pas en JSON.stringify
+      if (data.role_ids && data.role_ids.length > 0) {
+        data.role_ids.forEach((id) => {
+          formData.append("role_ids", id);
+        });
+      } else {
+        formData.append("role_ids[]", 27);
+ // rôle citoyen par défaut
+      }
+
+      // Requête API
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_SERVICEAUTH}/users/register-with-citizen-short-role`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("❌ Erreur lors de l'inscription :", error.response?.data || error);
+      throw error.response?.data || error;
+    }
+  },
+};
+
+/* ===== Composant principal ===== */
+export default function RegistrationForm({ cin }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     citizen_name: "",
     citizen_lastname: "",
-    citizen_national_card_number: "",
+    citizen_national_card_number: cin || "",
     citizen_adress: "",
     citizen_national_card_location: "",
     citizen_national_card_date: "",
-    fokotany_id: "",
+    fokotany_formatted_id: "",
     user_pseudo: "",
     user_email: "",
     user_password: "",
@@ -24,24 +79,26 @@ export default function RegistrationForm() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [communes, setCommunes] = useState();
+  const [communes, setCommunes] = useState([]);
 
+  // Charger les communes
+  useEffect(() => {
+    territoireService.getCommunes().then((data) => setCommunes(data));
+  }, []);
+
+  // Gérer les changements
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-
-    // Clear error when user starts typing
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
+  // Fichier photo
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     setFormData((prev) => ({
@@ -50,10 +107,9 @@ export default function RegistrationForm() {
     }));
   };
 
+  // Validation
   const validateForm = () => {
     const newErrors = {};
-
-    // Required fields validation
     const requiredFields = [
       "citizen_name",
       "citizen_lastname",
@@ -61,7 +117,7 @@ export default function RegistrationForm() {
       "citizen_adress",
       "citizen_national_card_location",
       "citizen_national_card_date",
-      "fokotany_id",
+      "fokotany_formatted_id",
       "user_pseudo",
       "user_email",
       "user_password",
@@ -75,37 +131,39 @@ export default function RegistrationForm() {
       }
     });
 
-    // Email validation
-    if (
-      formData.user_email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.user_email)
-    ) {
+    if (formData.user_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.user_email)) {
       newErrors.user_email = "Format d'email invalide";
     }
 
-    // Password validation
-    if (formData.user_password && formData.user_password.length < 6) {
-      newErrors.user_password =
-        "Le mot de passe doit contenir au moins 6 caractères";
-    }
-
-    // Phone validation
-    if (formData.user_phone && !/^[0-9+\-\s()]+$/.test(formData.user_phone)) {
-      newErrors.user_phone = "Format de téléphone invalide";
+    if (formData.user_password.length < 6) {
+      newErrors.user_password = "6 caractères minimum";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+  // Soumission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
     try {
       setIsSubmitting(true);
 
+      const payload = {
+        ...formData,
+        role_ids: [27], // 👈 Forcer le rôle citoyen par défaut
+      };
+
+      const result = await authService.registerUser(payload);
+      console.log("Inscription OK :", result);
+      alert("✅ Inscription réussie !");
+      navigate("/login", { replace: true });
+    } catch (err) {
+      console.error("Erreur lors de l'inscription:", err);
+      const msg = err?.message || err?.error || "Erreur serveur";
+      alert(`❌ Échec de l'inscription: ${msg}`);
       // Créer un objet FormData pour gérer les fichiers et les données
       const formDataToSend = new FormData();
       
@@ -193,373 +251,208 @@ export default function RegistrationForm() {
     } finally {
       setIsSubmitting(false);
     }
-};
-  useEffect(() => {
-    territoireService.getCommunes().then((data) => {
-      setCommunes(data);
-    });
-  }, []);
+  };
 
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center p-0">
       <div className="bg-white rounded-lg w-full max-w-full px-8">
-          <h1 className="text-2xl font-semibold text-gray-800 mb-2">
-            Nouvelle  Utilisateur
-          </h1>
-          <p className="text-gray-600 text-sm">
-            Veuillez remplir tous les champs pour créer votre compte
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold text-gray-800 mb-2">Nouvelle inscription</h1>
+        <p className="text-gray-600 text-sm mb-4">
+          Veuillez remplir tous les champs pour créer votre compte
+        </p>
 
-        <div className="space-y-6">
-          {/* Section Informations personnelles */}
-          <div className="p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">
-              Informations personnelles
-            </h3>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* === INFOS PERSONNELLES === */}
+          <div className="p-4 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Informations personnelles</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nom */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nom <span className="text-red-500">*</span>
-                </label>
+                <label>Nom *</label>
                 <input
                   type="text"
                   name="citizen_name"
                   value={formData.citizen_name}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_name ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="Votre nom"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
                 {errors.citizen_name && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.citizen_name}
-                  </p>
+                  <p className="text-red-500 text-xs">{errors.citizen_name}</p>
                 )}
               </div>
 
+              {/* Prénom */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Prénom <span className="text-red-500">*</span>
-                </label>
+                <label>Prénom *</label>
                 <input
                   type="text"
                   name="citizen_lastname"
                   value={formData.citizen_lastname}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_lastname
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Votre prénom"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
                 {errors.citizen_lastname && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.citizen_lastname}
-                  </p>
+                  <p className="text-red-500 text-xs">{errors.citizen_lastname}</p>
                 )}
               </div>
 
+              {/* CIN */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Numéro CIN <span className="text-red-500">*</span>
-                </label>
+                <label>Numéro CIN *</label>
                 <input
                   type="text"
                   name="citizen_national_card_number"
                   value={formData.citizen_national_card_number}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_national_card_number
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Numéro de carte d'identité"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.citizen_national_card_number && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.citizen_national_card_number}
-                  </p>
-                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date CIN <span className="text-red-500">*</span>
-                </label>
+                <label>Date de délivrance CIN *</label>
                 <input
                   type="date"
                   name="citizen_national_card_date"
                   value={formData.citizen_national_card_date}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_national_card_date
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.citizen_national_card_date && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.citizen_national_card_date}
-                  </p>
-                )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lieu de délivrance CIN <span className="text-red-500">*</span>
-                </label>
+                <label>Lieu de délivrance CIN *</label>
                 <input
                   type="text"
                   name="citizen_national_card_location"
                   value={formData.citizen_national_card_location}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_national_card_location
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Lieu de délivrance de la CIN"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.citizen_national_card_location && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.citizen_national_card_location}
-                  </p>
-                )}
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Adresse <span className="text-red-500">*</span>
-                </label>
+                <label>Adresse *</label>
                 <textarea
                   name="citizen_adress"
                   value={formData.citizen_adress}
                   onChange={handleInputChange}
-                  rows="2"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.citizen_adress ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="Votre adresse complète"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.citizen_adress && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.citizen_adress}
-                  </p>
-                )}
               </div>
 
+              {/* Commune */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Commune <span className="text-red-500">*</span>
-                </label>
+                <label>Commune *</label>
                 <select
                   name="municipality_id"
                   value={formData.municipality_id}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.municipality_id
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  placeholder="Commune"
+                  className="w-full px-3 py-2 border rounded-md"
                 >
-                  <option value="">--Selectionner un commune--</option>
-                  {communes &&
-                    communes.map((c, i) => (
-                      <option value={c.commune_id} key={i}>
-                        {c.name}
+                  <option value="">-- Sélectionner une commune --</option>
+                  {communes.map((c, i) => (
+                    <option key={i} value={c.commune_id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Fokotany */}
+              <div>
+                <label>Fokotany *</label>
+                <select
+                  name="fokotany_formatted_id"
+                  value={formData.fokotany_formatted_id}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="">-- Sélectionner un fokontany --</option>
+                  {communes
+                    .find((c) => c.commune_id === formData.municipality_id)
+                    ?.fokotanys.map((f, i) => (
+                      <option key={i} value={f.fokotany_id}>
+                        {f.name}
                       </option>
                     ))}
                 </select>
-                {errors.municipality_id && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.municipality_id}
-                  </p>
-                )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fokotany <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="fokotany_id"
-                  value={formData.fokotany_id}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.fokotany_id ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="ID Fokotany"
-                >
-                  <option value="">--Selectionner un fokontany--</option>
-                  {communes ? (
-                    communes
-                      .find((c) => c.commune_id == formData.municipality_id)
-                      ?.fokotanys.map((f, i) => (
-                        <option value={f.fokotany_id} key={i}>
-                          {f.name}
-                        </option>
-                      ))
-                  ) : (
-                    <></>
-                  )}
-                </select>
-                {errors.fokotany_id && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.fokotany_id}
-                  </p>
-                )}
-              </div>
-
+              {/* Photo */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Photo du citoyen
-                </label>
+                <label>Photo du citoyen (optionnelle)</label>
                 <input
                   type="file"
-                  name="citizen_photo"
-                  onChange={handleFileChange}
                   accept="image/*"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  onChange={handleFileChange}
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
             </div>
           </div>
 
-          {/* Section Compte utilisateur */}
-          <div className="p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">
-              Informations du compte
-            </h3>
+          {/* === COMPTE UTILISATEUR === */}
+          <div className="p-4 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Informations du compte</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pseudo <span className="text-red-500">*</span>
-                </label>
+                <label>Pseudo *</label>
                 <input
                   type="text"
                   name="user_pseudo"
                   value={formData.user_pseudo}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.user_pseudo ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="Votre pseudo"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.user_pseudo && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.user_pseudo}
-                  </p>
-                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email <span className="text-red-500">*</span>
-                </label>
+                <label>Email *</label>
                 <input
                   type="email"
                   name="user_email"
                   value={formData.user_email}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.user_email ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="votre@email.com"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.user_email && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.user_email}
-                  </p>
-                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mot de passe <span className="text-red-500">*</span>
-                </label>
+                <label>Mot de passe *</label>
                 <input
                   type="password"
                   name="user_password"
                   value={formData.user_password}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.user_password ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="Mot de passe"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.user_password && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.user_password}
-                  </p>
-                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Téléphone <span className="text-red-500">*</span>
-                </label>
+                <label>Téléphone *</label>
                 <input
                   type="tel"
                   name="user_phone"
                   value={formData.user_phone}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.user_phone ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="Numéro de téléphone"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
-                {errors.user_phone && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.user_phone}
-                  </p>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* === BOUTON === */}
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={isSubmitting}
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 disabled:opacity-50"
           >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Inscription en cours...
-              </span>
-            ) : (
-              "S'inscrire →"
-            )}
+            {isSubmitting ? "Inscription en cours..." : "S'inscrire →"}
           </button>
-
-          {/* Footer Links */}
-        </div>
+        </form>
       </div>
+    </div>
   );
 }
