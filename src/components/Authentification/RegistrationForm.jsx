@@ -3,9 +3,13 @@ import { territoireService } from "../../services/api/territoireService";
 import { useTranslation } from "react-i18next";
 import { authService } from "../../services/api/authService";
 import { uploadService } from "../../services/api/uploadService";
+import Select from "react-select";
+import { useNavigate } from "react-router-dom";
+
 
 export default function RegistrationForm({ cin }) {
   const { t } = useTranslation();
+  const navigate = useNavigate(); 
 
   const [formData, setFormData] = useState({
     citizen_name: "",
@@ -33,7 +37,7 @@ export default function RegistrationForm({ cin }) {
     fokotanys: false
   });
   const [errors, setErrors] = useState({});
-  const [apiError, setApiError] = useState(null);
+  const [apiError,setApiError] = useState(null);
 
   const validateCinField = (cinValue) => {
     const numericValue = (cinValue || '').replace(/\D/g, '');
@@ -335,6 +339,11 @@ export default function RegistrationForm({ cin }) {
       }
 
       alert(t('registrationForm.successMessage'));
+
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
       // Réinitialiser le formulaire après succès
       setFormData({
         citizen_name: "",
@@ -491,6 +500,7 @@ export default function RegistrationForm({ cin }) {
                   name="citizen_national_card_date"
                   value={formData.citizen_national_card_date}
                   onChange={handleInputChange}
+                  max={new Date().toISOString().split("T")[0]}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.citizen_national_card_date ? "border-red-500" : "border-gray-300"
                   }`}
@@ -545,106 +555,103 @@ export default function RegistrationForm({ cin }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('registrationForm.fields.municipality')} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="municipality_id"
-                  value={formData.municipality_id}
-                  onChange={handleInputChange}
-                  disabled={isLoading.communes}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.municipality_id ? 'border-red-500' : 'border-gray-300'
-                  } ${isLoading.communes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                  placeholder="Commune"
-                >
-                  <option value="">
-                    {isLoading.communes 
-                      ? t('registrationForm.loading') 
-                      : t('registrationForm.selectPlaceholder')}
-                  </option>
-                  {communes.map((commune) => {
-                    const communeId = commune.formatted_id || commune.commune_id;
-                    const communeName = commune.name || commune.nom || `Commune ${communeId}`;
-                    
-                    return (
-                      <option value={communeId} key={communeId}>
-                        {communeName}
-                      </option>
-                    );
-                  })}
-                </select>
-                {errors.municipality_id && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.municipality_id}
-                  </p>
-                )}
-              </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    {t("registrationForm.fields.municipality")}{" "}
+    <span className="text-red-500">*</span>
+  </label>
 
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('registrationForm.fields.fokotany')} <span className="text-red-500">*</span>
-                  </label>
-                  {isLoading.fokotanys && (
-                    <span className="text-xs text-gray-500 inline-flex items-center">
-                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Chargement...
-                    </span>
-                  )}
-                </div>
-                <select
-                  name="fokotany_id"
-                  value={formData.fokotany_id}
-                  onChange={handleInputChange}
-                  disabled={!formData.municipality_id || isLoading.fokotanys}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.fokotany_id ? 'border-red-500' : 'border-gray-300'
-                  } ${!formData.municipality_id || isLoading.fokotanys ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                >
-                  <option value="">
-                    {!formData.municipality_id 
-                      ? t('registrationForm.selectCommuneFirst')
-                      : isLoading.fokotanys 
-                        ? t('registrationForm.loadingFokotanys')
-                        : apiError
-                          ? t('registrationForm.errorLoadingFokotanys')
-                          : t('registrationForm.selectFokotany')}
-                  </option>
-                  {fokotanys.length > 0 ? (
-                    fokotanys.map((fokotany, index) => {
-                    const fokotanyId = fokotany.formatted_id || fokotany.fokotany_id || fokotany.id;
-                    const fokotanyName = fokotany.name || fokotany.nom || `Fokotany ${fokotanyId}`;
-                    
-                    return (
-                      <option 
-                        key={`${fokotanyId}-${index}`} 
-                        value={fokotanyId}
-                      >
-                        {fokotanyName}
-                      </option>
-                    );
-                  })
-                  ) : (
-                    formData.municipality_id && !isLoading.fokotanys && !apiError && (
-                      <option value="" disabled>{t('registrationForm.noFokotanyAvailable')}</option>
-                    )
-                  )}
-                </select>
-                {apiError && !isLoading.fokotanys && (
-                  <p className="text-yellow-600 text-xs mt-1">
-                    {apiError}
-                  </p>
-                )}
-                {errors.fokotany_id && !apiError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.fokotany_id}
-                  </p>
-                )}
-              </div>
+  <Select
+    name="municipality_id"
+    value={
+      communes
+        .map((c) => ({
+          value: c.formatted_id || c.commune_id,
+          label: c.name || c.nom || `Commune ${c.formatted_id}`,
+        }))
+        .find((opt) => opt.value === formData.municipality_id) || null
+    }
+    onChange={(selectedOption) =>
+      handleInputChange({
+        target: {
+          name: "municipality_id",
+          value: selectedOption?.value || "",
+        },
+      })
+    }
+    options={communes.map((c) => ({
+      value: c.formatted_id || c.commune_id,
+      label: c.name || c.nom || `Commune ${c.formatted_id}`,
+    }))}
+    isLoading={isLoading.communes}
+    isDisabled={isLoading.communes}
+    placeholder={
+      isLoading.communes
+        ? t("registrationForm.loading")
+        : t("registrationForm.selectPlaceholder")
+    }
+    className="react-select-container"
+    classNamePrefix="react-select"
+    filterOption={(option, inputValue) =>
+      option.label
+        .toLowerCase()
+        .startsWith(inputValue.toLowerCase()) // 🔍 Recherche par initiale
+    }
+  />
+
+  {errors.municipality_id && (
+    <p className="text-red-500 text-xs mt-1">{errors.municipality_id}</p>
+  )}
+</div>
+
+
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    {t("registrationForm.fields.fokotany")}{" "}
+    <span className="text-red-500">*</span>
+  </label>
+
+  <Select
+    name="fokotany_id"
+    value={
+      fokotanys
+        .map((f) => ({
+          value: f.formatted_id || f.fokotany_id || f.id,
+          label: f.name || f.nom || `Fokotany ${f.id}`,
+        }))
+        .find((opt) => opt.value === formData.fokotany_id) || null
+    }
+    onChange={(selectedOption) =>
+      handleInputChange({
+        target: {
+          name: "fokotany_id",
+          value: selectedOption?.value || "",
+        },
+      })
+    }
+    options={fokotanys.map((f) => ({
+      value: f.formatted_id || f.fokotany_id || f.id,
+      label: f.name || f.nom || `Fokotany ${f.id}`,
+    }))}
+    isLoading={isLoading.fokotanys}
+    isDisabled={!formData.municipality_id || isLoading.fokotanys}
+    placeholder={
+      !formData.municipality_id
+        ? t("registrationForm.selectCommuneFirst")
+        : t("registrationForm.selectFokotany")
+    }
+    className="react-select-container"
+    classNamePrefix="react-select"
+    filterOption={(option, inputValue) =>
+      option.label
+        .toLowerCase()
+        .startsWith(inputValue.toLowerCase()) // 🔍 Recherche alphabétique
+    }
+  />
+
+  {errors.fokotany_id && (
+    <p className="text-red-500 text-xs mt-1">{errors.fokotany_id}</p>
+  )}
+</div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
