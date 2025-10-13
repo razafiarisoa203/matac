@@ -131,31 +131,22 @@ const PermisConstruction = () => {
     });
   };
 
-  
-
   // ✅ Fonction corrigée : utilise getAlignmentById
   const handleVerifyAlignementExiste = async (referenceAlignement) => {
   if (!referenceAlignement) return null;
 
   try {
-    const alignmentData = await alignmentService.getAlignementByReference(referenceAlignement);
-    const constructionData = await constructionService.getConstructionByReferenceAlignement(referenceAlignement)
-    if(constructionData && constructionData.referenceAlignement) {
-      toast.warning("⚠️ Une construction est déjà associée à cet alignement.");
-      return null;
-    } 
-
+    const alignmentData = await alignmentService.getConstructionByReference(referenceAlignement);
     if (alignmentData && alignmentData.referenceAlignement) {
       return alignmentData; 
-    } else{
-      toast.error("⚠️ Aucun alignement trouvé pour cette référence.");
+    } else {
+      toast.error("⚠️ Aucun alignement trouvé pour cette Réference d'alignement.");
       return null;
     }
-
   } catch (error) {
     console.error('Erreur lors de la vérification de l’alignement :', error);
     if (error.response?.status === 404) {
-      toast.error("⚠️ Aucun alignement trouvé pour cette référence.");
+      toast.error('⚠️ Aucun alignement trouvé pour cet reference.');
     } else {
       toast.error('❌ Erreur serveur lors de la vérification.');
     }
@@ -175,6 +166,20 @@ const PermisConstruction = () => {
     }
   };
 
+
+  const handleVerifyConstructionExiste  = async (referenceAlignement) => {
+    if (!referenceAlignement) return null;
+    try {
+      const constructionData = await constructionService.getConstructionByReferenceAlignement(referenceAlignement);
+      if (constructionData && constructionData.referenceAlignement) {
+        toast.warning("⚠️ Vous avez déjà une construction associé à cet alignement .");
+        return constructionData;
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de la construction')
+      return null; //  retourne null en cas d'erreur
+    }
+  }
   // Fonction pour valider les pièces (OPTIONNEL)
   const validatePieces = (pieces) => {
     const errors = {};
@@ -552,8 +557,9 @@ const PermisConstruction = () => {
       if (isInReferenceAlignementSection && formData.referenceAlignement) {
         // ✅ Récupère les données de l'alignement (ou false/null si invalide)
         const alignmentData = await handleVerifyAlignementExiste(formData.referenceAlignement);
+        const constructionData = await handleVerifyConstructionExiste(formData.referenceAlignement);
 
-        if (!alignmentData) {
+        if (!alignmentData || constructionData) {
           setErrors(prev => ({
             ...prev,
             referenceAlignement: 'La référence d’alignement est invalide ou introuvable.'
