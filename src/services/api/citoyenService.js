@@ -18,7 +18,7 @@ export const citoyenService = {
 
   async getCitizenData(id_cit) {
     try {
-      const response = await axiosConfig.get(`/servicecitoyen/citizens/getCitizenById//${id_cit}`);
+      const response = await axiosConfig.get(`/servicecitoyen/citizens/getCitizenById/${id_cit}`);
       return response.data;
     } catch (error) {
       return error;
@@ -47,9 +47,13 @@ export const citoyenService = {
 
         // Ajouter tous les champs sauf fokotany_id qui sera ajouté après
         for (const [key, value] of entries) {
-          if (key !== 'fokotany_id' && value !== null && value !== undefined) {
+          if (key !== 'fokotany_id' && (value !== null && value !== undefined && value !== '')) {
             console.log(`Ajout de ${key}:`, value);
             formData.append(key, value);
+          } else if (key === 'citizen_photo') {
+            // Toujours ajouter citizen_photo même s'il est null/undefined/vide
+            console.log(`Ajout de citizen_photo:`, value || 'vide');
+            formData.append(key, value || '');
           }
         }
 
@@ -88,8 +92,8 @@ export const citoyenService = {
         console.log(`${key}:`, value);
       }
 
-      // Utiliser l'instance citoyenApi configurée qui gère déjà le token et le Content-Type
-      const response = await citoyenApi.post('/citizens', formData);
+      // Utiliser l'instance axiosConfig configurée qui gère déjà le token et le Content-Type
+      const response = await axiosConfig.post('/citizens', formData);
 
       return response.data;
 

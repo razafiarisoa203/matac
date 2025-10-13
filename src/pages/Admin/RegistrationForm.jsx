@@ -164,6 +164,90 @@ export default function RegistrationForm({ cin }) {
       console.error("Erreur lors de l'inscription:", err);
       const msg = err?.message || err?.error || "Erreur serveur";
       alert(`❌ Échec de l'inscription: ${msg}`);
+      // Créer un objet FormData pour gérer les fichiers et les données
+      const formDataToSend = new FormData();
+      
+      // Ajouter tous les champs texte au FormData
+      formDataToSend.append('citizen_name', formData.citizen_name);
+      formDataToSend.append('citizen_lastname', formData.citizen_lastname);
+      formDataToSend.append('citizen_national_card_number', formData.citizen_national_card_number);
+      formDataToSend.append('citizen_adress', formData.citizen_adress);
+      formDataToSend.append('citizen_national_card_location', formData.citizen_national_card_location);
+      formDataToSend.append('citizen_national_card_date', formData.citizen_national_card_date);
+      formDataToSend.append('fokotany_id', formData.fokotany_id);
+      formDataToSend.append('user_pseudo', formData.user_pseudo);
+      formDataToSend.append('user_email', formData.user_email);
+      formDataToSend.append('user_password', formData.user_password);
+      formDataToSend.append('user_phone', formData.user_phone);
+      formDataToSend.append('municipality_id', formData.municipality_id);
+      
+      // Ajouter le fichier photo s'il existe
+      if (formData.citizen_photo && formData.citizen_photo instanceof File) {
+        formDataToSend.append('citizen_photo', formData.citizen_photo);
+      }
+      // Note: Don't append citizen_photo if no file is provided - the API should handle optional photos
+
+      console.log(formData.citizen_photo)
+
+      // 1. Créer d'abord l'utilisateur
+      const userResponse = await citoyenService.createCitizen(formDataToSend);
+      
+      if (userResponse && userResponse.user_id) {
+        try {
+          // 2. Associer l'utilisateur à l'application MATAC
+          const token = localStorage.getItem('token');
+          
+          await axios.post(
+            `${import.meta.env.VITE_API_SERVICEAUTH}/users/${userResponse.user_id}/roles`,
+            {
+              role_ids: [
+                93
+              ]
+             }
+          );
+          
+          // 3. Récupérer le rôle "client"
+          const roles = await roleService.getRoles();
+          const clientRole = roles.find(role => 
+            role.name.toLowerCase() === 'client' || 
+            role.name.toLowerCase() === 'user' ||
+            role.name.toLowerCase() === 'utilisateur'
+          );
+          
+          if (clientRole) {
+            // 4. Attribuer le rôle "client" au nouvel utilisateur
+            await roleService.assignRole(userResponse.user_id, clientRole.id);
+          } else if (roles.length > 0) {
+            // Si aucun rôle "client" n'est trouvé, attribuer le premier rôle disponible
+            await roleService.assignRole(userResponse.user_id, roles[0].id);
+          }
+          
+          // 4. Rediriger vers la page de connexion avec un message de succès
+          navigate('/login', { 
+            state: { 
+              registrationSuccess: true,
+              message: 'Inscription réussie ! Vous pouvez maintenant vous connecter.'
+            } 
+          });
+          
+        } catch (roleError) {
+          console.error("Erreur lors de l'attribution du rôle:", roleError);
+          // L'utilisateur est créé mais sans rôle, on peut quand même le laisser se connecter
+          navigate('/login', { 
+            state: { 
+              registrationSuccess: true,
+              message: 'Inscription réussie ! Vous pouvez maintenant vous connecter.\n\nNote: Une erreur est survenue lors de l\'attribution du rôle par défaut. Veuillez contacter un administrateur.'
+            } 
+          });
+        }
+      } else {
+        throw new Error("Réponse d'inscription invalide");
+      }
+      
+    } catch (error) {
+      console.error("Erreur lors de l'inscription: ", error);
+      const errorMessage = error.response?.data?.message || error.message || 'Une erreur est survenue lors de l\'inscription.';
+      alert(`Erreur: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
