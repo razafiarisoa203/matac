@@ -134,7 +134,7 @@ const DashboardClient = () => {
       nom: alignment.qualite_demandeur || 'N/A',
       adresse: alignment.terrain?.adresse || 'N/A',
       date: alignment.created_at,
-      status: alignment.status || 'Reçus',
+      status: alignment.statut_alignement || " ",
       data: alignment
     }));
 
