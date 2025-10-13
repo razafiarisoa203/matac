@@ -131,22 +131,31 @@ const PermisConstruction = () => {
     });
   };
 
+  
+
   // ✅ Fonction corrigée : utilise getAlignmentById
   const handleVerifyAlignementExiste = async (referenceAlignement) => {
   if (!referenceAlignement) return null;
 
   try {
-    const alignmentData = await alignmentService.getConstructionByReference(referenceAlignement);
+    const alignmentData = await alignmentService.getAlignementByReference(referenceAlignement);
+    const constructionData = await constructionService.getConstructionByReferenceAlignement(referenceAlignement)
+    if(constructionData && constructionData.referenceAlignement) {
+      toast.warning("⚠️ Une construction est déjà associée à cet alignement.");
+      return null;
+    } 
+
     if (alignmentData && alignmentData.referenceAlignement) {
       return alignmentData; 
-    } else {
-      toast.error("⚠️ Aucun alignement trouvé pour cette Réference d'alignement.");
+    } else{
+      toast.error("⚠️ Aucun alignement trouvé pour cette référence.");
       return null;
     }
+
   } catch (error) {
     console.error('Erreur lors de la vérification de l’alignement :', error);
     if (error.response?.status === 404) {
-      toast.error('⚠️ Aucun alignement trouvé pour cet reference.');
+      toast.error("⚠️ Aucun alignement trouvé pour cette référence.");
     } else {
       toast.error('❌ Erreur serveur lors de la vérification.');
     }

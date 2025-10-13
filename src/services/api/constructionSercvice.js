@@ -69,6 +69,16 @@ export const constructionService = {
         throw error;
       }
     },
+
+    async getConstructionByReferenceAlignement(referenceAlignement) {
+      try {
+        const response = await axiosConfig.get(`/serviceconstruction/construction/by-reference/${referenceAlignement}`);
+        return response.data;
+      } catch (error) {
+        console.error('Erreur lors de la récupération de la construction:', error);
+        throw error;
+      }
+    },
   
     // Mettre à jour une construction
     async updateConstruction(id, constructionData) {

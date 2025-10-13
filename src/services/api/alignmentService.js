@@ -25,7 +25,7 @@ export const alignmentService = {
     }
   },
 
-  async getConstructionByReference(referenceAlignement) {
+  async getAlignementByReference(referenceAlignement) {
       try {
         const response = await axiosConfig.get(`/servicealignement/alignment/by-reference/${referenceAlignement}`);
         return response.data;

@@ -13,7 +13,7 @@ const DashboardClient = () => {
   const [alignments, setAlignments] = useState([]);
   const [constructions, setConstructions] = useState([]); // Nouvel état pour les constructions
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('tous');
@@ -89,10 +89,11 @@ const DashboardClient = () => {
   // Fonction pour obtenir le badge de statut
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'en_cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
+      'reçu': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
+      'en cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
       'approuve': { color: 'bg-green-100 text-green-800 border-green-200', text: 'Approuvé' },
       'rejete': { color: 'bg-red-100 text-red-800 border-red-200', text: 'Rejeté' },
-      'en_attente': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente' }
+      'en attente': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente' }
     };
     const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: status || 'Inconnu' };
     return (
@@ -165,7 +166,7 @@ const DashboardClient = () => {
       request.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.adresse?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const normalizedStatus = request.status || 'en_attente';
+    const normalizedStatus = request.status || 'en attente';
     const matchesStatus = selectedStatus === 'tous' || normalizedStatus === selectedStatus;
 
     const matchesType = selectedType === 'tous' || request.type === selectedType;
