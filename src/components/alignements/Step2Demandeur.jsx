@@ -1,7 +1,36 @@
+
+import { useTranslation } from 'react-i18next';
 const Step2Demandeur = ({
   statutProprietaire, setStatutProprietaire, qualiteDemandeur, setQualiteDemandeur,
   formData, handleInputChange, isLoadingUserData, userDataLoaded, resetFormData, loadUserData
 }) => {
+  const { t } = useTranslation();
+  const filterLettersOnly = (value, fieldName) => {
+    // Allow only letters, spaces, apostrophes, hyphens
+    return value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s'-]/g, '');
+  };
+
+  const filterDigitsOnly = (value) => {
+    // Allow only digits
+    return value.replace(/[^0-9]/g, '');
+  };
+
+  const handleFilteredInputChange = (e) => {
+    const { name, value } = e.target;
+    let filteredValue = value;
+
+    if (['nom', 'prenoms', 'nationalite', 'nomRepresentant', 'prenomsRepresentant', 
+        'nom_demandaire', 'prenom_mandataire', 'nationalite_demandaire'].includes(name)) {
+      filteredValue = filterLettersOnly(value, name);
+    } else if (['cinPasseport', 'cinPasseportRepresentant', 'cin_passeport_demandaire', 
+                 'carteStatistique'].includes(name)) {
+      filteredValue = filterDigitsOnly(value);
+    }
+
+    // Update formData with filtered value
+    handleInputChange({ target: { name, value: filteredValue } });
+  };
+
   const handleQualiteDemandeurChange = (e) => {
     const newValue = e.target.value;
     setQualiteDemandeur(newValue);
@@ -11,6 +40,7 @@ const Step2Demandeur = ({
       resetFormData();
     }
   };
+ 
 
   const renderFormContent = () => {
     return (
@@ -21,21 +51,22 @@ const Step2Demandeur = ({
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  <span className="text-sm text-blue-700">Chargement des informations utilisateur...</span>
+                  <span className="text-sm text-blue-700">{t('alignment.chargement_info')}</span>
                 </div>
               </div>
             )}
             {userDataLoaded && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-                <span className="text-sm text-green-700">✓ Informations utilisateur chargées automatiquement</span>
+                <span className="text-sm text-green-700">{t('alignment.info_chargees')}</span>
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">Civilité *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-4">{t('alignment.civilite')}</label>
               <div className="flex flex-col space-y-3 bg-transparent">
                 {["M", "Mme"].map((option) => (
                   <label key={option} className="flex items-center cursor-pointer p-2">
                     <input
+                      required
                       type="radio"
                       name="civilite"
                       value={option}
@@ -44,80 +75,92 @@ const Step2Demandeur = ({
                       className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                     />
                     <span className="ml-3 text-sm text-gray-700 font-medium">
-                      {option === "M" ? "Monsieur" : "Madame"}
+                      {option === "M" ? t('alignment.monsieur') : t('alignment.madame')}
                     </span>
                   </label>
                 ))}
                 {formData.civilite === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                 )}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nom')}</label>
+              <div className="flex-justify center">
               <input
+                required
                 type="text"
                 name="nom"
                 value={formData.nom}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre nom"
+                placeholder= {t('alignment.entrez_nom')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
+              </div>
               {formData.nom === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.prenoms')}</label>
               <input
+                required={true}
                 type="text"
                 name="prenoms"
                 value={formData.prenoms}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez vos prénoms"
+                placeholder={t('alignment.entrez_prenoms')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.prenoms === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.cin_passeport')}</label>
               <input
+                required={true}
+                inputMode="numeric"
                 type="text"
                 name="cinPasseport"
                 value={formData.cinPasseport}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Numéro de CIN ou Passeport"
+                placeholder={t('alignment.numero_cin_ou_passeport')}
+                pattern="^[0-9]+$"
               />
               {formData.cinPasseport === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fonction</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.fonction')}</label>
               <input
+                required={true}
                 type="text"
                 name="fonction"
                 value={formData.fonction}
                 onChange={handleInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre fonction (facultatif)"
+                placeholder={t('alignment.entrez_fonction')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nationalité *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nationalite')}</label>
               <input
+                required={true}
                 type="text"
                 name="nationalite"
                 value={formData.nationalite}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre nationalité"
+                placeholder={t('alignment.entrez_nationalite')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nationalite === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
           </>
@@ -125,12 +168,13 @@ const Step2Demandeur = ({
         {statutProprietaire === "particulier" && qualiteDemandeur === "mandataire" && (
           <>
             <div>
-            <h3 className="text-lg font-semibold">Identité du demandeur Mandataire</h3>
-              <label className="block text-sm font-medium text-gray-700 mb-4">Civilité *</label>
+            <h3 className="text-lg font-semibold">{t('alignment.identite_demandeur_mandataire')}</h3>
+              <label className="block text-sm font-medium text-gray-700 mb-4">{t('alignment.civilite')}</label>
               <div className="flex flex-col space-y-3 bg-transparent">
                 {["M", "Mme"].map((option) => (
                   <label key={option} className="flex items-center cursor-pointer p-2">
                     <input
+                     required={true}
                       type="radio"
                       name="civilite"
                       value={option}
@@ -139,89 +183,100 @@ const Step2Demandeur = ({
                       className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                     />
                     <span className="ml-3 text-sm text-gray-700 font-medium">
-                      {option === "M" ? "Monsieur" : "Madame"}
+                      {option === "M" ? t('alignment.monsieur') : t('alignment.madame')}
                     </span>
                   </label>
                 ))}
                 {formData.civilite === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                 )}
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+            <div className="justify-center">
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nom')}</label>
               <input
+                required={true}
                 type="text"
                 name="nom"
                 value={formData.nom}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre nom"
+                placeholder={t('alignment.entrez_nom')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nom === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.prenoms')}</label>
               <input
+                required={true}
                 type="text"
                 name="prenoms"
                 value={formData.prenoms}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez vos prénoms"
+                placeholder={t('alignment.entrez_les_prenoms')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.prenoms === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.cin_passeport')}</label>
               <input
+                required={true}
+                inputMode="numeric"
                 type="text"
                 name="cinPasseport"
                 value={formData.cinPasseport}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Numéro de CIN ou Passeport"
+                placeholder={t('alignment.numero_cin_ou_passeport')}
+                pattern="^[0-9]+$"
               />
               {formData.cinPasseport === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fonction</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.fonction')}</label>
               <input
+                required={true}
                 type="text"
                 name="fonction"
                 value={formData.fonction}
                 onChange={handleInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre fonction (facultatif)"
+                placeholder={t('alignment.entrez_fonction')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nationalité *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nationalite')}</label>
               <input
+                required={true}
                 type="text"
                 name="nationalite"
                 value={formData.nationalite}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez votre nationalité"
+                placeholder={t('alignment.entrez_nationalite')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nationalite === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4">Civilité *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-4">{t('alignment.civilite')}</label>
                 <div className="flex flex-col space-y-3 bg-transparent">
                   {["M", "Mme"].map((option) => (
                     <label key={option} className="flex items-center cursor-pointer p-2">
                       <input
+                        required={true}
                         type="radio"
                         name="civilite2"
                         value={option}
@@ -230,91 +285,105 @@ const Step2Demandeur = ({
                         className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                       />
                       <span className="ml-3 text-sm text-gray-700 font-medium">
-                        {option === "M" ? "Monsieur" : "Madame"}
+                        {option === "M" ? t('alignment.monsieur') : t('alignment.madame')}
                       </span>
                     </label>
                   ))}
                   {formData.civilite2 === "" && (
-                    <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                    <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                   )}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nom')}</label>
                 <input
+                  required={true}
                   type="text"
                   name="nom_demandaire"
                   value={formData.nom_demandaire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez le nom"
+                  placeholder={t('alignment.entrez_nom')}
+                  pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
                 />
                 {formData.nom_demandaire === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.prenoms')}</label>
                 <input
+                  required={true}
                   type="text"
                   name="prenom_mandataire"
                   value={formData.prenom_mandataire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez les prénoms"
+                  placeholder={t('alignment.entrez_prenoms')}
+                  pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
                 />
+
                 {formData.prenom_mandataire === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.cin_passeport')}</label>
                 <input
+                  required={true}
+                  inputMode="numeric"
                   type="text"
                   name="cin_passeport_demandaire"
                   value={formData.cin_passeport_demandaire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Numéro de CIN ou Passeport"
+                  placeholder={t('alignment.numero_cin_ou_passeport')}
+                  pattern="^[0-9]+$"
                 />
                 {formData.cin_passeport_demandaire === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fonction</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.fonction')}</label>
                 <input
+                  required={true}
                   type="text"
                   name="fonction_demandaire"
                   value={formData.fonction_demandaire}
                   onChange={handleInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez la fonction (facultatif)"
+                  placeholder={t('alignment.entrez_fonction')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nationalité *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nationalite')}</label>
                 <input
+                  required={true}
                   type="text"
                   name="nationalite_demandaire"
                   value={formData.nationalite_demandaire}
-                  onChange={handleInputChange}
+                  onChange={handleFilteredInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez la nationalité"
+                  placeholder={t('alignment.entrez_nationalite')}
+                  pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
                 />
                 {formData.nationalite_demandaire === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.age')}</label>
                 <input
+                  required={true}
+                  inputMode="numeric"
                   type="number"
                   name="age_demandaire"
                   value={formData.age_demandaire}
                   onChange={handleInputChange}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Entrez l'âge"
+                  placeholder={t('alignment.entrez_age')}
+                  pattern="^[0-9]+$"
                 />
               </div>
             </div>
@@ -322,55 +391,61 @@ const Step2Demandeur = ({
         )}
         {statutProprietaire === "personne-morale" && (
           <>
-            <h1>Personne morale</h1>
+            <h1>{t('alignment.personne_morale')}</h1>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Raison sociale *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.raison_sociale')}</label>
               <input
+                required={true}
                 type="text"
                 name="raisonSociale"
                 value={formData.raisonSociale}
                 onChange={handleInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez la raison sociale"
+                placeholder={t('alignment.entrez_raison_sociale')}
               />
               {formData.raisonSociale === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Numéro de carte statistique *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.numero_carte_statistique')}</label>
               <input
+                required={true}
                 type="text"
                 name="carteStatistique"
                 value={formData.carteStatistique}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez le numéro de carte statistique"
+                placeholder={t('alignment.entrez_numero_carte_statistique')}
+                inputMode="numeric"
+                pattern="^[0-9]+$"
               />
               {formData.carteStatistique === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">NIF *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nif')}</label>
               <input
+                required={true}
                 type="text"
                 name="nif"
                 value={formData.nif}
                 onChange={handleInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez le NIF"
+                placeholder={t('alignment.entrez_nif')}
               />
               {formData.nif === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">Civilité du représentant *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-4">{t('alignment.civilite_representant')}</label>
               <div className="flex flex-col space-y-3 bg-transparent">
                 {["M", "Mme", "Mlle"].map((option) => (
                   <label key={option} className="flex items-center cursor-pointer p-2">
                     <input
+                      required={true}
                       type="radio"
                       name="civiliteRepresentant"
                       value={option}
@@ -379,69 +454,77 @@ const Step2Demandeur = ({
                       className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                     />
                     <span className="ml-3 text-sm text-gray-700 font-medium">
-                      {option === "M" ? "Monsieur" : option === "Mme" ? "Madame" : "Mademoiselle"}
+                      {option === "M" ? t('alignment.monsieur') : option === "Mme" ? t('alignment.madame') : t('alignment.mademoiselle')}
                     </span>
                   </label>
                 ))}
                 {formData.civiliteRepresentant === "" && (
-                  <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                  <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
                 )}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nom du représentant *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.nom_representant')}</label>
               <input
+                required={true}
                 type="text"
                 name="nomRepresentant"
                 value={formData.nomRepresentant}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez le nom du représentant"
+                placeholder={t('alignment.entrez_nom_representant')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.nomRepresentant === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Prénoms du représentant *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.prenoms_representant')}</label>
               <input
+                required={true}
                 type="text"
                 name="prenomsRepresentant"
                 value={formData.prenomsRepresentant}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez les prénoms du représentant"
+                placeholder={t('alignment.entrez_prenoms_representant')}
+                pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$"
               />
               {formData.prenomsRepresentant === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Adresse du représentant *</label>
-              <input
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.adresse_representant')}</label>
+              <input 
+                required={true}
                 type="text"
                 name="adresseRepresentant"
                 value={formData.adresseRepresentant}
                 onChange={handleInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Entrez l'adresse du représentant"
+                placeholder={t('alignment.entrez_adresse_representant')}
               />
               {formData.adresseRepresentant === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">CIN ou Passeport du représentant *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('alignment.cin_passeport_representant')}</label>
               <input
+                required={true}
+                inputMode="numeric"
                 type="text"
                 name="cinPasseportRepresentant"
                 value={formData.cinPasseportRepresentant}
-                onChange={handleInputChange}
+                onChange={handleFilteredInputChange}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Numéro de CIN ou Passeport du représentant"
+                placeholder={t('alignment.entrez_cin_passeport_representant')}
+                pattern="^[0-9]+$"
               />
               {formData.cinPasseportRepresentant === "" && (
-                <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+                <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
               )}
             </div>
           </>
@@ -452,13 +535,14 @@ const Step2Demandeur = ({
 
   return (
     <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-6">Renseignement du demandeur</h3>
+      <h3 className="text-xl font-bold text-gray-800 mb-6">{t('alignment.renseignement')}</h3>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 p-6 bg-white border border-gray-200 rounded-lg">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-4">Spécifiez le Statut du propriétaire *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-4">{t('alignment.statut_proprietaire')}</label>
           <div className="space-y-3">
             <label className="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
               <input
+                required={true}
                 type="radio"
                 name="statutProprietaire"
                 value="particulier"
@@ -466,10 +550,11 @@ const Step2Demandeur = ({
                 onChange={(e) => setStatutProprietaire(e.target.value)}
                 className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
               />
-              <span className="ml-3 text-sm text-gray-700 font-medium">Particulier</span>
+              <span className="ml-3 text-sm text-gray-700 font-medium">{t('alignment.particulier')}</span>
             </label>
             <label className="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
               <input
+                required={true}
                 type="radio"
                 name="statutProprietaire"
                 value="personne-morale"
@@ -477,12 +562,12 @@ const Step2Demandeur = ({
                 onChange={(e) => setStatutProprietaire(e.target.value)}
                 className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
               />
-              <span className="ml-3 text-sm text-gray-700 font-medium">Personne morale</span>
+              <span className="ml-3 text-sm text-gray-700 font-medium">{t('alignment.personne_morale')}</span>
             </label>
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-4">Spécifiez la Qualité du demandeur *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-4">{t('alignment.qualite_demandeur')}</label>
           <div className="space-y-3">
             <label
               className={`flex items-center p-2 transition-colors ${
@@ -490,6 +575,7 @@ const Step2Demandeur = ({
               }`}
             >
               <input
+                required={true}
                 type="radio"
                 name="qualiteDemandeur"
                 value="proprietaire"
@@ -501,14 +587,15 @@ const Step2Demandeur = ({
                 }`}
               />
               <span className={`ml-3 text-sm font-medium ${statutProprietaire === "personne-morale" ? "text-gray-400" : "text-gray-700"}`}>
-                Propriétaire
+                {t('alignment.proprietaire')}
               </span>
               {statutProprietaire === "personne-morale" && (
-                <span className="ml-2 text-xs text-gray-400 italic">(non disponible)</span>
+                <span className="ml-2 text-xs text-gray-400 italic">{t('alignment.non_disponible')}</span>
               )}
             </label>
             <label className="flex items-center cursor-pointer p-2 hover:bg-gray-50 transition-colors">
-              <input
+              <input 
+                required={true}
                 type="radio"
                 name="qualiteDemandeur"
                 value="mandataire"
@@ -516,7 +603,7 @@ const Step2Demandeur = ({
                 onChange={handleQualiteDemandeurChange}
                 className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
               />
-              <span className="ml-3 text-sm text-gray-700 font-medium">Mandataire</span>
+              <span className="ml-3 text-sm text-gray-700 font-medium">{t('alignment.mandataire')}</span>
             </label>
           </div>
         </div>

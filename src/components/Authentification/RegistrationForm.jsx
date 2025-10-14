@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
 import { useTranslation } from "react-i18next";
 import { authService } from "../../services/api/authService";
-import { uploadService } from "../../services/api/uploadService";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 
 export default function RegistrationForm({ cin }) {
@@ -301,20 +301,7 @@ export default function RegistrationForm({ cin }) {
     }
 
     try {
-      setIsSubmitting(true);
-      // 1) Upload photo first if exists
-      let photoUrl = null;
-      if (formData.citizen_photo && formData.citizen_photo instanceof File) {
-        try {
-          console.log('Téléchargement de la photo...');
-          const uploadResponse = await uploadService.uploadCitizenPhoto(formData.citizen_photo);
-          photoUrl = uploadResponse.url || uploadResponse.fileUrl || uploadResponse.data?.url;
-          console.log('Photo téléchargée avec succès:', photoUrl);
-        } catch (uploadError) {
-          console.error('Erreur lors du téléchargement de la photo:', uploadError);
-          // Continue with registration even if photo upload fails
-        }
-      }
+      setIsSubmitting(true);     
 
       // Construire la payload pour authService.registerUser
       const userData = {
@@ -339,27 +326,7 @@ export default function RegistrationForm({ cin }) {
       // 2) Inscription (citoyen + utilisateur) via endpoint multipart
       const registerRes = await authService.registerUser(userData);
       console.log('Inscription réussie:', registerRes);
-
-      // 2) Assigner le rôle par défaut (client = 27)
-      try {
-        if (registerRes.user_id) {
-          await authService.assignUserRoles(registerRes.user_id, [27]);
-          console.log('Rôle client assigné avec succès');
-        }
-      } catch (roleError) {
-        console.warn('Erreur lors de l\'assignation du rôle:', roleError?.message || roleError);
-        // Ne pas bloquer le processus d'inscription si l'assignation du rôle échoue
-      }
-
-      // 3) Auto-login
-      try {
-        await authService.login(formData.user_email, formData.user_password);
-        console.log('Connexion automatique réussie');
-      } catch (loginErr) {
-        console.warn('Connexion automatique échouée:', loginErr?.message || loginErr);
-      }
-
-      alert(t('registrationForm.successMessage'));
+      toast.success(t('registrationForm.successMessage'));
 
 
       setTimeout(() => {
@@ -384,6 +351,25 @@ export default function RegistrationForm({ cin }) {
       });
 
       setIsSubmitting(false);
+
+      // 2) Assigner le rôle par défaut (client = 27)
+      try {
+        if (registerRes.user_id) {
+          await authService.assignUserRoles(registerRes.user_id, [27]);
+          console.log('Rôle client assigné avec succès');
+        }
+      } catch (roleError) {
+        console.warn('Erreur lors de l\'assignation du rôle:', roleError?.message || roleError);
+        // Ne pas bloquer le processus d'inscription si l'assignation du rôle échoue
+      }
+
+      // 3) Auto-login
+      try {
+        await authService.login(formData.user_email, formData.user_password);
+        console.log('Connexion automatique réussie');
+      } catch (loginErr) {
+        console.warn('Connexion automatique échouée:', loginErr?.message || loginErr);
+      }
     
     } catch (error) {
       console.error("Erreur lors de l'inscription: ", {
@@ -391,19 +377,8 @@ export default function RegistrationForm({ cin }) {
         stack: error.stack,
         response: error.response?.data
       });
+      toast.error("Erreur lors de l'inscription");
       setIsSubmitting(false);
-      
-      // Afficher un message d'erreur plus détaillé
-      const errorMessage = error.response?.data?.message ||
-                         error.message ||
-                         t('registrationForm.errors.registrationFailed');
-
-      // Vérifier si c'est une erreur de conflit (utilisateur existant)
-      if (errorMessage.includes("existe déjà") || errorMessage.includes("already exists")) {
-        alert(`⚠️ ${errorMessage}\n\nSi vous avez déjà un compte, veuillez vous connecter à la place.`);
-      } else {
-        alert(`❌ Échec de l'inscription: ${errorMessage}`);
-      }
     }
   };
 
