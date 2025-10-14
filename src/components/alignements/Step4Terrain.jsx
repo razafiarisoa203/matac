@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect } from "react";
 
 const Step4Terrain = ({
@@ -11,6 +12,8 @@ const Step4Terrain = ({
     // Allow only letters, spaces, apostrophes, hyphens
     return value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s'-]/g, "");
   };
+  
+ const { t } = useTranslation();
 
   const filterDigitsOnly = (value) => {
     // Allow only digits
@@ -40,6 +43,7 @@ const Step4Terrain = ({
     if (["xv_laborde", "yv_laborde", "longitude", "latitude"].includes(name)) {
       filteredValue = filterCoordinate(value);
     }
+    
 
     // Update the specific field
     handleInputChange({ target: { name, value: filteredValue } });
@@ -141,7 +145,7 @@ const Step4Terrain = ({
     return (
       <div key={field}>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          {field.replace("_", " ")} *
+          {t(`alignment.${field}`)} *
         </label>
         <input
           type={inputType}
@@ -158,7 +162,7 @@ const Step4Terrain = ({
           className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
         />
         {!formData[field] && (
-          <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+          <p className="text-red-500 text-xs mt-1">  {t('alignment.champ_requis')}</p>
         )}
       </div>
     );
@@ -167,7 +171,7 @@ const Step4Terrain = ({
   return (
     <div>
       <h3 className="text-xl font-bold text-gray-800 mb-6">
-        Identité du Terrain
+       {t('alignment.identite_terrain')}
       </h3>
 
       {/* Choix du statut du terrain */}
@@ -187,10 +191,10 @@ const Step4Terrain = ({
             />
             <span className="ml-3 text-sm text-gray-700 font-medium">
               {status === "titre"
-                ? "Titre"
+                ? t('alignment.titre')
                 : status === "cadastre"
-                  ? "Cadastre"
-                  : "Certificat foncier"}
+                  ? t('alignment.cadastre')
+                  : t('alignment.certificat_foncier')}
             </span>
           </label>
         ))}
@@ -216,7 +220,7 @@ const Step4Terrain = ({
             {/* Champs optionnels */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Numéro Karatany (optionnel)
+                 {t('alignment.num_karatany')}
               </label>
               <input
                 type="text"
@@ -230,7 +234,7 @@ const Step4Terrain = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fokotany (optionnel)
+                {t('alignment.fokotany')} 
               </label>
               <input
                 type="text"

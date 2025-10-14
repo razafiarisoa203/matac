@@ -587,7 +587,7 @@ const Step2Demandeur = ({
                 }`}
               />
               <span className={`ml-3 text-sm font-medium ${statutProprietaire === "personne-morale" ? "text-gray-400" : "text-gray-700"}`}>
-                Propriétaire
+                {t('alignment.proprietaire')}
               </span>
               {statutProprietaire === "personne-morale" && (
                 <span className="ml-2 text-xs text-gray-400 italic">{t('alignment.non_disponible')}</span>

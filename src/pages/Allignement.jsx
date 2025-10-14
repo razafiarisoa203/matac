@@ -14,10 +14,13 @@ import Step6Documents from "../components/alignements/Step6Documents";
 import NavigationButtons from "../components/alignements/NavigationButtons";
 import MessageDisplay from "../components/alignements/MessageDisplay";
 import { citoyenService } from "../services/api/citoyenService";
+import { useTranslation } from 'react-i18next';
 //import { notificationService } from "../services/api/notificationService";
 
 
 function Allignement() {
+  
+ const { t } = useTranslation();
   const navigate = useNavigate();
   const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
   const [statutTerrain, setStatutTerrain] = useState("titre");
@@ -326,12 +329,12 @@ function Allignement() {
   };
 
   const steps = [
-    { number: 1, title: "Choix d'implantation", active: true },
-    { number: 2, title: "Renseignement du Demandeur", active: false },
-    { number: 3, title: "Coordonnées du propriétaire", active: false },
-    { number: 4, title: "Identité du Terrain", active: false },
-    { number: 5, title: "Informations Alignement", active: false },
-    { number: 6, title: "Documents administratifs", active: false },
+    { number: 1, title:  t('alignment.choix_implantation'), active: true },
+    { number: 2, title:  t('alignment.renseignement_demandeur'), active: false },
+    { number: 3, title: t('alignment.coordonnees_proprietaire'), active: false },
+    { number: 4, title: t('alignment.identite_terrain'), active: false },
+    { number: 5, title: t('alignment.informations_alignment'), active: false },
+    { number: 6, title: t('alignment.documents_administratifs'), active: false },
   ];
 
   return (
@@ -339,11 +342,11 @@ function Allignement() {
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-white rounded-lg shadow-sm">
           <button onClick={() => navigate('/dashboard')} className="bg-gray-300 absolute top-5 text-gray-800 font-semibold left-5 px-4 py-2 rounded-md hover:bg-gray-400">
-            Retour au dashboard
+           {t('alignment.retour')}
           </button>
           <div className="text-center py-8 border-transparent">
             <h2 className="text-2xl font-light text-gray-800 font-semibold">
-              SOUMETTRE UN DOSSIER D'ALIGNEMENT
+             {t('alignment.soumettre_dossier')}
             </h2>
           </div>
           <div className="flex">

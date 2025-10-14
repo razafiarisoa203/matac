@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-
+import { useTranslation } from 'react-i18next';
 const Step5Alignement = ({ formData, setFormData }) => {
   // Met à jour formData quand un champ change
   const handleInputChange = (e) => {
@@ -10,6 +9,7 @@ const Step5Alignement = ({ formData, setFormData }) => {
     }));
     console.log(`Champ mis à jour: ${name} = ${value}`);
   };
+  const { t } = useTranslation();
 
   // Remplit automatiquement les champs obligatoires s'ils sont vides
   const autofillMissingFields = () => {
@@ -47,7 +47,7 @@ const Step5Alignement = ({ formData, setFormData }) => {
   return (
     <>
       <h3 className="text-xl font-medium text-gray-800 mb-8">
-        Informations Alignement
+      {t('alignment.informations_alignement')}
       </h3>
 
       <div className="space-y-6">
@@ -61,7 +61,7 @@ const Step5Alignement = ({ formData, setFormData }) => {
         ].map((field) => (
           <div key={field}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {field.replace(/_/g, " ")} *
+             {t(`alignment.${field}`)} *
             </label>
             <input
               type="text"
@@ -71,14 +71,14 @@ const Step5Alignement = ({ formData, setFormData }) => {
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
             {!formData[field] && (
-              <p className="text-red-500 text-xs mt-1">Ce champ est requis</p>
+              <p className="text-red-500 text-xs mt-1">{t('alignment.champ_requis')}</p>
             )}
           </div>
         ))}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            ID Terrain (optionnel)
+           {t('alignment.id_terrain')}
           </label>
           <input
             type="number"
@@ -94,7 +94,7 @@ const Step5Alignement = ({ formData, setFormData }) => {
           onClick={handleCheckStep5}
           className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md"
         >
-          Vérifier Step 5 et Autofill
+         {t('alignment.verifier_step5')}
         </button>
       </div>
     </>
