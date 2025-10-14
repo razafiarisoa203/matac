@@ -9,12 +9,10 @@ import ResetPassword from "../pages/Authentification/ResetPassword";
 
 // Pages principales
 import HomePage from "../pages/HomePage";
-import Dashboard from "../pages/DashboardClient";
 import DashboardClient from "../pages/DashboardClient";
 
 // Alignement
 import Allignement from "../pages/Allignement";
-//import AlignmentList from "../pages/AlignmentList";
 import AlignmentDetailsPage from "../pages/AlignmentDetailsPage";
 import AlignmentListPage from "../pages/AlignmentListPage";
 
@@ -30,9 +28,10 @@ import RoleManagement from "../pages/RoleAppli/Role";
 
 // 🔒 Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { user } = useSelector((state) => ({
-    user: state.user?.user || null,
-  }));
+  // On récupère l'utilisateur depuis Redux ou localStorage
+  const reduxUser = useSelector((state) => state.user?.user);
+  const localUser = JSON.parse(localStorage.getItem("user"));
+  const user = reduxUser || localUser;
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -52,21 +51,22 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/permis" element={<PermisConstruction />} />
-        {/* Protected */}
+
+        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
-            //<ProtectedRoute>
-              <Dashboard />
-           // </ProtectedRoute>
+            <ProtectedRoute>
+              <DashboardClient />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/dashboard-client"
           element={
-           // <ProtectedRoute>
+            <ProtectedRoute>
               <DashboardClient />
-            //</ProtectedRoute>
+            </ProtectedRoute>
           }
         />
 
@@ -74,35 +74,19 @@ function App() {
         <Route
           path="/alignement"
           element={
-          //  <ProtectedRoute>
-              <Allignement />
-          //  </ProtectedRoute>
-          }
-        />
-        {/* <Route
-          path="/liste-demandes"
-          element={
             <ProtectedRoute>
-              <AlignmentTable />
+              <Allignement />
             </ProtectedRoute>
           }
-        /> */}
+        />
         <Route
           path="/alignement-list"
           element={
-            //<ProtectedRoute>
+            <ProtectedRoute>
               <AlignmentListPage />
-            //</ProtectedRoute>
+            </ProtectedRoute>
           }
         />
-        {/*<Route
-          path="/alignements"
-          element={
-           // <ProtectedRoute>
-              <AlignmentList />
-           // </ProtectedRoute>
-          }
-        />*/}
         <Route
           path="/alignment-details/:id"
           element={
@@ -116,43 +100,48 @@ function App() {
         <Route
           path="/permis-list"
           element={
-            //<ProtectedRoute>
+            <ProtectedRoute>
               <ConstructionListPage />
-            //</ProtectedRoute>
+            </ProtectedRoute>
           }
         />
-        <Route path="/permis-details/:id" element={
-          <ProtectedRoute>
-            <ConstructionDetailsPage />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/permis-details/:id"
+          element={
+            <ProtectedRoute>
+              <ConstructionDetailsPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin */}
         <Route
           path="/admin-dashboard"
           element={
-            // <ProtectedRoute>
-            // </ProtectedRoute>
+            <ProtectedRoute>
               <AdminDashboard />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/users"
           element={
-            //<ProtectedRoute>
+            <ProtectedRoute>
               <UsersList />
-            //</ProtectedRoute>
+            </ProtectedRoute>
           }
         />
-    
         <Route
           path="/RoleManagement"
           element={
-            //<ProtectedRoute>
+            <ProtectedRoute>
               <RoleManagement />
-            //</ProtectedRoute>
+            </ProtectedRoute>
           }
         />
+
+        {/* Catch-all pour les routes inconnues */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

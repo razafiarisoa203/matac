@@ -27,7 +27,7 @@ const AlignmentTable = ({
   formatDate,
   navigate
 }) => {
-  
+
   const handleViewDetails = (request) => {
     if (request.type === 'alignment') {
       navigate(`/alignment-details/${request.id}`);
@@ -151,7 +151,7 @@ const AlignmentTable = ({
                       {formatDate(request.date)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 lg:px-6">
-                      {getStatusBadge(request.status || 'en_attente')}
+                      {getStatusBadge(request.status || '')}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap lg:px-6">
                       -

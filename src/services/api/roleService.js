@@ -263,43 +263,43 @@ export const roleService = {
     },
 
 
-  async updateRole(roleId, data) {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) throw new Error('Non authentifié');
-      const response = await axiosConfig.put(`serviceauth/roles/${roleId}`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async deleteRole(roleId) {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) throw new Error('Non authentifié');
-      const response = await axiosConfig.delete(`serviceauth/roles/${roleId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async getRole(roleId) {
+    async updateRole(roleId, data) {
       try {
-          const token = localStorage.getItem('authToken');
-          if (!token) throw new Error('Non authentifié');
-
-          const response = await axiosConfig.get(`serviceauth/roles/${roleId}`);
-          return response.data;
+        const token = localStorage.getItem('access_token');
+        if (!token) throw new Error('Non authentifié');
+        const response = await axiosConfig.put(`serviceauth/roles/${roleId}`, data, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
       } catch (error) {
-          throw error;
+        throw error;
       }
-  },
+    },
+
+    async deleteRole(roleId) {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) throw new Error('Non authentifié');
+        const response = await axiosConfig.delete(`serviceauth/roles/${roleId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    async getRole(roleId) {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token) throw new Error('Non authentifié');
+
+            const response = await axiosConfig.get(`serviceauth/roles/${roleId}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
 
   /**
  * Assigner des rôles à un utilisateur

@@ -12,7 +12,7 @@ const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubm
         </button>
       )}
       <div className="flex gap-4">
-        {currentStep < 6 && (
+        {currentStep < 5 && (
           <button
             onClick={handleNext}
             disabled={isNextDisabled}
@@ -25,7 +25,7 @@ const NavigationButtons = ({ currentStep, setCurrentStep, handleNext, handleSubm
             Suivant
           </button>
         )}
-        {currentStep === 6 && (
+        {currentStep === 5 && (
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
