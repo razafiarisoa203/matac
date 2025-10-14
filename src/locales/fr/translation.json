@@ -458,7 +458,10 @@
     "identite_terrain": "Identité du Terrain",
     "informations_alignment": "Informations Alignement",
     "documents_administratifs": "Documents administratifs",
-   "adresse": "Adresse"
+   "adresse": "Adresse",
+   "verifier_terrain": "Vérifier le terrain",
+   "plan_officiel": "Plan officiel",
+    "certificat_situation_juridique": "Certificat de situation juridique"
 
 
    

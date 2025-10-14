@@ -433,8 +433,8 @@
     "num_karatany": "Laharana Karatany (tsy voatery)",
     "fokotany": "Fokontany (tsy voatery)",
     "identite_terrain": "Mombamomba ny tany",
-   "longitude": "Longitude",
-    "latitude": "Latitude",
+   "longitude": "Longitida",
+    "latitude": "Latitida",
     "verifier_step5": "Hamarino ny Dingana faha-5 Feno ho azy",
     "id_terrain": "Mari-pamantarana[id] Tany (tsy voatery)",
     "informations_alignement": "Mombamomba ny Fandrindrana",
@@ -459,7 +459,11 @@
     "coordonnees_proprietaire": "Mombamomba ny tompony",
     
     "informations_alignment": "Mahakasika ny fanamarihana",
-     "adresse": "Adiresy"
+     "adresse": "Adiresy",
+
+  "verifier_terrain": "Hamarino ny tany",
+   "plan_officiel": "Drafitra ofisialy",
+   "certificat_situation_juridique": "Taratasy manaporofo ny sata ara-dalàna"
     
        
 

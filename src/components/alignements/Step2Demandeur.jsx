@@ -40,6 +40,7 @@ const Step2Demandeur = ({
       resetFormData();
     }
   };
+ 
 
   const renderFormContent = () => {
     return (
@@ -269,7 +270,6 @@ const Step2Demandeur = ({
               )}
             </div>
             <div>
-              <h3 className="text-lg font-semibold">{t('alignment.identite_demandeur_mandataire')}</h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-4">{t('alignment.civilite')}</label>
                 <div className="flex flex-col space-y-3 bg-transparent">

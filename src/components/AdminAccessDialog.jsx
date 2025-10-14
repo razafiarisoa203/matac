@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { loginService } from '../services/api';
+import { authService } from '../services/api/authService';
 import { useNavigate } from 'react-router-dom';
-import { getUserRolesForApp } from '../services/roleService';
+import { roleService } from '../services/api/roleService';
 
 const APP_ID = import.meta.env.VITE_APP_ID || 'matac-frontend';
 
@@ -28,7 +28,7 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
         // Sinon, récupérer via l'API
         if (token) {
           console.log('AdminAccessDialog - Récupération des rôles via API');
-          const roles = await getUserRolesForApp(APP_ID, token);
+          const roles = await roleService.getUserRolesForApp(APP_ID, token);
           console.log('AdminAccessDialog - Rôles récupérés via API:', roles);
           setUserRoles(roles);
         }
@@ -59,10 +59,25 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
     onClose();
   };
 
+  const handleCommuneAccess = () => {
+    const token = authService.getToken();
+    if (!token) {
+      alert("Aucun token trouvé. Veuillez vous reconnecter.");
+      return;
+    }
+  
+    // URL du projet B en local
+    const projectBUrl = "http://localhost:5174";
+  
+    // Ouvrir le projet B avec le token
+    window.open(`${projectBUrl}/auth?token=${token}`, "_blank");
+  };
+  
+
   const handleContinueAsClient = () => {
     console.log('AdminAccessDialog - Continuation en tant que client');
-    if (loginService.stayAsClient) {
-      loginService.stayAsClient();
+    if (authService.stayAsClient) {
+      authService.stayAsClient();
     }
     // Rediriger vers le tableau de bord client
     navigate('/dashboard');
@@ -72,7 +87,7 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
   const hasAdminRole = React.useMemo(() => {
     const isAdmin = Array.isArray(userRoles) && userRoles.some(role => {
       const roleValue = role.role_slug || role.role_name || role;
-      const result = ['admin', 'Admin', 'ADMIN', 'super_admin', 'SUPER_ADMIN', 'administrator', 'ADMINISTRATOR']
+      const result = ['Admin', 'Client', 'Service-technique', 'Maire', 'Chef-Service-technique', 'Super-Admin']
         .some(adminRole => String(roleValue).toLowerCase() === adminRole.toLowerCase());
       return result;
     });
@@ -123,8 +138,8 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+    <div className="fixed inset-0 bg-black bg-black flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl">
         <div className="flex items-center mb-4">
           <div className="flex-shrink-0">
             <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
@@ -164,6 +179,12 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             Interface d'administration
+          </button>
+          <button
+            onClick={handleCommuneAccess}
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Interface commune
           </button>
         </div>
       </div>

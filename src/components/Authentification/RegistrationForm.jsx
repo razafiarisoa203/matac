@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { authService } from "../../services/api/authService";
+import { uploadService } from "../../services/api/uploadService";
+import Select from "react-select";
+import { useNavigate } from "react-router-dom";
+
 
 export default function RegistrationForm({ cin }) {
   const { t } = useTranslation();
+  const navigate = useNavigate(); 
 
   const [formData, setFormData] = useState({
     citizen_name: "",
@@ -16,6 +20,7 @@ export default function RegistrationForm({ cin }) {
     citizen_national_card_location: "",
     citizen_national_card_date: "",
     fokotany_id: "",
+    fokotany_formatted_id: "", // Add this field to the initial state
     user_pseudo: "",
     user_email: "",
     user_password: "",
@@ -23,7 +28,7 @@ export default function RegistrationForm({ cin }) {
     municipality_id: "",
   });
   
-  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [communes, setCommunes] = useState([]);
   const [fokotanys, setFokotanys] = useState([]);
@@ -31,10 +36,12 @@ export default function RegistrationForm({ cin }) {
     communes: false,
     fokotanys: false
   });
-  const [apiError, setApiError] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [apiError,setApiError] = useState(null);
 
   const validateCinField = (cinValue) => {
     const numericValue = (cinValue || '').replace(/\D/g, '');
+    apiError
     
     if (numericValue.length > 0 && numericValue.length !== 12) {
       setErrors(prev => ({
@@ -53,9 +60,9 @@ export default function RegistrationForm({ cin }) {
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    
+
     // Clear any previous API errors
-    if (apiError) setApiError(null);
+    setApiError(null);
     
     // For CIN field - only allow digits and exactly 12 characters
     if (name === 'citizen_national_card_number') {
@@ -78,6 +85,26 @@ export default function RegistrationForm({ cin }) {
       return;
     }
     
+    if (name === "user_phone") {
+      // Supprimer tout ce qui n'est pas un chiffre et limiter à 10 caractères
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+    
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numericValue,
+      }));
+    
+      // Clear error si présent
+      if (errors[name]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+    
+      return; // ne pas continuer avec les autres validations
+    }
+
     // Si la commune change, on réinitialise le fokotany sélectionné
     if (name === 'municipality_id' && value) {
       // Ici, 'value' DOIT être le formatted_id de la commune
@@ -222,6 +249,7 @@ export default function RegistrationForm({ cin }) {
       "citizen_national_card_location",
       "citizen_national_card_date",
       "fokotany_id", // Ce champ est toujours utilisé dans le state du formulaire
+      "fokotany_formatted_id", // Add this field to required validation
       "user_pseudo",
       "user_email",
       "user_password",
@@ -274,7 +302,21 @@ export default function RegistrationForm({ cin }) {
 
     try {
       setIsSubmitting(true);
-      // Construire la payload pour authService.registerUser (le service gère le FormData multipart)
+      // 1) Upload photo first if exists
+      let photoUrl = null;
+      if (formData.citizen_photo && formData.citizen_photo instanceof File) {
+        try {
+          console.log('Téléchargement de la photo...');
+          const uploadResponse = await uploadService.uploadCitizenPhoto(formData.citizen_photo);
+          photoUrl = uploadResponse.url || uploadResponse.fileUrl || uploadResponse.data?.url;
+          console.log('Photo téléchargée avec succès:', photoUrl);
+        } catch (uploadError) {
+          console.error('Erreur lors du téléchargement de la photo:', uploadError);
+          // Continue with registration even if photo upload fails
+        }
+      }
+
+      // Construire la payload pour authService.registerUser
       const userData = {
         user_pseudo: formData.user_pseudo,
         user_email: formData.user_email,
@@ -289,15 +331,27 @@ export default function RegistrationForm({ cin }) {
           citizen_national_card_location: formData.citizen_national_card_location,
           citizen_national_card_date: formData.citizen_national_card_date,
           fokotany_formatted_id: formData.fokotany_formatted_id || formData.fokotany_id,
-          citizen_photo: formData.citizen_photo,
+          // Send the photo file directly if available, otherwise don't include the field
+          ...(formData.citizen_photo && { citizen_photo: formData.citizen_photo }),
         },
       };
 
-      // 1) Inscription (citoyen + utilisateur) via endpoint multipart
+      // 2) Inscription (citoyen + utilisateur) via endpoint multipart
       const registerRes = await authService.registerUser(userData);
       console.log('Inscription réussie:', registerRes);
 
-      // 2) Auto-login
+      // 2) Assigner le rôle par défaut (client = 27)
+      try {
+        if (registerRes.user_id) {
+          await authService.assignUserRoles(registerRes.user_id, [27]);
+          console.log('Rôle client assigné avec succès');
+        }
+      } catch (roleError) {
+        console.warn('Erreur lors de l\'assignation du rôle:', roleError?.message || roleError);
+        // Ne pas bloquer le processus d'inscription si l'assignation du rôle échoue
+      }
+
+      // 3) Auto-login
       try {
         await authService.login(formData.user_email, formData.user_password);
         console.log('Connexion automatique réussie');
@@ -306,6 +360,11 @@ export default function RegistrationForm({ cin }) {
       }
 
       alert(t('registrationForm.successMessage'));
+
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
       // Réinitialiser le formulaire après succès
       setFormData({
         citizen_name: "",
@@ -316,6 +375,7 @@ export default function RegistrationForm({ cin }) {
         citizen_national_card_location: "",
         citizen_national_card_date: "",
         fokotany_id: "",
+        fokotany_formatted_id: "", // Add this field to the reset
         user_pseudo: "",
         user_email: "",
         user_password: "",
@@ -334,11 +394,16 @@ export default function RegistrationForm({ cin }) {
       setIsSubmitting(false);
       
       // Afficher un message d'erreur plus détaillé
-      const errorMessage = error.response?.data?.message || 
-                         error.message || 
+      const errorMessage = error.response?.data?.message ||
+                         error.message ||
                          t('registrationForm.errors.registrationFailed');
-      
-      alert(`Échec de l'inscription: ${errorMessage}`);
+
+      // Vérifier si c'est une erreur de conflit (utilisateur existant)
+      if (errorMessage.includes("existe déjà") || errorMessage.includes("already exists")) {
+        alert(`⚠️ ${errorMessage}\n\nSi vous avez déjà un compte, veuillez vous connecter à la place.`);
+      } else {
+        alert(`❌ Échec de l'inscription: ${errorMessage}`);
+      }
     }
   };
 
@@ -456,6 +521,7 @@ export default function RegistrationForm({ cin }) {
                   name="citizen_national_card_date"
                   value={formData.citizen_national_card_date}
                   onChange={handleInputChange}
+                  max={new Date().toISOString().split("T")[0]}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.citizen_national_card_date ? "border-red-500" : "border-gray-300"
                   }`}
@@ -510,106 +576,103 @@ export default function RegistrationForm({ cin }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('registrationForm.fields.municipality')} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="municipality_id"
-                  value={formData.municipality_id}
-                  onChange={handleInputChange}
-                  disabled={isLoading.communes}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.municipality_id ? 'border-red-500' : 'border-gray-300'
-                  } ${isLoading.communes ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                  placeholder="Commune"
-                >
-                  <option value="">
-                    {isLoading.communes 
-                      ? t('registrationForm.loading') 
-                      : t('registrationForm.selectPlaceholder')}
-                  </option>
-                  {communes.map((commune) => {
-                    const communeId = commune.formatted_id || commune.commune_id;
-                    const communeName = commune.name || commune.nom || `Commune ${communeId}`;
-                    
-                    return (
-                      <option value={communeId} key={communeId}>
-                        {communeName}
-                      </option>
-                    );
-                  })}
-                </select>
-                {errors.municipality_id && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.municipality_id}
-                  </p>
-                )}
-              </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    {t("registrationForm.fields.municipality")}{" "}
+    <span className="text-red-500">*</span>
+  </label>
 
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('registrationForm.fields.fokotany')} <span className="text-red-500">*</span>
-                  </label>
-                  {isLoading.fokotanys && (
-                    <span className="text-xs text-gray-500 inline-flex items-center">
-                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Chargement...
-                    </span>
-                  )}
-                </div>
-                <select
-                  name="fokotany_id"
-                  value={formData.fokotany_id}
-                  onChange={handleInputChange}
-                  disabled={!formData.municipality_id || isLoading.fokotanys}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.fokotany_id ? 'border-red-500' : 'border-gray-300'
-                  } ${!formData.municipality_id || isLoading.fokotanys ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                >
-                  <option value="">
-                    {!formData.municipality_id 
-                      ? t('registrationForm.selectCommuneFirst')
-                      : isLoading.fokotanys 
-                        ? t('registrationForm.loadingFokotanys')
-                        : apiError
-                          ? t('registrationForm.errorLoadingFokotanys')
-                          : t('registrationForm.selectFokotany')}
-                  </option>
-                  {fokotanys.length > 0 ? (
-                    fokotanys.map((fokotany, index) => {
-                    const fokotanyId = fokotany.formatted_id || fokotany.fokotany_id || fokotany.id;
-                    const fokotanyName = fokotany.name || fokotany.nom || `Fokotany ${fokotanyId}`;
-                    
-                    return (
-                      <option 
-                        key={`${fokotanyId}-${index}`} 
-                        value={fokotanyId}
-                      >
-                        {fokotanyName}
-                      </option>
-                    );
-                  })
-                  ) : (
-                    formData.municipality_id && !isLoading.fokotanys && !apiError && (
-                      <option value="" disabled>{t('registrationForm.noFokotanyAvailable')}</option>
-                    )
-                  )}
-                </select>
-                {apiError && !isLoading.fokotanys && (
-                  <p className="text-yellow-600 text-xs mt-1">
-                    {apiError}
-                  </p>
-                )}
-                {errors.fokotany_id && !apiError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.fokotany_id}
-                  </p>
-                )}
-              </div>
+  <Select
+    name="municipality_id"
+    value={
+      communes
+        .map((c) => ({
+          value: c.formatted_id || c.commune_id,
+          label: c.name || c.nom || `Commune ${c.formatted_id}`,
+        }))
+        .find((opt) => opt.value === formData.municipality_id) || null
+    }
+    onChange={(selectedOption) =>
+      handleInputChange({
+        target: {
+          name: "municipality_id",
+          value: selectedOption?.value || "",
+        },
+      })
+    }
+    options={communes.map((c) => ({
+      value: c.formatted_id || c.commune_id,
+      label: c.name || c.nom || `Commune ${c.formatted_id}`,
+    }))}
+    isLoading={isLoading.communes}
+    isDisabled={isLoading.communes}
+    placeholder={
+      isLoading.communes
+        ? t("registrationForm.loading")
+        : t("registrationForm.selectPlaceholder")
+    }
+    className="react-select-container"
+    classNamePrefix="react-select"
+    filterOption={(option, inputValue) =>
+      option.label
+        .toLowerCase()
+        .startsWith(inputValue.toLowerCase()) // 🔍 Recherche par initiale
+    }
+  />
+
+  {errors.municipality_id && (
+    <p className="text-red-500 text-xs mt-1">{errors.municipality_id}</p>
+  )}
+</div>
+
+
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    {t("registrationForm.fields.fokotany")}{" "}
+    <span className="text-red-500">*</span>
+  </label>
+
+  <Select
+    name="fokotany_id"
+    value={
+      fokotanys
+        .map((f) => ({
+          value: f.formatted_id || f.fokotany_id || f.id,
+          label: f.name || f.nom || `Fokotany ${f.id}`,
+        }))
+        .find((opt) => opt.value === formData.fokotany_id) || null
+    }
+    onChange={(selectedOption) =>
+      handleInputChange({
+        target: {
+          name: "fokotany_id",
+          value: selectedOption?.value || "",
+        },
+      })
+    }
+    options={fokotanys.map((f) => ({
+      value: f.formatted_id || f.fokotany_id || f.id,
+      label: f.name || f.nom || `Fokotany ${f.id}`,
+    }))}
+    isLoading={isLoading.fokotanys}
+    isDisabled={!formData.municipality_id || isLoading.fokotanys}
+    placeholder={
+      !formData.municipality_id
+        ? t("registrationForm.selectCommuneFirst")
+        : t("registrationForm.selectFokotany")
+    }
+    className="react-select-container"
+    classNamePrefix="react-select"
+    filterOption={(option, inputValue) =>
+      option.label
+        .toLowerCase()
+        .startsWith(inputValue.toLowerCase()) // 🔍 Recherche alphabétique
+    }
+  />
+
+  {errors.fokotany_id && (
+    <p className="text-red-500 text-xs mt-1">{errors.fokotany_id}</p>
+  )}
+</div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -673,20 +736,38 @@ export default function RegistrationForm({ cin }) {
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('registrationForm.fields.password')} <span className="text-red-500">{t('registrationForm.requiredField')}</span>
                 </label>
-                <input
-                  type="password"
-                  name="user_password"
-                  value={formData.user_password}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                    errors.user_password ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder={t('registrationForm.fields.password')}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="user_password"
+                    value={formData.user_password}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                      errors.user_password ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder={t('registrationForm.fields.password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? (
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {errors.user_password && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.user_password}
@@ -703,6 +784,9 @@ export default function RegistrationForm({ cin }) {
                   name="user_phone"
                   value={formData.user_phone}
                   onChange={handleInputChange}
+                  maxLength={10}
+                  inputMode="numeric"
+                 pattern="[0-9]*"
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.user_phone ? "border-red-500" : "border-gray-300"
                   }`}

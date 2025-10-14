@@ -36,20 +36,25 @@ const AlignmentListPage = () => {
     }
   };
 
-  // Fonction pour récupérer les alignements
-  const fetchAlignments = async () => {
-    try {
-      setLoading(true);
-      const response = await alignmentService.getAllAlignment();
-      setAlignments(response.data || response);
-      console.log("Alignements récupérés :", response.data || response);
-    } catch (err) {
-      setError(err.message || "Erreur de récupération des alignements");
-      console.error("Erreur:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+   // Fonction pour récupérer les alignements par ID utilisateur connecter
+
+  const userData = JSON.parse(localStorage.getItem('user'));
+    const id_citizen = userData?.id_citizen;
+  
+    const mandataireId = id_citizen; // ou un ID si tu veux filtrer
+  
+    const fetchAlignments = async () => {
+      try {
+        setLoading(true);
+        const data = await alignmentService.getAllAlignment(mandataireId);
+        setAlignments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setError(err.message || "Erreur de récupération des alignements");
+        console.error("Erreur:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   // Charger les alignements au montage du composant
   useEffect(() => {

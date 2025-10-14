@@ -3,24 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useFormData } from "../hooks/useFormData";
 import { useFileUpload } from "../hooks/useFileUpload";
 import { alignmentService } from "../services/api/alignmentService";
-import { validateTerrainForm } from "../utils/validation";
 import Sidebar from "../components/alignements/Sidebar";
 import Step1Implantation from "../components/alignements/Step1Implantation";
 import Step2Demandeur from "../components/alignements/Step2Demandeur";
 import Step3Proprietaire from "../components/alignements/Step3Proprietaire";
 import Step4Terrain from "../components/alignements/Step4Terrain";
-import Step5Alignement from "../components/alignements/Step5Alignement";
 import Step6Documents from "../components/alignements/Step6Documents";
 import NavigationButtons from "../components/alignements/NavigationButtons";
 import MessageDisplay from "../components/alignements/MessageDisplay";
 import { citoyenService } from "../services/api/citoyenService";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from 'react-i18next';
-//import { notificationService } from "../services/api/notificationService";
-
 
 function Allignement() {
   
- const { t } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
   const [statutTerrain, setStatutTerrain] = useState("titre");
@@ -28,12 +25,12 @@ function Allignement() {
   const [statutProprietaire, setStatutProprietaire] = useState("particulier");
   const [qualiteDemandeur, setQualiteDemandeur] = useState("proprietaire");
   const { formData, setFormData, handleInputChange, updateFormData } = useFormData({
-    id_mandataire: "",
-    status_proprietaire: "",
-    qualite_demandeur: "",
-    nif: "",
-    id_cert_sit_jur: "",
-    id_plan_off: "",
+    id_mandataire: null,
+    status_proprietaire: null,
+    qualite_demandeur: null,
+    nif: null,
+    id_cert_sit_jur: null,
+    id_plan_off: null,
     id_terrain: null,
     num_titre: "",
     indice: "",
@@ -80,24 +77,20 @@ function Allignement() {
   const [communes, setCommunes] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState("");
   const [selectedCommune, setSelectedCommune] = useState("");
-
   const [isLoadingUserData, setIsLoadingUserData] = useState(false);
   const [userDataLoaded, setUserDataLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
-
+  //Recuperation information citoyen dans localStorage
   const userData = JSON.parse(localStorage.getItem('user'));
   const id_citizen = userData?.id_citizen;
-
-  const loadUserData = useCallback(async () => { 
+  setRegions
+  setCommunes
+  const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
     setIsLoadingUserData(true);
-
     try {
-      // 🔹 On récupère les infos citoyen depuis le serviceCitoyen
       const citizenData = await citoyenService.getCitizenData(id_citizen);
-
-      // 🔹 On formate les données
       const formattedData = {
         civilite: 'M',
         nom: citizenData?.citizen_lastname || '',
@@ -185,13 +178,7 @@ function Allignement() {
         setCurrentStep(currentStep + 1);
         break;
       case 4:
-        if (validateTerrainForm(formData, statutTerrain)) setCurrentStep(currentStep + 1);
-        break;
       case 5:
-        // Ici, on ne fait **aucune validation**, Step5Alignement gère ça
-        setCurrentStep(currentStep + 1);
-        break;
-      case 6:
         setCurrentStep(currentStep + 1);
         break;
       default:
@@ -268,18 +255,17 @@ function Allignement() {
 
       // Préparer uniquement les champs que l'alignement attend
       const alignmentData = {
-        id_mandataire: formData.id_mandataire || "TEMP_USER_ID",
-        status_proprietaire: formData.status_proprietaire || "particulier",
-        qualite_demandeur: formData.qualite_demandeur || "proprietaire",
-        nif: formData.nif || "000000000000",
-        id_cert_sit_jur: formData.id_cert_sit_jur || `CERT-${Date.now()}`,
-        id_plan_off: formData.id_plan_off || `PLAN-${Date.now()}`,
-        id_terrain: Number(formData.id_terrain), //  terrainResult
-
+        id_mandataire: id_citizen || " ",
+        status_proprietaire: statutProprietaire || " ",
+        qualite_demandeur: qualiteDemandeur || " ",
+        nif: "000000000000",
+        id_cert_sit_jur: `CERT-${Date.now()}`,//{certjurd, `CERT-${Date.now()}.pdf`}
+        id_plan_off: `PLAN-${Date.now()}`,
+        id_terrain: formData.id_terrain, //  terrainResult
         // Champs obligatoires côté DB
-        nom_demandaire: formData.nom_demandaire || "Nom",
-        prenom_mandataire: formData.prenom_mandataire || "Prénom",
-        cin_passeport_demandaire: formData.cin_passeport_demandaire || "000000000000"
+        nom_demandaire: formData.nom || " ",
+        prenom_mandataire: formData.prenoms || " ",
+        cin_passeport_demandaire: formData.cinPasseport || " "
       };
 
 
@@ -291,13 +277,8 @@ function Allignement() {
 
       // Envoyer au backend
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
+      console.log("alignementCreate:",alignmentResult)
       setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès !");
-      /*await notificationService.sendNotif({
-        to: "hasinaedmondine55@gmail.com",
-        subject: "Nouvelle soumission de formulaire",
-        body: "Un utilisateur a soumis le formulaire avec succès.",
-        filePath: "" 
-      });*/
       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 
       setTimeout(() => {
@@ -333,16 +314,19 @@ function Allignement() {
     { number: 2, title:  t('alignment.renseignement_demandeur'), active: false },
     { number: 3, title: t('alignment.coordonnees_proprietaire'), active: false },
     { number: 4, title: t('alignment.identite_terrain'), active: false },
-    { number: 5, title: t('alignment.informations_alignment'), active: false },
-    { number: 6, title: t('alignment.documents_administratifs'), active: false },
+   
+    { number: 5, title: t('alignment.documents_administratifs'), active: false },
   ];
 
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-white rounded-lg shadow-sm">
-          <button onClick={() => navigate('/dashboard')} className="bg-gray-300 absolute top-5 text-gray-800 font-semibold left-5 px-4 py-2 rounded-md hover:bg-gray-400">
-           {t('alignment.retour')}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="bg-gray-300 absolute top-5 left-5 p-2 rounded-md hover:bg-gray-400 transition"
+          >
+            <ArrowLeft className="text-gray-800 w-5 h-5" />
           </button>
           <div className="text-center py-8 border-transparent">
             <h2 className="text-2xl font-light text-gray-800 font-semibold">
@@ -386,13 +370,11 @@ function Allignement() {
                     statutTerrain={statutTerrain}
                     setStatutTerrain={setStatutTerrain}
                     formData={formData}
+                    setFormData={setFormData}
                     handleInputChange={handleInputChange}
                   />
                 )}
                 {currentStep === 5 && (
-                  <Step5Alignement formData={formData} handleInputChange={handleInputChange} setFormData={setFormData} />
-                )}
-                {currentStep === 6 && (
                   <Step6Documents
                     files={files}
                     isUploadingFile={isUploadingFile}
