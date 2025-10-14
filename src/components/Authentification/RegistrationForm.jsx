@@ -5,6 +5,7 @@ import { authService } from "../../services/api/authService";
 import { uploadService } from "../../services/api/uploadService";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 
 export default function RegistrationForm({ cin }) {
@@ -312,6 +313,7 @@ export default function RegistrationForm({ cin }) {
           console.log('Photo téléchargée avec succès:', photoUrl);
         } catch (uploadError) {
           console.error('Erreur lors du téléchargement de la photo:', uploadError);
+          toast.error("Erreur lors du téléchargement de la photo");
           // Continue with registration even if photo upload fails
         }
       }
@@ -359,7 +361,7 @@ export default function RegistrationForm({ cin }) {
         console.warn('Connexion automatique échouée:', loginErr?.message || loginErr);
       }
 
-      alert(t('registrationForm.successMessage'));
+      toast.success(t('registrationForm.successMessage'));
 
 
       setTimeout(() => {
@@ -402,7 +404,7 @@ export default function RegistrationForm({ cin }) {
       if (errorMessage.includes("existe déjà") || errorMessage.includes("already exists")) {
         alert(`⚠️ ${errorMessage}\n\nSi vous avez déjà un compte, veuillez vous connecter à la place.`);
       } else {
-        alert(`❌ Échec de l'inscription: ${errorMessage}`);
+        toast.error("Échec de l'inscription");
       }
     }
   };
