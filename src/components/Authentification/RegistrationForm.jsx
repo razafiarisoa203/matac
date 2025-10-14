@@ -41,6 +41,7 @@ export default function RegistrationForm({ cin }) {
 
   const validateCinField = (cinValue) => {
     const numericValue = (cinValue || '').replace(/\D/g, '');
+    apiError
     
     if (numericValue.length > 0 && numericValue.length !== 12) {
       setErrors(prev => ({
