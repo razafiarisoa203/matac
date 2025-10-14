@@ -6,7 +6,7 @@ import HeaderDashboard from '../components/HeaderDashboard';
 import StatsCards from '../components/StatsCards';
 import SearchBar from '../components/SearchBar';
 import AlignmentTable from '../components/AlignmentTable';
-import { alignmentService } from '../services/api/alignmentService'; 
+import { alignmentService } from '../services/api/alignmentService';
 import { constructionService } from '../services/api/constructionSercvice';
 
 const DashboardClient = () => {
@@ -38,21 +38,28 @@ const DashboardClient = () => {
     }
   };
 
-  // Fonction pour récupérer les alignements
+  // Fonction pour récupérer les alignements par ID utilisateur connecter
+  const userData = JSON.parse(localStorage.getItem('user'));
+  const id_citizen = userData?.id_citizen;
+
+  const mandataireId = id_citizen; // ou un ID si tu veux filtrer
+
   const fetchAlignments = async () => {
     try {
       setLoading(true);
-      const response = await alignmentService.getAllAlignment();
-      setAlignments(response.data);
-      console.log("Tous les alignements récupérés :", response.data);
+      const data = await alignmentService.getAllAlignment(mandataireId);
+      setAlignments(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Erreur de récupération des alignements");
+      console.error("Erreur:", err);
+    } finally {
+      setLoading(false);
     }
   };
- // Fonction pour récupérer les construction
+  // Fonction pour récupérer les construction
   const fetchConstructions = async () => {
     try {
-      const response = await constructionService.getConstruction();
+      const response = await constructionService.getConstruction(mandataireId);
       setConstructions(response.data || response);
       console.log("Toutes les constructions récupérées :", response.data || response);
     } catch (err) {
@@ -60,7 +67,7 @@ const DashboardClient = () => {
       setError(prev => prev + " | Erreur constructions: " + err.message);
     }
   };
- 
+
   // Charger les données au montage du composant
   useEffect(() => {
     const loadData = async () => {
@@ -127,7 +134,7 @@ const DashboardClient = () => {
       nom: alignment.qualite_demandeur || 'N/A',
       adresse: alignment.terrain?.adresse || 'N/A',
       date: alignment.created_at,
-      status: alignment.status || 'en_attente',
+      status: alignment.status || 'Reçus',
       data: alignment
     }));
 
@@ -142,7 +149,7 @@ const DashboardClient = () => {
       data: construction
     }));
 
-    return [...alignmentRequests, ...constructionRequests].sort((a, b) => 
+    return [...alignmentRequests, ...constructionRequests].sort((a, b) =>
       new Date(b.date) - new Date(a.date)
     );
   };
@@ -154,10 +161,10 @@ const DashboardClient = () => {
       request.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.adresse?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const normalizedStatus = request.status || 'en_attente';
     const matchesStatus = selectedStatus === 'tous' || normalizedStatus === selectedStatus;
-    
+
     const matchesType = selectedType === 'tous' || request.type === selectedType;
 
     return matchesSearch && matchesStatus && matchesType;

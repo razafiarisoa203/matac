@@ -216,7 +216,6 @@ const Step2Demandeur = ({
               )}
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Identité du demandeur Mandataire,</h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-4">Civilité *</label>
                 <div className="flex flex-col space-y-3 bg-transparent">
