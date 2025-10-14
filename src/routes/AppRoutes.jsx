@@ -23,7 +23,7 @@ import ConstructionDetailsPage from '../pages/ConstructionDetailsPage';
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
-import UsersList from "../pages/Admin/UsersList";
+import UsersList from "../components/Users/UsersList";
 import RoleManagement from "../pages/RoleAppli/Role";
 
 // 🔒 Protected Route Component
