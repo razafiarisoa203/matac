@@ -1,11 +1,9 @@
-// components/PermisConst/PermisHeader.jsx
 import React from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import PersonIcon from '@mui/icons-material/Person';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import { Navigate } from 'react-router-dom';
 
 const iconMap = {
     person: <PersonIcon fontSize="small" />,
@@ -15,7 +13,7 @@ const iconMap = {
     check: <CheckIcon fontSize="small" />,
 };
 
-const PermisHeader = ({ steps, currentStep, getStepProgress, onReset }) => (
+const PermisHeader = ({ steps, currentStep, getStepProgress, onReset, onStepChange }) => (
     <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="text-center mb-8">
@@ -41,28 +39,35 @@ const PermisHeader = ({ steps, currentStep, getStepProgress, onReset }) => (
             </div>
             <div className="flex justify-between">
                 {steps.map((step, idx) => (
-                    <div key={step.id} className="flex flex-col items-center">
+                    <button
+                        key={step.id}
+                        onClick={() => onStepChange && onStepChange(step.id)}
+                        className="flex flex-col items-center focus:outline-none"
+                    >
                         <div className="flex items-center">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all ${currentStep === step.id
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all cursor-pointer ${
+                                currentStep === step.id
                                     ? 'bg-[#269745] text-white shadow-lg'
                                     : currentStep > step.id
-                                        ? 'bg-green-100 text-[#269745]'
-                                        : 'bg-gray-200 text-gray-500'
-                                }`}>
+                                        ? 'bg-green-100 text-[#269745] hover:bg-green-200'
+                                        : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                            }`}>
                                 {currentStep > step.id
                                     ? iconMap.check
                                     : iconMap[step.icon] || <PersonIcon fontSize="small" />}
                             </div>
                             {idx < steps.length - 1 && (
-                                <div className={`w-16 h-1 ml-4 ${currentStep > step.id ? 'bg-[#269745]' : 'bg-gray-200'
-                                    }`} />
+                                <div className={`w-16 h-1 ml-4 ${
+                                    currentStep > step.id ? 'bg-[#269745]' : 'bg-gray-200'
+                                }`} />
                             )}
                         </div>
-                        <span className={`mt-3 text-sm font-medium text-center max-w-24 ${currentStep === step.id ? 'text-[#269745]' : 'text-gray-600'
-                            }`}>
-                            {step.title}
+                        <span className={`mt-3 text-sm font-medium text-center max-w-24 ${
+                            currentStep === step.id ? 'text-[#269745]' : 'text-gray-600'
+                        }`}>
+                           
                         </span>
-                    </div>
+                    </button>
                 ))}
             </div>
         </div>
