@@ -65,7 +65,7 @@ const PermisHeader = ({ steps, currentStep, getStepProgress, onReset, onStepChan
                         <span className={`mt-3 text-sm font-medium text-center max-w-24 ${
                             currentStep === step.id ? 'text-[#269745]' : 'text-gray-600'
                         }`}>
-                           
+                            {step.title}
                         </span>
                     </button>
                 ))}
