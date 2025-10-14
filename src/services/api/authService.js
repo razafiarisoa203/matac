@@ -230,32 +230,6 @@ export const authService = {
 
     registerUser: async (userData) => {
         try {
-          const formData = new FormData();
-      
-          // === Citizen fields ===
-          formData.append("citizen_name", userData.citizen_name || "");
-          formData.append("citizen_lastname", userData.citizen_lastname || "");
-          formData.append("citizen_national_card_number", userData.citizen_national_card_number || "");
-          formData.append("citizen_adress", userData.citizen_adress || "");
-          formData.append("citizen_national_card_location", userData.citizen_national_card_location || "");
-          formData.append("citizen_national_card_date", userData.citizen_national_card_date || "");
-          formData.append("fokotany_formatted_id", userData.fokotany_formatted_id || "");
-          formData.append("municipality_id", userData.municipality_id || "");
-      
-          // === User fields ===
-          formData.append("user_pseudo", userData.user_pseudo || "");
-          formData.append("user_email", userData.user_email || "");
-          formData.append("user_password", userData.user_password || "");
-          formData.append("user_phone", userData.user_phone || "");
-      
-          // === Photo (optionnelle) ===
-          if (userData.citizen_photo && userData.citizen_photo instanceof File) {
-            formData.append("citizen_photo", userData.citizen_photo);
-          }
-      
-        // === Roles: envoyer un rôle par champ FormData ===
-        const roleIds = userData.role_ids || [27]; // rôle par défaut
-        roleIds.forEach(id => formData.append("role_ids", id)); 
             const formData = new FormData();
             
             // Ajouter les champs utilisateur
@@ -307,35 +281,8 @@ export const authService = {
                 },
             });
 
-          // Debug: log des paires FormData
-          console.log("---- registerUser formData entries ----");
-          for (const pair of formData.entries()) {
-            console.log(pair[0], pair[1]);
-          }
-      
-          const response = await axiosConfig.post(
-            "/serviceauth/users/register-with-citizen-short-role",
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
-          );
-      
-          console.log("✅ registerUser response:", response?.data);
-          return response.data;
-      
+            return response.data;
         } catch (error) {
-          const axiosData = error?.response?.data;
-          console.error("❌ Erreur lors de l'inscription:", {
-            message: axiosData?.message || error.message,
-            status: error?.response?.status,
-            data: axiosData,
-          });
-      
-          throw {
-            message: axiosData?.message || "Erreur lors de l'inscription",
-            statusCode: error?.response?.status,
-            data: axiosData,
-            original: error
-          };
             console.error("Erreur lors de l'inscription:", error);
             console.error("Données reçues:", error.response?.data);
             
@@ -386,7 +333,5 @@ export const authService = {
             console.error("Error in forgot password process:", error);
             throw error;
         }
-      },
-                };
-
-export default authService;
+    },
+};
