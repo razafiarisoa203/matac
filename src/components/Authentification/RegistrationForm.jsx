@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
 import { useTranslation } from "react-i18next";
 import { authService } from "../../services/api/authService";
-import { uploadService } from "../../services/api/uploadService";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
