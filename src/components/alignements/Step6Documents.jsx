@@ -1,17 +1,18 @@
 import { Trash2 } from "lucide-react";
-
+import { useTranslation } from 'react-i18next';
 const Step6Documents = ({ files, isUploadingFile, fileInputRef, handleFileUpload, setFiles }) => {
   const handleRemoveFile = (index) => {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
+  const { t } = useTranslation();
   
 
   return (
     <>
-      <h3 className="text-xl font-medium text-gray-800 mb-8">Documents administratifs</h3>
+      <h3 className="text-xl font-medium text-gray-800 mb-8">{t('alignment.documents_administratifs')}</h3>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <label className="w-64 text-sm font-medium text-gray-700">Pièce justifiant le droit de propriété</label>
+          <label className="w-64 text-sm font-medium text-gray-700">{t('alignment.piece_justifiant_droit_propriete')}</label>
           <input
             type="file"
             ref={fileInputRef}
@@ -30,12 +31,12 @@ const Step6Documents = ({ files, isUploadingFile, fileInputRef, handleFileUpload
             onClick={() => fileInputRef.current.click()}
             disabled={isUploadingFile}
           >
-            {isUploadingFile ? "Chargement..." : "Ajouter un fichier"}
+            {isUploadingFile ? t('alignment.chargement') :  t('alignment.ajouter_fichier')}
           </button>
           
         </div>
         <div className="flex items-center gap-3">
-          <label className="w-64 text-sm font-medium text-gray-700"> plan official </label>
+          <label className="w-64 text-sm font-medium text-gray-700"> {t('alignment.plan_officiel')} </label>
           <input
             type="file"
             ref={fileInputRef}
@@ -55,12 +56,12 @@ const Step6Documents = ({ files, isUploadingFile, fileInputRef, handleFileUpload
             onClick={() => fileInputRef.current.click()}
             disabled={isUploadingFile}
           >
-            {isUploadingFile ? "Chargement..." : "Ajouter un fichier"}
+            {isUploadingFile ? t('alignment.chargement') :  t('alignment.ajouter_fichier')}
           </button>
           
         </div>
         <div className="flex items-center gap-3">
-          <label className="w-64 text-sm font-medium text-gray-700"> certificat situation juridique</label>
+          <label className="w-64 text-sm font-medium text-gray-700"> {t('alignment.certificat_situation_juridique')}</label>
           <input
             type="file"
             ref={fileInputRef}
@@ -80,7 +81,7 @@ const Step6Documents = ({ files, isUploadingFile, fileInputRef, handleFileUpload
             onClick={() => fileInputRef.current.click()}
             disabled={isUploadingFile}
           >
-            {isUploadingFile ? "Chargement..." : "Ajouter un fichier"}
+            {isUploadingFile ? t('alignment.chargement') :  t('alignment.ajouter_fichier')}
           </button>
           
         </div>
@@ -100,7 +101,7 @@ const Step6Documents = ({ files, isUploadingFile, fileInputRef, handleFileUpload
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-500">Aucun fichier sélectionné.</p>
+            <p className="text-sm text-gray-500">{t('alignment.aucun_fichier_selectionne')}</p>
           )}
         </div>
       </div>
