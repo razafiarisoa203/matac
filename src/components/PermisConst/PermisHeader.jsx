@@ -45,7 +45,7 @@ const PermisHeader = ({ steps, currentStep, getStepProgress, onReset, onStepChan
                         onClick={() => onStepChange && onStepChange(step.id)}
                         className="flex flex-col items-center focus:outline-none"
                     >
-                        <div className="flex items-center">
+                        <div className="flex items-center flex-col">
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all cursor-pointer ${
                                 currentStep === step.id
                                     ? 'bg-[#269745] text-white shadow-lg'
@@ -57,11 +57,6 @@ const PermisHeader = ({ steps, currentStep, getStepProgress, onReset, onStepChan
                                     ? iconMap.check
                                     : iconMap[step.icon] || <PersonIcon fontSize="small" />}
                             </div>
-                            {idx < steps.length - 1 && (
-                                <div className={`w-16 h-1 ml-4 ${
-                                    currentStep > step.id ? 'bg-[#269745]' : 'bg-gray-200'
-                                }`} />
-                            )}
                             <span className={`mt-2 text-xs sm:text-sm font-medium text-center ${currentStep === step.id ? 'text-[#269745]' : 'text-gray-600'}`}>
                                 {step.title}
                             </span>
