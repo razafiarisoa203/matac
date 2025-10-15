@@ -1,4 +1,3 @@
-// components/PermisConstruction.jsx
 import React, { useEffect, useState } from 'react';
 import { steps } from './PermisConst/stepsConfig';
 import { sidebarItems } from './PermisConst/sidebarItemsConfig';
@@ -94,6 +93,13 @@ const PermisConstruction = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: null }));
   };
+
+  const handleStepChange = (stepId) => {
+  // Valider si on peut naviguer vers cette étape
+  // Vous pouvez ajouter une logique de validation ici si nécessaire
+  setCurrentStep(stepId);
+  setCurrentSection(1); // Toujours revenir à la première section de l'étape
+};
 
   // Fonction pour gérer l'upload de fichiers par type
   const handleFileUpload = async (fileType, file) => {
@@ -633,6 +639,7 @@ const PermisConstruction = () => {
         currentStep={currentStep}
         getStepProgress={getStepProgress}
         onReset={clearAllData}
+        onStepChange={handleStepChange}
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -682,7 +689,7 @@ const PermisConstruction = () => {
                   className={`flex items-center gap-2 px-6 py-2 text-white rounded-lg transition-colors ${
                     (isSubmitting || isUploadingFile)
                       ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-[#269745] hover:bg-green-600'
+                      : 'bg-green-500 hover:bg-green-600'
                   }`}
                 >
                   {(isSubmitting || isUploadingFile) ? (
