@@ -57,7 +57,6 @@ const ConstructionListPage = () => {
       setConstructions(constructions);
       console.log("Constructions récupérées :", constructions);
     } catch (err) {
-      setError(err.message || "Erreur de récupération des permis de construction");
       console.error("Erreur:", err);
     } finally {
       setLoading(false);
