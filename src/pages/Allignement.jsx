@@ -15,6 +15,7 @@ import { citoyenService } from "../services/api/citoyenService";
 import { ArrowLeft } from "lucide-react";
 import { authService } from "../services/api/authService";
 import { dataURLtoFile } from "../utils/uploadUtils";
+import { useTranslation } from "react-i18next";
 
 function Allignement() {
   
@@ -317,7 +318,6 @@ function Allignement() {
     { number: 2, title:  t('alignment.renseignement_demandeur'), active: false },
     { number: 3, title: t('alignment.coordonnees_proprietaire'), active: false },
     { number: 4, title: t('alignment.identite_terrain'), active: false },
-   
     { number: 5, title: t('alignment.documents_administratifs'), active: false },
   ];
 

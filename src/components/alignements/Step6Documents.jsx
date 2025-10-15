@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Step6Documents = ({ files, setFiles, handleFileUpload }) => {
   const fileRefs = {
@@ -13,6 +14,8 @@ const Step6Documents = ({ files, setFiles, handleFileUpload }) => {
     plan: false,
     certificat: false,
   });
+
+    const { t } = useTranslation();
 
   const handleChangeFile = async (e, type) => {
     const file = e.target.files[0];
@@ -89,7 +92,7 @@ const Step6Documents = ({ files, setFiles, handleFileUpload }) => {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-500">{t('alignment.aucun_fichier_selectionne')}</p>
+            <p className="text-sm text-gray-500">{t('alignment.aucun_fichier_selectionne')}</p> 
           )}
         </div>
       </div>
