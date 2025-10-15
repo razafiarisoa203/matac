@@ -2,18 +2,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Menu, User } from "lucide-react";
 import { citoyenService } from "../services/api/citoyenService";
+import { authService } from "../services/api/authService";
 
 export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClick }) {
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   const [citizenData, setCitizenData] = useState({
-    nom: "Utilisateur",
-    email: "email@exemple.com",
+    nom: "",
+    email: "",
     telephone: "",
   });
   const profileRef = useRef(null);
 
-  // 🔹 Récupérer les données utilisateur depuis localStorage
-  const userData = JSON.parse(localStorage.getItem("user"));
+  const userData = authService.getUserInfo();
   const id_citizen = userData?.id_citizen || null;
 
   // 🔹 Charger les données citoyen (dans useEffect)

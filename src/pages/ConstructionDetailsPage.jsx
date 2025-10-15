@@ -1,18 +1,15 @@
-// src/pages/ConstructionDetailsPage.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
 import { constructionService } from '../services/api/constructionSercvice';
 import { 
-  Eye, 
   Download, 
   AlertCircle, 
   Building, 
   ChevronRight, 
   ArrowLeft,
   User,
-  MapPin,
   Clock,
   FileText,
   Home,
@@ -21,6 +18,30 @@ import {
   Layers
 } from 'lucide-react';
 import { Link } from "react-router-dom";
+
+// Mapping des valeurs techniques (base de données) vers les libellés affichés
+const STATUS_MAPPING = {
+  'reçu': 'Reçus',
+  'en_cours_traitement': 'En cours de traitement',
+  'en_cours_traitement_srat': 'En cours de traitement SRAT',
+  'en_attente_validation': 'En attente de validation',
+  'en_attente_regularisation': 'En attente de régularisation',
+  'traite': 'Traité',
+  'rejete': 'Rejeté'
+};
+
+// Fonction utilitaire pour vérifier si le statut est "Traité"
+const isTraite = (statusValue) => {
+  return STATUS_MAPPING[statusValue] === 'Traité';
+};
+
+// Composant pour afficher une ligne d'information
+const InfoRow = ({ label, value }) => (
+  <div className="flex justify-between items-start py-2 border-b border-gray-200 last:border-b-0">
+    <span className="text-sm font-medium text-gray-600">{label}</span>
+    <span className="text-sm text-gray-900 text-right max-w-xs">{value || 'N/A'}</span>
+  </div>
+);
 
 const ConstructionDetailsPage = () => {
   const { id } = useParams();
@@ -63,7 +84,6 @@ const ConstructionDetailsPage = () => {
     }
   };
 
-  // Charger les détails au montage du composant
   useEffect(() => {
     if (id) {
       fetchConstructionDetails();
@@ -72,13 +92,19 @@ const ConstructionDetailsPage = () => {
 
   // Fonction pour obtenir le badge de statut
   const getStatusBadge = (status) => {
+    const displayStatus = STATUS_MAPPING[status] || status;
+
     const statusConfig = {
-      'en_cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
-      'approuve': { color: 'bg-green-100 text-green-800 border-green-200', text: 'Approuvé' },
-      'rejete': { color: 'bg-red-100 text-red-800 border-red-200', text: 'Rejeté' },
-      'en_attente': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente' }
+      'Reçus': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'Reçus' },
+      'En cours de traitement': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours de traitement' },
+      'En cours de traitement SRAT': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours de traitement SRAT' },
+      'En attente de validation': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente de validation' },
+      'En attente de régularisation': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente de régularisation' },
+      'Traité': { color: 'bg-green-100 text-green-800 border-green-200', text: 'Traité' },
+      'Rejeté': { color: 'bg-red-100 text-red-800 border-red-200', text: 'Rejeté' }
     };
-    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: status || 'Inconnu' };
+
+    const config = statusConfig[displayStatus] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: displayStatus || 'Inconnu' };
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${config.color}`}>
         {config.text}
@@ -116,10 +142,8 @@ const ConstructionDetailsPage = () => {
     return 'N/A';
   };
 
-  // Fonction pour générer le PDF
   const generatePDF = () => {
     console.log("Génération du PDF pour le permis:", id);
-    // Implémentation de la génération PDF à faire
     alert(`Génération du PDF pour le permis #${id}`);
   };
 
@@ -127,15 +151,9 @@ const ConstructionDetailsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
-
         {isMobile && isSidebarOpen && (
-          <div
-            onClick={toggleSidebar}
-            className="fixed inset-0 bg-transparent z-30 lg:hidden"
-            style={{ pointerEvents: 'all' }}
-          ></div>
+          <div onClick={toggleSidebar} className="fixed inset-0 bg-transparent z-30 lg:hidden" />
         )}
-
         <div className="flex-1 flex flex-col overflow-hidden">
           <HeaderDashboard toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} isMobile={isMobile} />
           <main className="flex-1 overflow-y-auto p-6">
@@ -157,15 +175,9 @@ const ConstructionDetailsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
-
         {isMobile && isSidebarOpen && (
-          <div
-            onClick={toggleSidebar}
-            className="fixed inset-0 bg-transparent z-30 lg:hidden"
-            style={{ pointerEvents: 'all' }}
-          ></div>
+          <div onClick={toggleSidebar} className="fixed inset-0 bg-transparent z-30 lg:hidden" />
         )}
-
         <div className="flex-1 flex flex-col overflow-hidden">
           <HeaderDashboard toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} isMobile={isMobile} />
           <main className="flex-1 overflow-y-auto p-6">
@@ -197,15 +209,9 @@ const ConstructionDetailsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
-
         {isMobile && isSidebarOpen && (
-          <div
-            onClick={toggleSidebar}
-            className="fixed inset-0 bg-transparent z-30 lg:hidden"
-            style={{ pointerEvents: 'all' }}
-          ></div>
+          <div onClick={toggleSidebar} className="fixed inset-0 bg-transparent z-30 lg:hidden" />
         )}
-
         <div className="flex-1 flex flex-col overflow-hidden">
           <HeaderDashboard toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} isMobile={isMobile} />
           <main className="flex-1 overflow-y-auto p-6">
@@ -235,20 +241,12 @@ const ConstructionDetailsPage = () => {
   return (
     <div className="min-h-screen bg-green-50 flex">
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
-
       {isMobile && isSidebarOpen && (
-        <div
-          onClick={toggleSidebar}
-          className="fixed inset-0 bg-transparent z-30 lg:hidden"
-          style={{ pointerEvents: 'all' }}
-        ></div>
+        <div onClick={toggleSidebar} className="fixed inset-0 bg-transparent z-30 lg:hidden" />
       )}
-
       <div className="lg:ml-65 flex-1 flex flex-col overflow-hidden">
         <HeaderDashboard toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} isMobile={isMobile} />
-
         <main className="flex-1 overflow-y-auto p-0 mt-25">
-          {/* Header avec breadcrumb */}
           <div className="bg-green-50 p-6 mb-8 -mt-6">
             <nav className="flex items-center text-sm text-gray-100 mb-6" aria-label="Breadcrumb">
               <Link to="/" className="text-black">Accueil</Link>
@@ -260,7 +258,6 @@ const ConstructionDetailsPage = () => {
               <span className="text-black">Détails du permis #{construction.id_const}</span>
             </nav>
 
-            {/* En-tête avec informations principales */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 ml-4 mr-4 lg:ml-14 lg:mr-16">
               <div className="flex items-center space-x-4">
                 <button
@@ -274,7 +271,7 @@ const ConstructionDetailsPage = () => {
                     Permis de Construction #{construction.id_const}
                   </h1>
                   <div className="flex items-center space-x-4 mt-2">
-                    {getStatusBadge(construction.status || 'en_attente')}
+                    {getStatusBadge(construction.statut_construction || '')}
                     <span className="text-sm text-gray-600">
                       Créé le {formatDate(construction.created_at)}
                     </span>
@@ -282,20 +279,22 @@ const ConstructionDetailsPage = () => {
                 </div>
               </div>
               
+              {/* ✅ Bouton PDF affiché UNIQUEMENT si statut = "Traité" */}
               <div className="flex items-center space-x-3 mt-4 lg:mt-0">
-                <button
-                  onClick={generatePDF}
-                  className="inline-flex items-center px-4 py-2 border border-red-600 text-sm font-medium rounded-lg text-red-600 bg-white hover:bg-red-50 hover:text-red-700 transition-colors"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger PDF
-                </button>
+                {isTraite(construction.statut_construction) && (
+                  <button
+                    onClick={generatePDF}
+                    className="inline-flex items-center px-4 py-2 border border-red-600 text-sm font-medium rounded-lg text-red-600 bg-white hover:bg-red-50 hover:text-red-700 transition-colors"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Télécharger PDF
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
           <div className="bg-white -mt-10 pt-8 pb-12">
-            {/* Navigation par onglets */}
             <div className="ml-4 mr-4 lg:ml-20 lg:mr-20 border-b border-gray-200">
               <nav className="-mb-px flex space-x-8">
                 <button
@@ -356,10 +355,7 @@ const ConstructionDetailsPage = () => {
               </nav>
             </div>
 
-            {/* Contenu des onglets */}
             <div className="ml-4 mr-4 lg:ml-20 lg:mr-20 mt-8">
-              
-              {/* Onglet Informations Générales */}
               {activeTab === 'general' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="bg-gray-50 rounded-lg p-6">
@@ -370,12 +366,11 @@ const ConstructionDetailsPage = () => {
                     <div className="space-y-4">
                       <InfoRow label="Nature des travaux" value={construction.natureTravaux} />
                       <InfoRow label="Type d'affectation" value={construction.typeAffectation} />
-                      <InfoRow label="Référence alignement" value={construction.referenceAlignement} />
+                      <InfoRow label="Référence alignement" value={construction.referenceAlignement}/>
                       <InfoRow label="Zone d'implantation" value={construction.zoneImplantation} />
                       <InfoRow label="Matériaux utilisés" value={construction.materiaux} />
                     </div>
                   </div>
-
                   <div className="bg-gray-50 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <Clock className="w-5 h-5 mr-2 text-lime-600" />
@@ -391,7 +386,6 @@ const ConstructionDetailsPage = () => {
                 </div>
               )}
 
-              {/* Onglet Propriétaire */}
               {activeTab === 'proprietaire' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="bg-gray-50 rounded-lg p-6">
@@ -408,7 +402,6 @@ const ConstructionDetailsPage = () => {
                       <InfoRow label="Adresse" value={construction.adresseProprietaire} />
                     </div>
                   </div>
-
                   <div className="bg-gray-50 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <Wrench className="w-5 h-5 mr-2 text-lime-600" />
@@ -427,7 +420,6 @@ const ConstructionDetailsPage = () => {
                 </div>
               )}
 
-              {/* Onglet Renseignement Architectural */}
               {activeTab === 'architectural' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="bg-gray-50 rounded-lg p-6">
@@ -441,7 +433,6 @@ const ConstructionDetailsPage = () => {
                       <InfoRow label="Hauteur" value={construction.hauteurProjet ? `${formatNumber(construction.hauteurProjet)} m` : 'N/A'} />
                     </div>
                   </div>
-
                   <div className="bg-gray-50 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <Home className="w-5 h-5 mr-2 text-lime-600" />
@@ -455,7 +446,6 @@ const ConstructionDetailsPage = () => {
                 </div>
               )}
 
-              {/* Onglet Renseignement Technique */}
               {activeTab === 'technique' && (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -470,7 +460,6 @@ const ConstructionDetailsPage = () => {
                         <InfoRow label="Surface verte" value={construction.surfaceVerte ? `${formatNumber(construction.surfaceVerte)} m²` : 'N/A'} />
                       </div>
                     </div>
-
                     <div className="bg-gray-50 rounded-lg p-6">
                       <h4 className="font-semibold text-gray-900 mb-4">Distances</h4>
                       <div className="space-y-3">
@@ -480,7 +469,6 @@ const ConstructionDetailsPage = () => {
                         <InfoRow label="Distance limite propriété" value={construction.distanceProjetLimitePropriete ? `${formatNumber(construction.distanceProjetLimitePropriete)} m` : 'N/A'} />
                       </div>
                     </div>
-
                     <div className="bg-gray-50 rounded-lg p-6">
                       <h4 className="font-semibold text-gray-900 mb-4">Équipements Terrain</h4>
                       <div className="space-y-3">
@@ -494,10 +482,8 @@ const ConstructionDetailsPage = () => {
                 </div>
               )}
 
-              {/* Onglet Pièces et Équipements */}
               {activeTab === 'pieces' && (
                 <div className="space-y-8">
-                  {/* Liste des pièces */}
                   {construction.pieces && construction.pieces.length > 0 && (
                     <div className="bg-gray-50 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -533,7 +519,6 @@ const ConstructionDetailsPage = () => {
                     </div>
                   )}
 
-                  {/* Équipements de l'ouvrage */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="bg-gray-50 rounded-lg p-6">
                       <h4 className="font-semibold text-gray-900 mb-4">Équipements</h4>
@@ -546,7 +531,6 @@ const ConstructionDetailsPage = () => {
                         <InfoRow label="Nombre d'escaliers" value={construction.nbrEscalier} />
                       </div>
                     </div>
-
                     <div className="bg-gray-50 rounded-lg p-6">
                       <h4 className="font-semibold text-gray-900 mb-4">Assainissement</h4>
                       <div className="space-y-3">
@@ -568,12 +552,5 @@ const ConstructionDetailsPage = () => {
     </div>
   );
 };
-// Composant pour afficher une ligne d'information
-const InfoRow = ({ label, value }) => (
-  <div className="flex justify-between items-start py-2 border-b border-gray-200 last:border-b-0">
-    <span className="text-sm font-medium text-gray-600">{label}</span>
-    <span className="text-sm text-gray-900 text-right max-w-xs">{value || 'N/A'}</span>
-  </div>
-);
 
 export default ConstructionDetailsPage;

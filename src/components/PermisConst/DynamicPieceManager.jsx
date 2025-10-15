@@ -1,5 +1,3 @@
-// ...existing code...
-import React from "react";
 import InputField from "./InputField";
 import MaterialIcon from "./MaterialIcon";
 

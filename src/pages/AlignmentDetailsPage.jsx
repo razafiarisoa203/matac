@@ -4,12 +4,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
 import { alignmentService } from '../services/api/alignmentService';
-import { 
-  Eye, 
-  Download, 
-  AlertCircle, 
-  MapPin, 
-  ChevronRight, 
+import {
+  Eye,
+  Download,
+  AlertCircle,
+  MapPin,
+  ChevronRight,
   ArrowLeft,
   User,
   FileText,
@@ -19,6 +19,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { Link } from "react-router-dom";
+import { viewJoinFiles } from "../services/api/uploadService";
 
 const AlignmentDetailsPage = () => {
   const { id } = useParams();
@@ -51,8 +52,9 @@ const AlignmentDetailsPage = () => {
     try {
       setLoading(true);
       const response = await alignmentService.getAlignmentById(id);
+      console.log("Alignements: ", response);
       setAlignment(response.data || response);
-      console.log("Détails de l'alignement récupérés :", response.data || response);
+      console.dir(response.id_cert_sit_jur, { depth: null });
     } catch (err) {
       setError(err.message || "Erreur de récupération des détails de l'alignement");
       console.error("Erreur:", err);
@@ -260,7 +262,7 @@ const AlignmentDetailsPage = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 mt-4 lg:mt-0">
                 <button
                   onClick={generatePDF}
@@ -279,44 +281,40 @@ const AlignmentDetailsPage = () => {
               <nav className="-mb-px flex space-x-8">
                 <button
                   onClick={() => setActiveTab('general')}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'general'
-                      ? 'border-lime-500 text-lime-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'general'
+                    ? 'border-lime-500 text-lime-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   <MapPin className="w-4 h-4 inline mr-2" />
                   Informations Générales
                 </button>
                 <button
                   onClick={() => setActiveTab('demandeur')}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'demandeur'
-                      ? 'border-lime-500 text-lime-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'demandeur'
+                    ? 'border-lime-500 text-lime-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   <User className="w-4 h-4 inline mr-2" />
                   Informations du Demandeur
                 </button>
                 <button
                   onClick={() => setActiveTab('terrain')}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'terrain'
-                      ? 'border-lime-500 text-lime-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'terrain'
+                    ? 'border-lime-500 text-lime-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   <Home className="w-4 h-4 inline mr-2" />
                   Informations du Terrain
                 </button>
                 <button
                   onClick={() => setActiveTab('documents')}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'documents'
-                      ? 'border-lime-500 text-lime-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'documents'
+                    ? 'border-lime-500 text-lime-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   <FileText className="w-4 h-4 inline mr-2" />
                   Documents et Références
@@ -326,7 +324,7 @@ const AlignmentDetailsPage = () => {
 
             {/* Contenu des onglets */}
             <div className="ml-4 mr-4 lg:ml-20 lg:mr-20 mt-8">
-              
+
               {/* Onglet Informations Générales */}
               {activeTab === 'general' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -442,8 +440,16 @@ const AlignmentDetailsPage = () => {
                       Références Administratives
                     </h3>
                     <div className="space-y-4">
-                      <InfoRow label="ID Certificat situation juridique" value={alignment.id_cert_sit_jur} />
-                      <InfoRow label="ID Plan officiel" value={alignment.id_plan_off} />
+                      <InfoRow
+                        label="ID Certificat situation juridique"
+                        value={alignment.id_cert_sit_jur ? alignment.id_cert_sit_jur.split('.')[0] : ''}
+                      />
+
+                      <InfoRow
+                        label="ID Plan officiel"
+                        value={alignment.id_plan_off ? alignment.id_plan_off.split('.')[0] : ''}
+                      />
+
                       <InfoRow label="NIF" value={alignment.nif} />
                       <InfoRow label="Numéro carte statistique" value={alignment.num_carte_stat} />
                     </div>
@@ -455,25 +461,50 @@ const AlignmentDetailsPage = () => {
                       Pièces Jointes
                     </h3>
                     <div className="space-y-4">
-                      {alignment.pieces_jointes && alignment.pieces_jointes.length > 0 ? (
+                      {alignment.id_cert_sit_jur || alignment.id_plan_off ? (
                         <div className="space-y-3">
-                          {alignment.pieces_jointes.map((piece, index) => (
-                            <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
-                              <div>
-                                <span className="text-sm font-medium text-gray-900">{piece.nom_fichier}</span>
-                                <p className="text-xs text-gray-500">{piece.type_fichier}</p>
-                              </div>
-                              <button className="text-lime-600 hover:text-lime-700 text-sm font-medium">
+                          {/* Certificat situation juridique */}
+                          {alignment.id_cert_sit_jur && (
+                            <div className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                              <span className="text-sm font-medium text-gray-900">
+                                {alignment.id_cert_sit_jur}
+                              </span>
+                              <a
+                                href={viewJoinFiles({ filePath: alignment.id_cert_sit_jur })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-lime-600 hover:text-lime-700 text-sm font-medium"
+                              >
                                 Télécharger
-                              </button>
+                              </a>
+
                             </div>
-                          ))}
+                          )}
+
+                          {/* Plan officiel */}
+                          {alignment.id_plan_off && (
+                            <div className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                              <span className="text-sm font-medium text-gray-900">
+                                {alignment.id_plan_off}
+                              </span>
+                              <a
+                                href={viewJoinFiles({ filePath: alignment.id_plan_off })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-lime-600 hover:text-lime-700 text-sm font-medium"
+                                download
+                              >
+                                Télécharger
+                              </a>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="text-gray-500 text-sm">Aucune pièce jointe disponible</p>
                       )}
                     </div>
                   </div>
+
                 </div>
               )}
             </div>

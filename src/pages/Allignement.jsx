@@ -13,7 +13,9 @@ import NavigationButtons from "../components/alignements/NavigationButtons";
 import MessageDisplay from "../components/alignements/MessageDisplay";
 import { citoyenService } from "../services/api/citoyenService";
 import { ArrowLeft } from "lucide-react";
-import { useTranslation } from 'react-i18next';
+import { authService } from "../services/api/authService";
+import { dataURLtoFile } from "../utils/uploadUtils";
+import { useTranslation } from "react-i18next";
 
 function Allignement() {
   
@@ -82,7 +84,7 @@ function Allignement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   //Recuperation information citoyen dans localStorage
-  const userData = JSON.parse(localStorage.getItem('user'));
+  const userData = authService.getUserInfo();
   const id_citizen = userData?.id_citizen;
   setRegions
   setCommunes
@@ -194,6 +196,7 @@ function Allignement() {
   const handleFileUpload = async (file) => {
     try {
       const result = await uploadFile(file);
+      console.log(result);
       setSubmitMessage("Fichier uploadé avec succès!");
       setTimeout(() => setSubmitMessage(""), 3000);
       return result;
@@ -253,16 +256,18 @@ function Allignement() {
         return;
       }
 
-      // Préparer uniquement les champs que l'alignement attend
+      const certFile = files.find(f => f.type === "certificat");
+      const planFile = files.find(f => f.type === "plan");
+
       const alignmentData = {
         id_mandataire: id_citizen || " ",
         status_proprietaire: statutProprietaire || " ",
         qualite_demandeur: qualiteDemandeur || " ",
         nif: "000000000000",
-        id_cert_sit_jur: `CERT-${Date.now()}`,//{certjurd, `CERT-${Date.now()}.pdf`}
-        id_plan_off: `PLAN-${Date.now()}`,
-        id_terrain: formData.id_terrain, //  terrainResult
-        // Champs obligatoires côté DB
+        // envoyer juste l'id ou le nom généré
+        id_cert_sit_jur: certFile ? certFile.name : null,
+        id_plan_off: planFile ? planFile.name : null,
+        id_terrain: formData.id_terrain,
         nom_demandaire: formData.nom || " ",
         prenom_mandataire: formData.prenoms || " ",
         cin_passeport_demandaire: formData.cinPasseport || " "
@@ -277,7 +282,6 @@ function Allignement() {
 
       // Envoyer au backend
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
-      console.log("alignementCreate:",alignmentResult)
       setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès !");
       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 
@@ -314,7 +318,6 @@ function Allignement() {
     { number: 2, title:  t('alignment.renseignement_demandeur'), active: false },
     { number: 3, title: t('alignment.coordonnees_proprietaire'), active: false },
     { number: 4, title: t('alignment.identite_terrain'), active: false },
-   
     { number: 5, title: t('alignment.documents_administratifs'), active: false },
   ];
 
