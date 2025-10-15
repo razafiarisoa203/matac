@@ -9,7 +9,7 @@ export const useFormData = (initialData = {}) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  const updateFormData = useCallback((updates) => {
+  const updateFormData = useCallback((updates) => { 
     setFormData((prev) => ({ ...prev, ...updates }));
   }, []);
 

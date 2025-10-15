@@ -27,7 +27,7 @@ const ActionsDashboard = () => {
   const itemsPerPage = 10;
 
   // Données d'exemple étendues
-  const allActions = useMemo(() => [
+  const allAct2ions = useMemo(() => [
     {
       dossier: "56DAL-43023-05-2025",
       proprietaire: "Ruffin",

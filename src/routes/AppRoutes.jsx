@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 // Auth
 import Login from "../pages/Authentification/Login";
@@ -26,13 +25,12 @@ import AdminDashboard from "../pages/Admin/AdminDashboard";
 import UsersList from "../components/Users/UsersList";
 import RoleManagement from "../pages/RoleAppli/Role";
 
-// 🔒 Protected Route Component
+/**
+ * ProtectedRoute vérifie uniquement localStorage (clé "user").
+ * Si la valeur est absente / invalide => redirect vers /login
+ */
 const ProtectedRoute = ({ children }) => {
-  // On récupère l'utilisateur depuis Redux ou localStorage
-  const reduxUser = useSelector((state) => state.user?.user);
-  const localUser = JSON.parse(localStorage.getItem("user"));
-  const user = reduxUser || localUser;
-
+  const user = localStorage.getItem("access_token");
   if (!user) {
     return <Navigate to="/login" replace />;
   }

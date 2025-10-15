@@ -25,6 +25,16 @@ export const alignmentService = {
     }
   },
 
+  getConstructionByReference: async (referenceAlignement) => {
+    try {
+      const response = await axiosConfig.get(`/servicealignement/alignment/by-reference/${referenceAlignement}`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur lors de la récupération de la construction :', error);
+      throw error;
+    }
+  },
+
   // Création d’un alignement
   createAlignment: async (donneAlignment) => {
     try {

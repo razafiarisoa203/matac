@@ -1,38 +1,38 @@
 import { useState, useRef } from 'react';
 import { uploadFile as uploadFileService } from '../services/api/uploadService';
+import { dataURLtoFile } from '../utils/uploadUtils';
 
-// Hook personnalisé pour gérer l'upload de fichiers
 export const useFileUpload = () => {
-  const [files, setFiles] = useState([]);
-  const [uploadedPieceJointes, setUploadedPieceJointes] = useState([]);
+  const [files, setFiles] = useState([]); // liste des fichiers { type, name, dataURL }
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(selectedFiles);
+  // Ajouter un fichier unique par type
+  const handleFileChange = (file, type) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataURL = e.target.result;
+      const name = `${type.toUpperCase()}-${Date.now()}.${file.name.split('.').pop()}`;
+
+      setFiles(prev => {
+        // supprimer l'ancien fichier du même type
+        const filtered = prev.filter(f => f.type !== type);
+        return [...filtered, { type, name, dataURL }];
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const uploadFile = async (file) => {
     setIsUploadingFile(true);
-    
     try {
-      const result = await uploadFileService(file);
-      
-      // Ajouter le fichier à la liste avec les informations d'upload
-      const fileWithUploadInfo = {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        uploaded: true,
-        url: result.url || URL.createObjectURL(file),
-        filename: result.filename || file.name,
-        uploadResult: result
-      };
-      
-      setFiles(prev => [...prev, fileWithUploadInfo]);
-      setUploadedPieceJointes(prev => [...prev, result]);
-      return fileWithUploadInfo;
+      // Convertir dataURL en File si besoin
+      let fileToUpload = file;
+      if (file.dataURL) {
+        fileToUpload = dataURLtoFile(file.dataURL, file.name);
+      }
+      const result = await uploadFileService(fileToUpload);
+      return result;
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
       throw error;
@@ -41,30 +41,20 @@ export const useFileUpload = () => {
     }
   };
 
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFileByType = (type) => {
+    setFiles(prev => prev.filter(f => f.type !== type));
   };
 
-  const removeUploadedFile = (index) => {
-    setUploadedPieceJointes(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const clearFiles = () => {
-    setFiles([]);
-    setUploadedPieceJointes([]);
-  };
+  const clearFiles = () => setFiles([]);
 
   return {
     files,
-    uploadedPieceJointes,
     isUploadingFile,
     fileInputRef,
     handleFileChange,
     uploadFile,
-    removeFile,
-    removeUploadedFile,
+    removeFileByType,
     clearFiles,
-    setFiles,
-    setUploadedPieceJointes
+    setFiles
   };
 };
