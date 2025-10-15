@@ -18,7 +18,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 const PermisConstruction = () => {
-  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [currentSection, setCurrentSection] = useState(1);
   const [formData, setFormData] = useState({});
@@ -86,7 +85,7 @@ const PermisConstruction = () => {
       pieces,
       lastSaved: new Date().toISOString()
     };
-
+    
     try {
       localStorage.setItem('permis_construction_data', JSON.stringify(dataToSave));
     } catch (error) {
@@ -100,11 +99,18 @@ const PermisConstruction = () => {
     setErrors(prev => ({ ...prev, [name]: null }));
   };
 
+  const handleStepChange = (stepId) => {
+  // Valider si on peut naviguer vers cette étape
+  // Vous pouvez ajouter une logique de validation ici si nécessaire
+  setCurrentStep(stepId);
+  setCurrentSection(1); // Toujours revenir à la première section de l'étape
+};
+
   // Fonction pour gérer l'upload de fichiers par type
   const handleFileUpload = async (fileType, file) => {
     try {
       const uploadedFile = await uploadFile(file);
-
+      
       // Stocker le fichier uploadé dans l'état correspondant
       setUploadedFiles(prev => ({
         ...prev,
@@ -183,27 +189,27 @@ const PermisConstruction = () => {
   // Fonction pour valider les pièces (OPTIONNEL)
   const validatePieces = (pieces) => {
     const errors = {};
-
+    
     pieces.forEach((piece, index) => {
       // Seulement valider si la pièce a des données
       const hasData = piece.destination || piece.niveau || piece.surface;
-
+      
       if (hasData) {
         if (!piece.destination || piece.destination.trim() === '') {
           errors[`pieces.${index}.destination`] = 'La destination est requise';
         }
-
+        
         if (!piece.niveau || piece.niveau === '') {
           errors[`pieces.${index}.niveau`] = 'Le niveau est requis';
         }
-
+        
         if (!piece.surface || piece.surface === '') {
           errors[`pieces.${index}.surface`] = 'La surface est requise';
         }
       }
       // Si aucun champ n'est rempli, la pièce est ignorée (optionnelle)
     });
-
+    
     return errors;
   };
 
@@ -246,11 +252,11 @@ const PermisConstruction = () => {
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
-
+      
       // Préparer les données complètes pour l'envoi
       const permisData = {
         formData,
-        pieces: pieces.filter(piece =>
+        pieces: pieces.filter(piece => 
           piece.destination || piece.niveau || piece.surface
         ), // Filtrer les pièces vides
         uploadedFiles: uploadedFiles // Fichiers uploadés par type
@@ -260,9 +266,9 @@ const PermisConstruction = () => {
 
       // Appel au service backend
       const result = await constructionService.submitPermisConstruction(permisData);
-
+      
       console.log('Réponse du serveur:', result);
-
+      
       // Sauvegarde finale avec les informations de soumission
       const finalData = {
         ...permisData,
@@ -286,13 +292,13 @@ const PermisConstruction = () => {
 
     } catch (error) {
       console.error('Erreur lors de la soumission:', error);
-
+      
       let errorMessage = 'Erreur lors de l\'envoi du dossier. ';
-
+      
       if (error.response) {
         const serverError = error.response.data;
         errorMessage += `Code: ${error.response.status}. `;
-
+        
         if (serverError.message) {
           errorMessage += `Message: ${serverError.message}`;
         } else if (serverError.errors) {
@@ -304,7 +310,7 @@ const PermisConstruction = () => {
       } else {
         errorMessage += error.message;
       }
-
+      
       setSubmissionResult({
         success: false,
         message: errorMessage
@@ -372,7 +378,7 @@ const PermisConstruction = () => {
                 {file.label}
                 {file.required && <span className="text-red-500 ml-1">*</span>}
               </label>
-
+              
               <div className="space-y-4">
                 {/* Input file avec gestion d'upload */}
                 <input
@@ -404,7 +410,7 @@ const PermisConstruction = () => {
                             <div>
                               <p className="font-medium text-gray-900">{uploadedFile.name}</p>
                               <p className="text-sm text-gray-500">
-                                {uploadedFile.size ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB` : 'Taille inconnue'} •
+                                {uploadedFile.size ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB` : 'Taille inconnue'} • 
                                 {uploadedFile.uploaded ? ' Uploadé' : ' En attente'}
                               </p>
                               {uploadedFile.filename && (
@@ -677,13 +683,14 @@ const PermisConstruction = () => {
                 <p className="text-gray-600 mb-4">{submissionResult?.message}</p>
               </>
             )}
-
+            
             <button
               onClick={handleConfirmationClose}
-              className={`w-full py-2 px-4 rounded font-medium transition-colors ${submissionResult?.success
-                ? 'bg-green-500 text-white hover:bg-green-600'
-                : 'bg-gray-500 text-white hover:bg-gray-600'
-                }`}
+              className={`w-full py-2 px-4 rounded font-medium transition-colors ${
+                submissionResult?.success 
+                  ? 'bg-green-500 text-white hover:bg-green-600' 
+                  : 'bg-gray-500 text-white hover:bg-gray-600'
+              }`}
             >
               {submissionResult?.success ? 'Fermer' : 'Réessayer'}
             </button>
@@ -695,20 +702,14 @@ const PermisConstruction = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Bouton retour au Dashboard */}
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="bg-gray-300 absolute top-5 left-5 p-2 rounded-md hover:bg-gray-400 transition"
-      >
-        <ArrowLeft className="text-gray-800 w-5 h-5" />
-      </button>
       <PermisHeader
         steps={steps}
         currentStep={currentStep}
         getStepProgress={getStepProgress}
         onReset={clearAllData}
+        onStepChange={handleStepChange}
       />
-
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="flex flex-col lg:flex-row min-h-[600px]">
@@ -720,7 +721,7 @@ const PermisConstruction = () => {
               completedSections={completedSections}
               onSectionChange={setCurrentSection}
             />
-
+            
             <div className="flex-1 p-6 lg:p-8">
               <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -745,7 +746,7 @@ const PermisConstruction = () => {
 
                 <div className="text-center">
                   <span className="text-gray-700 font-medium">
-                    Étape {currentStep} sur {steps.length} •
+                    Étape {currentStep} sur {steps.length} • 
                     Section {currentSection} sur {sidebarItems[currentStep]?.length || 1}
                   </span>
                 </div>
@@ -753,10 +754,11 @@ const PermisConstruction = () => {
                 <button
                   onClick={handleNext}
                   disabled={isSubmitting || isUploadingFile}
-                  className={`flex items-center gap-2 px-6 py-2 text-white rounded-lg transition-colors ${(isSubmitting || isUploadingFile)
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600'
-                    }`}
+                  className={`flex items-center gap-2 px-6 py-2 text-white rounded-lg transition-colors ${
+                    (isSubmitting || isUploadingFile)
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-green-500 hover:bg-green-600'
+                  }`}
                 >
                   {(isSubmitting || isUploadingFile) ? (
                     <>

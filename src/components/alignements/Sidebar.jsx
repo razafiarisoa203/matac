@@ -1,11 +1,13 @@
 import React from 'react';
 
+import { useTranslation } from 'react-i18next';
 const Sidebar = ({ steps, currentStep, handleStepClick }) => {
+   const { t } = useTranslation();
   return (
     <div className="w-80 border-transparent bg-gray-50">
       <div className="p-6">
         <h3 className="text-lg font-medium text-gray-700 mb-6">
-          INFORMATION GENERALE
+          {t('alignment.information')}
         </h3>
         <div className="space-y-4">
           {steps.map((step) => (
@@ -14,7 +16,7 @@ const Sidebar = ({ steps, currentStep, handleStepClick }) => {
               onClick={() => handleStepClick(step.number)}
               className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left ${
                 step.number === currentStep
-                  ? "bg-green-500 text-white"
+                  ? "bg-[#269745]  text-white"
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >

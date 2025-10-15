@@ -89,7 +89,7 @@ const Step6Documents = ({ files, setFiles, handleFileUpload }) => {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-500">Aucun fichier sélectionné.</p>
+            <p className="text-sm text-gray-500">{t('alignment.aucun_fichier_selectionne')}</p>
           )}
         </div>
       </div>

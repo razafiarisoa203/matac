@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { alignmentService } from "../../services/api/alignmentService";
+import { useTranslation } from 'react-i18next';
 
 const Step4Terrain = ({
   statutTerrain,
@@ -7,11 +8,12 @@ const Step4Terrain = ({
   formData,
   setFormData,
   handleInputChange,
-  setIsTerrainValid,
+  
 }) => {
   const [verificationMessage, setVerificationMessage] = useState("");
   const [terrainVisible, setTerrainVisible] = useState(false); // contrôle d'affichage
   const num_titre = formData.num_titre;
+  const { t } = useTranslation();
 
   // Vérification manuelle (seulement pour statut "titre")
   const handleVerifyTerrain = useCallback(async () => {
@@ -81,7 +83,7 @@ const Step4Terrain = ({
   const renderInputField = (field) => (
     <div key={field} className="relative">
       <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-        {field.replace("_", " ")}
+         {t(`alignment.${field}`)}
       </label>
       <input
         type={field === "superficie" ? "number" : "text"}
@@ -95,7 +97,9 @@ const Step4Terrain = ({
 
   return (
     <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-6">Identité du Terrain</h3>
+      <h3 className="text-xl font-bold text-gray-800 mb-6">
+       {t('alignment.identite_terrain')}
+      </h3>
 
       {/*Choix du statut du terrain */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 p-6 bg-white border border-gray-200 rounded-lg">
@@ -116,7 +120,7 @@ const Step4Terrain = ({
               className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
             />
             <span className="ml-3 text-sm text-gray-700 font-medium capitalize">
-              {status.replace("-", " ")}
+              {t(`alignment.${status.replace("-", "_")}`)}
             </span>
           </label>
         ))}
@@ -130,7 +134,7 @@ const Step4Terrain = ({
             onClick={handleVerifyTerrain}
             className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md font-medium h-fit"
           >
-            Vérifier le terrain
+            {t('alignment.verifier_terrain')}
           </button>
         </div>
       )}
@@ -146,14 +150,14 @@ const Step4Terrain = ({
         {statutTerrain === "cadastre" && (
           <>
             {[
-              "numParcelle",
-              "sectionDite",
-              "canton",
-              "adresse",
-              "num_karatany",
-              "superficie",
-              "longitude",
-              "latitude",
+                "num_parcelle",
+                "section_dite",
+                "canton",
+                "adresse",
+                "num_karatany",
+                "superficie",
+                "longitude",
+                "latitude",
             ].map(renderInputField)}
           </>
         )}

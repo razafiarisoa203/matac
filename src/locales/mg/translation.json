@@ -3,7 +3,7 @@
     "login": "Hiditra",
     "logout": "Hivoaka",
     "register": "Hisoratra anarana",
-    "forgotPassword": "Hadino ny tenimiafinao ve?",
+    "forgotPassword": "Hadino ny teny miafina",
     "home": "Fandraisana",
     "dashboard": "Tabilao fanaraha-maso",
     "adminDashboard": "Tabilao fanaraha-masan'ny mpitantana",
@@ -13,10 +13,10 @@
     "back": "Miverina",
     "save": "Tehirizo",
     "cancel": "Ajanona",
-    "delete": "Fafao",
-    "edit": "Ovay",
-    "view": "Jereo",
-    "viewAll": "Jereo ny",
+    "delete": "Fafana",
+    "edit": "Hanova",
+    "view": "Hijery",
+    "viewAll": "Hijery ny",
     "search": "Hikaroka",
     "loading": "Eo am-pandefasana...",
     "error": "Tsy nahomby",
@@ -191,6 +191,7 @@
     "contactInfo": "Famoronana ny kaonty",
     "accountInfo": "Antontan'isa momba ny kaonty",
     "requiredField": "*",
+    "address": "Adiresy",
     "submitButton": "Hisoratra anarana",
     "submitting": "Eo am-pandefasana...",
     "successMessage": "Nahomby ny fisoratana anarana ! Mandeha...",
@@ -338,14 +339,141 @@
     "list": "Lisitry ny fifanitsiana",
     "details": "Antsipirihany momba ny fifanitsiana",
     "new": "Fifanitsiana vaovao",
-    "edit": "Ovay ny fifanitsiana",
-    "delete": "Fafao ny fifanitsiana",
-    "confirmDelete": "Tena te-hamafa ity fifanitsiana ity ve ianao?",
+    "edit": "Hanova ny fanintsiana",
+    "delete": "Hamafa ny fifanitsiana",
+    "confirmDelete": "Tena hamafa ity fifanitsiana ity ve ianao?",
     "reference": "Fanamarihana",
     "status": "Sata",
     "date": "Daty",
     "location": "Toerana",
     "description": "Famaritana",
-    "attachments": "Rakitsoratra"
+    "attachments": "Raki-tsoratra",
+    "boutton":"Hiverina",
+    "suivant":"Manaraka",
+    "soumi":"Handefa",
+    "soumission":"Fandefasana",
+    "information":"FAMPAHAFANTARANA ANKAPOBENY",
+
+    "erreur_chargement_regions": "Misy diso ny fifidianana faritra",
+    "erreur_chargement_communes": "Misy diso ny fifidianana ny kaominina",
+    "choix_implantation": "Safidy momban'ny fametrahana",
+    "specifiez_region": "Farito ny Faritra",
+    "selectionnez_region": "Hisafidy ny Faritra",
+    "specifiez_commune": "Farito ny Kaominina",
+    "selectionnez_commune": "Hisafidy ny Kaominina",
+
+    "chargement_info": "Mametraka ny fampahalalana momba ny mpampiasa…",
+    "info_chargees": "✓ Fampahalalana momba ny mpampiasa efa voapetraka ho azy",
+    "civilite": "Anaram-pitondrana *",
+     "monsieur": "Andriamatoa",
+    "madame": "Ramatoa",
+    "mademoiselle": "Ramatoa kely",
+    "champ_requis": "Tsy maintsy fenoina ity saha ity",
+    "nom": "Anarana *",
+    "prenoms": "Fanampin'anarana *",
+    "cin_passeport": "Karatra maha-olona *",
+    "fonction": " Asa atao",
+    "nationalite": "Firenena *",
+    "identite_demandeur_mandataire": "Mombamomba'ny solontena Hangataka",
+    "mandataire": "Solontena",
+    "age": "Taona",
+    "personne_morale": "Orinasa",
+    "raison_sociale": "Anarana ara-barotra *",
+    "num_carte_stat": "Laharan'ny karatra statistika *",
+    "nif": "Laharana famantarana ara-panjakana",
+    "civilite_representant": "Fomba fanao / Anarana fanao amin'ny solontena *",
+    "nom_representant": "Anaran'ny solontena *",
+    "prenoms_representant": "Fanampin'anaran'ny solontena *",
+    "adresse_representant": "Adiresin'ny solon-tena *",
+   
+    "cin_passeport_representant": "Karatra maha-olona na Pasipaoro an'ny solon-tena *",
+    "statut_proprietaire": "Farito ny sata misy amin'ny tompony *",
+    "particulier": "Olona tsotra",
+    "personne_morale_2": "Orinasa / Olona ara-dalàna",
+    "qualite_demandeur": "Farito ny kalitaon'ny mpangataka ",
+    "non_disponible": "(tsy misy)",
+
+    "entrez_prenoms": "Ampidiro ny fanampin'ny anarana",
+    "numero_cin_ou_passeport": "Laharana CIN na Pasipaoro",
+    "entrez_fonction": "Ampidiro ny asanao (tsy voatery)",
+    "entrez_nationalite": "Ampidiro ny zom-pirenenao",
+    "entrez_nom": "Ampidiro ny anarana",
+    "entrez_les_prenoms": "Ampidiro ny anaran’ny faharoa",
+    "entrez_age": "Ampidiro ny taonanao",
+    "entrez_nif": "Ampidiro ny Laharana famantarana ara-panjakana",
+  
+
+        
+    "entrez_raison_sociale": "Ampidiro ny anaran’ny orinasa",
+    "entrez_numero_carte_statistique": "Ampidiro ny laharan’ny kara statistika",
+    "numero_carte_statistique": "Laharana kara statistika",
+    "entrez_nom_representant": "Ampidiro ny anaran’ny solontena",
+    "entrez_prenoms_representant": "Ampidiro ny fanampin'ny anaran’ny solontena",
+    "entrez_adresse_representant": "Ampidiro ny adiresin’ny solontena",
+     "entrez_cin_passeport_representant": "Ampidiro ny laharan'ny CIN na Pasipaoro an'ny solontena",
+       "renseignement": "Fampahalalana momba ny mpangataka",
+       "proprietaire": "Tompony",
+
+    "coordonnees": "Mombamomba ny tompony",
+    "contact": " Laharan-tarobian'ny tompony *",
+    "email": "Adiresy mailaka *",
+
+
+    "titre": "Titra",
+    "cadastre": "Kadasitra",
+    "certificat_foncier": "Taratasy fanamarinan-tany",
+    "num_titre": "Laharan'ny Titra ",
+    "indice": "Marika famantarana",
+    "nom_proprietaire": "Anaran’ny tompony",
+    "num_parcelle": "Laharana Parselin-tany ",
+    "section_dite": "Fizaràna  ",
+    "canton": "Fokontany ",
+    "superficie": "Haben’ny tany ",
+    "xv_laborde": "Xv Laborde ",
+    "yv_laborde": "Yv Laborde ",
+    "num_karatany": "Laharana Karatany (tsy voatery)",
+    "fokotany": "Fokontany (tsy voatery)",
+    "identite_terrain": "Mombamomba ny tany",
+   "longitude": "Longitida",
+    "latitude": "Latitida",
+    "verifier_step5": "Hamarino ny Dingana faha-5 Feno ho azy",
+    "id_terrain": "Mari-pamantarana[id] Tany (tsy voatery)",
+    "informations_alignement": "Mombamomba ny Fandrindrana",
+
+   "id_mandataire": "Mari-pamantarana[id] mpisolotena",
+    "status_proprietaire": "Sata ny tompony",
+    "qualte_demandeur": "Toetra ny mpangataka",
+    "id_cert_sit_jur": "Taratasy manaporofo ny sata ara-dalàna",
+    "id_plan_off": "Drafitra ofisialy",
+
+     
+    "documents_administratifs": "Taratasy ara-panjakana",
+    "piece_justifiant_droit_propriete": "Antontan-taratasy manaporofo ny zon'ny fananana",
+    "ajouter_fichier": "Ampidiro ny antotataratasy",
+    "aucun_fichier_selectionne": "Tsy misy rakitra voafidy",
+     "chargement": "Miandry...",
+
+    "retour": "Miverina any amin'ny Tabilao fanaraha-maso",
+    "soumettre_dossier": "MANDROTSAKA ANTOTA TARATASY FANAMPIHARANA",
+  
+    "renseignement_demandeur": "Fanazavana momba ny mpangataka",
+    "coordonnees_proprietaire": "Mombamomba ny tompony",
+    
+    "informations_alignment": "Mahakasika ny fanamarihana",
+     "adresse": "Adiresy",
+
+  "verifier_terrain": "Hamarino ny tany",
+   "plan_officiel": "Drafitra ofisialy",
+   "certificat_situation_juridique": "Taratasy manaporofo ny sata ara-dalàna"
+    
+       
+
+
   }
-}
+   
+
+   
+  
+
+  }
+

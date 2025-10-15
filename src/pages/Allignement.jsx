@@ -17,6 +17,8 @@ import { authService } from "../services/api/authService";
 import { dataURLtoFile } from "../utils/uploadUtils";
 
 function Allignement() {
+  
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
   const [statutTerrain, setStatutTerrain] = useState("titre");
@@ -83,7 +85,8 @@ function Allignement() {
   //Recuperation information citoyen dans localStorage
   const userData = authService.getUserInfo();
   const id_citizen = userData?.id_citizen;
-
+  setRegions
+  setCommunes
   const loadUserData = useCallback(async () => {
     if (isLoadingUserData || userDataLoaded) return;
     setIsLoadingUserData(true);
@@ -310,11 +313,12 @@ function Allignement() {
   };
 
   const steps = [
-    { number: 1, title: "Choix d'implantation", active: true },
-    { number: 2, title: "Renseignement du Demandeur", active: false },
-    { number: 3, title: "Coordonnées du propriétaire", active: false },
-    { number: 4, title: "Identité du Terrain", active: false },
-    { number: 5, title: "Documents administratifs", active: false },
+    { number: 1, title:  t('alignment.choix_implantation'), active: true },
+    { number: 2, title:  t('alignment.renseignement_demandeur'), active: false },
+    { number: 3, title: t('alignment.coordonnees_proprietaire'), active: false },
+    { number: 4, title: t('alignment.identite_terrain'), active: false },
+   
+    { number: 5, title: t('alignment.documents_administratifs'), active: false },
   ];
 
   return (
@@ -329,7 +333,7 @@ function Allignement() {
           </button>
           <div className="text-center py-8 border-transparent">
             <h2 className="text-2xl font-light text-gray-800 font-semibold">
-              SOUMETTRE UN DOSSIER D'ALIGNEMENT
+             {t('alignment.soumettre_dossier')}
             </h2>
           </div>
           <div className="flex">

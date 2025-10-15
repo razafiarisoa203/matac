@@ -1,3 +1,5 @@
+
+import { useTranslation } from 'react-i18next';
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
@@ -10,6 +12,7 @@ const Step1Implantation = ({
   setSelectedRegion,
   setSelectedCommune
 }) => {
+  const { t } = useTranslation();
   const [regions, setRegions] = useState(parentRegions);
   const [communes, setCommunes] = useState(parentCommunes);
 
@@ -20,12 +23,12 @@ const Step1Implantation = ({
         const regionsData = await territoireService.getRegions();
         setRegions(regionsData.data || []);
       } catch (error) {
-        console.error("Erreur lors du chargement des régions :", error);
+        console.error(t('alignment.erreur_chargement_regions'), error);
         setRegions([]);
       }
     };
     loadRegions();
-  }, []);
+  }, [t]);
 
   // Charger les communes lorsque la région change
   useEffect(() => {
@@ -39,28 +42,28 @@ const Step1Implantation = ({
         const communesData = await territoireService.getCommunesByRegion(selectedRegion);
         setCommunes(communesData.data || []);
       } catch (error) {
-        console.error("Erreur lors du chargement des communes :", error);
+        console.error(t('alignment.erreur_chargement_communes'), error);
         setCommunes([]);
       }
     };
     loadCommunes();
-  }, [selectedRegion]);
+  }, [selectedRegion, t]);
 
   return (
     <>
       <h3 className="text-xl font-medium text-gray-800 mb-8">
-        Choix d'implantation
+        {t('alignment.choix_implantation')}
       </h3>
       <div className="space-y-6">
         {/* Région */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Spécifiez la Région
+            {t('alignment.choix_implantation')}
           </label>
           <div className="relative">
             {!selectedRegion && (
               <span className="absolute top-3 left-3 text-gray-400 pointer-events-none">
-                Sélectionnez la Région
+                 {t('alignment.selectionnez_region')}
               </span>
             )}
             <select
@@ -85,12 +88,12 @@ const Step1Implantation = ({
         {/* Commune */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Spécifiez la Commune
+            {t('alignment.specifiez_commune')}
           </label>
           <div className="relative">
             {!selectedCommune && (
               <span className="absolute top-3 left-3 text-gray-400 pointer-events-none">
-                Sélectionnez la commune
+                {t('alignment.selectionnez_commune')}
               </span>
             )}
             <select
