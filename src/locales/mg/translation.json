@@ -191,7 +191,7 @@
     "contactInfo": "Famoronana ny kaonty",
     "accountInfo": "Antontan'isa momba ny kaonty",
     "requiredField": "*",
-     "adresse": "Adiresy",
+    "address": "Adiresy",
     "submitButton": "Hisoratra anarana",
     "submitting": "Eo am-pandefasana...",
     "successMessage": "Nahomby ny fisoratana anarana ! Mandeha...",

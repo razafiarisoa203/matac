@@ -204,7 +204,7 @@
       "firstName": "Prénom",
       "lastName": "Nom",
       "cinNumber": "Numéro CIN",
-      "adresse": "Adresse",
+      "address": "Adresse",
       "cinIssuePlace": "Lieu de délivrance de la CIN",
       "cinIssueDate": "Date de délivrance de la CIN",
       "fokotany": "Fokontany",
