@@ -8,6 +8,7 @@ import SearchBar from '../components/SearchBar';
 import AlignmentTable from '../components/AlignmentTable';
 import { alignmentService } from '../services/api/alignmentService';
 import { constructionService } from '../services/api/constructionSercvice';
+import { authService } from "../services/api/authService";
 
 const DashboardClient = () => {
   const [alignments, setAlignments] = useState([]);
@@ -39,10 +40,10 @@ const DashboardClient = () => {
   };
 
   // Fonction pour récupérer les alignements par ID utilisateur connecter
-  const userData = JSON.parse(localStorage.getItem('user'));
+  const userData = authService.getUserInfo();
   const id_citizen = userData?.id_citizen;
 
-  const mandataireId = id_citizen; // ou un ID si tu veux filtrer
+  const mandataireId = id_citizen;
 
   const fetchAlignments = async () => {
     try {
@@ -59,17 +60,17 @@ const DashboardClient = () => {
 
   // Fonction pour récupérer les construction
   const fetchConstructions = async () => {
-      try {
-        // Ton service retourne déjà un tableau de constructions
-        const constructions = await constructionService.getConstructionMandataire(mandataireId);
+    try {
+      // Ton service retourne déjà un tableau de constructions
+      const constructions = await constructionService.getConstructionMandataire(mandataireId);
 
-        setConstructions(constructions);
-        console.log("Constructions récupérées :", constructions);
-      } catch (err) {
-        setError(err.message || "Erreur de récupération des permis de construction");
-        console.error("Erreur:", err);
-      } 
-    };
+      setConstructions(constructions);
+      console.log("Constructions récupérées :", constructions);
+    } catch (err) {
+      setError(err.message || "Erreur de récupération des permis de construction");
+      console.error("Erreur:", err);
+    }
+  };
 
   // Charger les données au montage du composant
   useEffect(() => {

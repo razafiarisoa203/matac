@@ -40,7 +40,7 @@ const Step2Demandeur = ({
                       name="civilite"
                       value={option}
                       checked={formData.civilite === option}
-                      onChange={handleInputChange}
+                      onChange={handleInputChange} 
                       className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
                     />
                     <span className="ml-3 text-sm text-gray-700 font-medium">

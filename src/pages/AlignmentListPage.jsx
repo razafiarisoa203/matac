@@ -7,6 +7,7 @@ import SearchBar from '../components/SearchBar';
 import { alignmentService } from '../services/api/alignmentService';
 import { Eye, FileText, Download, AlertCircle, MapPin, ChevronRight, Plus } from 'lucide-react';
 import { Link } from "react-router-dom";
+import { authService } from "../services/api/authService";
 
 
 const AlignmentListPage = () => {
@@ -36,25 +37,25 @@ const AlignmentListPage = () => {
     }
   };
 
-   // Fonction pour récupérer les alignements par ID utilisateur connecter
+  // Fonction pour récupérer les alignements par ID utilisateur connecter
 
-  const userData = JSON.parse(localStorage.getItem('user'));
-    const id_citizen = userData?.id_citizen;
-  
-    const mandataireId = id_citizen; // ou un ID si tu veux filtrer
-  
-    const fetchAlignments = async () => {
-      try {
-        setLoading(true);
-        const data = await alignmentService.getAllAlignment(mandataireId);
-        setAlignments(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setError(err.message || "Erreur de récupération des alignements");
-        console.error("Erreur:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const userData = authService.getUserInfo();
+  const id_citizen = userData?.id_citizen;
+
+  const mandataireId = id_citizen; // ou un ID si tu veux filtrer
+
+  const fetchAlignments = async () => {
+    try {
+      setLoading(true);
+      const data = await alignmentService.getAllAlignment(mandataireId);
+      setAlignments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message || "Erreur de récupération des alignements");
+      console.error("Erreur:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Charger les alignements au montage du composant
   useEffect(() => {
@@ -93,10 +94,10 @@ const AlignmentListPage = () => {
       alignment.nom_demandaire?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       alignment.cin_passeport_demandaire?.includes(searchTerm) ||
       alignment.terrain?.adresse?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const normalizedStatus = alignment.status || 'en_attente';
     const matchesStatus = selectedStatus === 'tous' || normalizedStatus === selectedStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -182,7 +183,7 @@ const AlignmentListPage = () => {
                   {searchTerm && ` pour "${searchTerm}"`}
                 </p>
               </div>
-              
+
               <div className="flex items-center space-x-4 mt-4 lg:mt-0">
                 <div className="bg-white shadow-sm p-3 rounded-lg flex items-center space-x-2">
                   <MapPin className="w-5 h-5 text-lime-600" />
@@ -195,8 +196,8 @@ const AlignmentListPage = () => {
             <div className="flex flex-wrap gap-4 mb-6 ml-4 mr-4 lg:ml-14 lg:mr-16">
               <div className="flex items-center space-x-4">
                 <span className="text-sm font-medium text-gray-700">Filtrer par statut:</span>
-                <select 
-                  value={selectedStatus} 
+                <select
+                  value={selectedStatus}
                   onChange={(e) => {
                     setSelectedStatus(e.target.value);
                     setCurrentPage(1);
@@ -336,7 +337,7 @@ const AlignmentListPage = () => {
                             {formatDate(alignment.created_at)}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 lg:px-6">
-                            {getStatusBadge(alignment.status || 'en_attente')}
+                            {getStatusBadge(alignment.statut_alignement || "")}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-right lg:px-6">
                             <div className="flex justify-end space-x-2">
@@ -377,7 +378,7 @@ const AlignmentListPage = () => {
                         >
                           Précédent
                         </button>
-                        
+
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                           let pageNum;
                           if (totalPages <= 5) {
@@ -389,22 +390,21 @@ const AlignmentListPage = () => {
                           } else {
                             pageNum = currentPage - 2 + i;
                           }
-                          
+
                           return (
                             <button
                               key={pageNum}
                               onClick={() => setCurrentPage(pageNum)}
-                              className={`px-3 py-1 border rounded-md text-sm ${
-                                currentPage === pageNum
-                                  ? 'bg-lime-500 text-white border-lime-500'
-                                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                              }`}
+                              className={`px-3 py-1 border rounded-md text-sm ${currentPage === pageNum
+                                ? 'bg-lime-500 text-white border-lime-500'
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
                             >
                               {pageNum}
                             </button>
                           );
                         })}
-                        
+
                         <button
                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                           disabled={currentPage === totalPages}

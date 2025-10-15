@@ -1,7 +1,21 @@
+import { authService } from "./authService";
 import axiosConfig from "./axios.config";
 
 //Recuperer tous commune
 export const territoireService = {
+  async getUserCommuneName() {
+    try {
+      const response = await axiosConfig.get(`/serviceterritoire-v2/communes/${authService.getUserCommune()}`);
+      // Gérer différents formats de réponse
+      console.log("Donnée reçu: ", response.data)
+      return response.data;
+    } catch (error) {
+      console.error('[API] Erreur lors de la récupération des communes:', error);
+      throw new Error('Impossible de charger les communes. Veuillez réessayer plus tard.');
+    }
+  },
+
+
   async getCommunes() {
     try {
       const response = await axiosConfig.get(`/serviceterritoire-v2/communes/basic?page=1&limit=100`);
@@ -14,9 +28,9 @@ export const territoireService = {
     }
   },
 
-  async getCommunesByRegion() {
+  async getCommunesByRegion(reg_id) {
     //formatted_id
-    const response = await axiosConfig.get(`/serviceterritoire-v2/communes/basic?page=1&limit=100`);
+    const response = await axiosConfig.get(`/serviceterritoire-v2/communes/region/${(reg_id)}?page=1&limit=100`);
     return response.data;
   },
 
@@ -38,7 +52,7 @@ export const territoireService = {
 
       // Utiliser l'endpoint direct pour récupérer les fokotanys par commune
       const response = await axiosConfig.get(`/serviceterritoire-v2/fokotanys/commune/${communeFormattedId}`);
-      
+
       // Gérer différents formats de réponse
       const data = response.data?.data || response.data;
       const fokotanys = Array.isArray(data) ? data : [];

@@ -13,6 +13,8 @@ import NavigationButtons from "../components/alignements/NavigationButtons";
 import MessageDisplay from "../components/alignements/MessageDisplay";
 import { citoyenService } from "../services/api/citoyenService";
 import { ArrowLeft } from "lucide-react";
+import { authService } from "../services/api/authService";
+import { dataURLtoFile } from "../utils/uploadUtils";
 
 function Allignement() {
   const navigate = useNavigate();
@@ -79,7 +81,7 @@ function Allignement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   //Recuperation information citoyen dans localStorage
-  const userData = JSON.parse(localStorage.getItem('user'));
+  const userData = authService.getUserInfo();
   const id_citizen = userData?.id_citizen;
 
   const loadUserData = useCallback(async () => {
@@ -190,6 +192,7 @@ function Allignement() {
   const handleFileUpload = async (file) => {
     try {
       const result = await uploadFile(file);
+      console.log(result);
       setSubmitMessage("Fichier uploadé avec succès!");
       setTimeout(() => setSubmitMessage(""), 3000);
       return result;
@@ -249,16 +252,18 @@ function Allignement() {
         return;
       }
 
-      // Préparer uniquement les champs que l'alignement attend
+      const certFile = files.find(f => f.type === "certificat");
+      const planFile = files.find(f => f.type === "plan");
+
       const alignmentData = {
         id_mandataire: id_citizen || " ",
         status_proprietaire: statutProprietaire || " ",
         qualite_demandeur: qualiteDemandeur || " ",
         nif: "000000000000",
-        id_cert_sit_jur: `CERT-${Date.now()}`,//{certjurd, `CERT-${Date.now()}.pdf`}
-        id_plan_off: `PLAN-${Date.now()}`,
-        id_terrain: formData.id_terrain, //  terrainResult
-        // Champs obligatoires côté DB
+        // envoyer juste l'id ou le nom généré
+        id_cert_sit_jur: certFile ? certFile.name : null,
+        id_plan_off: planFile ? planFile.name : null,
+        id_terrain: formData.id_terrain,
         nom_demandaire: formData.nom || " ",
         prenom_mandataire: formData.prenoms || " ",
         cin_passeport_demandaire: formData.cinPasseport || " "
@@ -273,7 +278,6 @@ function Allignement() {
 
       // Envoyer au backend
       const alignmentResult = await alignmentService.createAlignment(alignmentData);
-      console.log("alignementCreate:",alignmentResult)
       setSubmitMessage("Terrain, alignement et pièces jointes créés avec succès !");
       alert("Soumission réussie! Vous allez être redirigé vers la liste des alignements.");
 

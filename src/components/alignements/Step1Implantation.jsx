@@ -1,113 +1,83 @@
-import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
+import { Loader2 } from "lucide-react";
 
 const Step1Implantation = ({
-  regions: parentRegions = [],
-  communes: parentCommunes = [],
   selectedRegion,
   selectedCommune,
   setSelectedRegion,
-  setSelectedCommune
+  setSelectedCommune,
 }) => {
-  const [regions, setRegions] = useState(parentRegions);
-  const [communes, setCommunes] = useState(parentCommunes);
+  const [regions, setRegions] = useState({});
+  const [communes, setCommunes] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // Charger toutes les régions au montage
   useEffect(() => {
-    const loadRegions = async () => {
-      try {
-        const regionsData = await territoireService.getRegions();
-        setRegions(regionsData.data || []);
-      } catch (error) {
-        console.error("Erreur lors du chargement des régions :", error);
-        setRegions([]);
-      }
-    };
-    loadRegions();
-  }, []);
-
-  // Charger les communes lorsque la région change
-  useEffect(() => {
-    if (!selectedRegion) {
-      setCommunes([]);
-      return;
-    }
-
     const loadCommunes = async () => {
       try {
-        const communesData = await territoireService.getCommunesByRegion(selectedRegion);
-        setCommunes(communesData.data || []);
+        setLoading(true);
+        const data = await territoireService.getUserCommuneName();
+        console.log("Communes chargées :", data);
+
+        if (data) {
+          setCommunes(data);
+          setSelectedCommune(data.name);
+          setRegions(data.region);
+          setSelectedRegion(data.region?.name);
+        }
       } catch (error) {
         console.error("Erreur lors du chargement des communes :", error);
-        setCommunes([]);
+        setCommunes({});
+      } finally {
+        setLoading(false);
       }
     };
+
     loadCommunes();
-  }, [selectedRegion]);
+  }, [setSelectedCommune, setSelectedRegion]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10">
+        <Loader2 className="w-10 h-10 animate-spin text-green-600 mb-3" />
+        <p className="text-gray-600">Chargement en cours...</p>
+      </div>
+    );
+  }
 
   return (
     <>
       <h3 className="text-xl font-medium text-gray-800 mb-8">
-        Choix d'implantation
+        Implantation
       </h3>
+
       <div className="space-y-6">
         {/* Région */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Spécifiez la Région
+            Région du compte
           </label>
-          <div className="relative">
-            {!selectedRegion && (
-              <span className="absolute top-3 left-3 text-gray-400 pointer-events-none">
-                Sélectionnez la Région
-              </span>
-            )}
-            <select
-              value={selectedRegion || ""}
-              onChange={(e) => {
-                setSelectedRegion(e.target.value);
-                setSelectedCommune(""); // reset commune
-              }}
-              className="w-full p-3 border border-gray-300 rounded-md appearance-none bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="" hidden></option>
-              {regions.map((reg) => (
-                <option key={reg.region_id} value={reg.formatted_id}>
-                  {reg.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-          </div>
+          <input
+            type="text"
+            value={regions.name || ""}
+            readOnly
+            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 
+              focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
         </div>
 
         {/* Commune */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Spécifiez la Commune
+            Commune enregistré
           </label>
-          <div className="relative">
-            {!selectedCommune && (
-              <span className="absolute top-3 left-3 text-gray-400 pointer-events-none">
-                Sélectionnez la commune
-              </span>
-            )}
-            <select
-              value={selectedCommune || ""}
-              onChange={(e) => setSelectedCommune(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md appearance-none bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={!selectedRegion}
-            >
-              <option value="" hidden></option>
-              {communes.map((commune) => (
-                <option key={commune.commune_id} value={commune.commune_id}>
-                  {commune.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-          </div>
+          <input
+            type="text"
+            value={communes.name || ""}
+            readOnly
+            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 
+              focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
         </div>
       </div>
     </>

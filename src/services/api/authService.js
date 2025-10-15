@@ -65,6 +65,14 @@ export const authService = {
         return null;
     },
 
+    getUserCommune: () => {
+        const decodedToken = authService.decodedToken();
+        if (decodedToken) {
+            return decodedToken.municipality_id;
+        }
+        return null;
+    },
+
     getUsername: () => {
         const decodedToken = authService.decodedToken();
         if (decodedToken) {

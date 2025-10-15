@@ -271,7 +271,7 @@ export const constructionService = {
         uploadedFilesInfo: this.prepareUploadedFilesInfo(uploadedFiles),
   
         // IDs requis (à adapter selon votre logique)
-        id_align: formData.referenceAlignement, // À remplacer par l'ID d'alignement réel
+        id_align: 1, // À remplacer par l'ID d'alignement réel
         id_terrain: 1 // À remplacer par l'ID de terrain réel
       };
   
