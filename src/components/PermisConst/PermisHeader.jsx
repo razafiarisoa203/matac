@@ -17,6 +17,18 @@ const PermisHeader = ({ steps, currentStep, getStepProgress, onReset, onStepChan
     <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
             <div className="text-center mb-6">
+                <button
+                    class="bg-gray-300 absolute top-5 left-5 p-2 rounded-md hover:bg-gray-400 transition"
+                    onClick={() => window.location.href = "/dashboard"}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-arrow-left text-gray-800 w-5 h-5" aria-hidden="true">
+                        <path d="m12 19-7-7 7-7"></path>
+                        <path d="M19 12H5"></path>
+                    </svg>
+                </button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
                     SOUMETTRE UN DOSSIER DE PERMIS DE CONSTRUIRE
                 </h1>
