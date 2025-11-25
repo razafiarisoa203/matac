@@ -10,7 +10,7 @@ const Indicateurs = () => {
         window.location.href = "/indicateurs";
         break;
       case "cartographie":
-        window.location.href = "/cartographie";
+         window.open("https://geoportail.tsirylab.com");
         break;
       case "documentation":
         window.location.href = "/documentation";
