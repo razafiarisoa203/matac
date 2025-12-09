@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { User, Globe, Menu, X, Sun, Moon } from "lucide-react";
 
-function NavigationBar() {
+function NavigationBar({ activeSection, setActiveSection }) {
   const { t, i18n } = useTranslation();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("accueil");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
@@ -60,7 +59,9 @@ function NavigationBar() {
               href={`#${section}`}
               onClick={(e) => handleClick(e, section)}
               className={`px-3 py-2 text-sm font-medium cursor-pointer transition-colors duration-300 ${
-                activeSection === section ? "text-[#269745]" : "text-gray-800 hover:text-[#269745]"
+                activeSection === section 
+                  ? "text-[#269745] border-b-2 border-[#269745]" 
+                  : "text-gray-800 hover:text-[#269745]"
               }`}
             >
               {section === "accueil" && t('navigation.home')}
@@ -173,7 +174,9 @@ function NavigationBar() {
                 href={`#${section}`}
                 onClick={(e) => handleClick(e, section)}
                 className={`block px-4 py-2 text-base font-medium ${
-                  activeSection === section ? "text-[#269745]" : "text-gray-800 hover:text-[#269745]"
+                  activeSection === section 
+                    ? "text-[#269745] border-l-4 border-[#269745] bg-green-50" 
+                    : "text-gray-800 hover:text-[#269745]"
                 }`}
               >
                 {sectionName}
