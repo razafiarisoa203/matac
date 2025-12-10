@@ -13,7 +13,7 @@ const Indicateurs = () => {
          window.open("https://geoportail.tsirylab.com");
         break;
       case "documentation":
-        window.location.href = "/documentation";
+        window.open("https://drive.google.com/drive/folders/1bKptZohd8jIlqH7VFimq3oNvQozxc_2u");
         break;
       default:
         break;
