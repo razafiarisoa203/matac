@@ -19,6 +19,9 @@ const UsersList = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [photos, setPhotos] = useState({}); // { [id_citizen]: photo_url }
 
+  forceRender
+  setLimit
+
   useEffect(() => {
     users.forEach((user) => {
       if (user.id_citizen && !photos[user.id_citizen]) {
@@ -215,7 +218,7 @@ const UsersList = () => {
       </form>
 
       {/* Users Table */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="bg-white shadow-md rounded-lg overflow-x-scroll">
         {loading ? (
           <div className="p-4 text-center">Chargement...</div>
         ) : (
