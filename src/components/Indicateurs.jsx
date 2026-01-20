@@ -10,7 +10,7 @@ const Indicateurs = () => {
         window.location.href = "/indicateurs";
         break;
       case "cartographie":
-         window.open("https://geoportail.tsirylab.com");
+         window.open("https://geoportail.agvm.mg");
         break;
       case "documentation":
         window.open("https://drive.google.com/drive/folders/1bKptZohd8jIlqH7VFimq3oNvQozxc_2u");
