@@ -2,6 +2,7 @@
   "common": {
     "login": "Connexion",
     "logout": "Déconnexion",
+    "connected": "Connecté",
     "register": "S'inscrire",
     "forgotPassword": "Mot de passe oublié",
     "home": "Accueil",
@@ -24,7 +25,8 @@
     "warning": "Avertissement",
     "info": "Information",
     "configure": "Configurer",
-    "admin": "Administrateur"
+    "admin": "Administrateur",
+    "language": "Langue"
   },
   "navigation": {
     "home": "Accueil",

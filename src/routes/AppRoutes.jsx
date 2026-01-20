@@ -38,16 +38,29 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+/**
+ * PublicRoute vérifie si l'utilisateur est authentifié.
+ * Si authentifié => redirect vers /
+ */
+const PublicRoute = ({ children }) => {
+  const user = localStorage.getItem("access_token");
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <Router>
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<UserRegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><UserRegisterPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
         <Route path="/permis" element={<PermisConstruction />} />
 
         {/* Protected Routes */}

@@ -11,8 +11,8 @@ import CustomToast from "./components/customToast";
 
 
 // Charger la langue depuis le stockage local
-const savedLanguage = localStorage.getItem('i18nextLng') || 'fr';
-i18n.changeLanguage(savedLanguage);
+// const savedLanguage = localStorage.getItem('i18nextLng') || 'fr';
+// i18n.changeLanguage(savedLanguage);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
