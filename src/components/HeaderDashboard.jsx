@@ -137,7 +137,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
             <ArrowLeft size={24} className="text-black dark:text-white" />
           </button>
         )}
-        <h1 className="font-bold text-2xl text-black dark:text-white">MATAC</h1>
+        {/* <h1 className="font-bold text-2xl text-black dark:text-white">MATAC</h1> */}
       </div>
 
 

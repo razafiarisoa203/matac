@@ -47,7 +47,7 @@ const StatsCards = ({
       </nav>
 
       {/* Filtres par type */}
-      <div className="flex flex-wrap gap-4 mb-6 ml-4 mr-4 lg:ml-14 lg:mr-16">
+      <div className="flex flex-wrap gap-4 mb-6 mr-4  lg:mr-16">
         <div className="flex items-center space-x-4">
           <span className="text-sm font-medium text-gray-700">Type de demande:</span>
           <select
@@ -84,7 +84,7 @@ const StatsCards = ({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 mt-4 ml-4 mr-4 lg:ml-14 lg:mr-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 mt-4 mr-4 lg:mr-16">
         {/* Toutes les demandes */}
         <div
           onClick={() => handleFilterClick('tous', 'tous')}

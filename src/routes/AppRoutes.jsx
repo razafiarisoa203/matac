@@ -19,6 +19,7 @@ import AlignmentListPage from "../pages/AlignmentListPage";
 import PermisConstruction from "../components/PermisConstruction";
 import ConstructionListPage from "../pages/ConstructionListPage";
 import ConstructionDetailsPage from '../pages/ConstructionDetailsPage';
+import PermisRemblai from '../pages/PermisRemblai';
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -121,6 +122,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ConstructionDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/permis-remblai"
+          element={
+            <ProtectedRoute>
+              <PermisRemblai />
             </ProtectedRoute>
           }
         />
