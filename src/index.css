@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark,.dark *));
+
 /* Styles de base */
 body {
   font-family: "Poppins", sans-serif;
@@ -18,37 +19,38 @@ body {
 }
 
 .dark body {
-  background-color: #1a202c;
-  color: #f7fafc;
+  background-color: #0B1220; /* Bleu marine très sombre */
+  color: #FFFFFF; /* Texte principal */
 }
 
-/* Styles pour les éléments de formulaire en mode sombre */
+/* Form elements en mode sombre */
 .dark input,
 .dark select,
 .dark textarea,
 .dark .form-input,
 .dark #objectifs,
 .dark #services {
-  background-color: #2d3748!important;
-  border-color: #4a5568!important;
-  color: #f7fafc!important;
+  background-color: #101A2E !important; /* Bleu profond */
+  border-color: #3BB6E0 !important; /* Accent turquoise */
+  color: #FFFFFF !important;
 }
 
 .dark input:focus,
 .dark select:focus,
 .dark textarea:focus {
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+  border-color: #3BB6E0; /* Accent focus */
+  box-shadow: 0 0 0 3px rgba(59, 182, 224, 0.35);
 }
 
-/* Styles pour les cartes en mode sombre */
+/* Cartes en mode sombre */
 .dark .card,
 .dark .bg-white {
-  background-color: #2d3748;
-  color: #f7fafc;
+  background-color: #101A2E !important; /* Bleu profond */
+  color: #FFFFFF;
+  border: 1px solid #162237; /* Bleu nuit subtil */
 }
 
-/* Styles pour le texte en mode sombre */
+/* Texte en mode sombre */
 .dark h1,
 .dark h2,
 .dark h3,
@@ -57,18 +59,23 @@ body {
 .dark h6,
 .dark p,
 .dark div {
-  color: #f7fafc;
+  color: #FFFFFF;
 }
 
-/* Styles pour les liens en mode sombre */
+.dark .text-secondary {
+  color: #B4C0D0 !important;
+}
+
+/* Liens en mode sombre */
 .dark a {
-  color: #63b3ed;
+  color: whitesmoke; /* Accent turquoise */
 }
 
 .dark a:hover {
-  color: #90cdf4;
+  color: #2BAE76; /* Accent vert au survol */
 }
 
+/* Scroll */
 html {
   scroll-behavior: smooth;
 }
