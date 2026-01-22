@@ -8,8 +8,7 @@ import {
   AlignJustify,
   LogOut,
 } from 'lucide-react';
-import { LuLayoutDashboard } from "react-icons/lu";
-
+import { LuLayoutDashboard, LuMapPinHouse } from "react-icons/lu";
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authService } from '../services/api/authService';
@@ -34,6 +33,11 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
       title: 'Permis de construire',
       icon: <Building2 className="w-5 h-5" />,
       path: '/permis-list',
+    },
+    {
+      title: "Prescription d'urbanisme",
+      icon: <LuMapPinHouse className="w-5 h-5" />,
+      path: '/prescription-urbanisme',
     },
     {
       title: 'Permis de remblai',

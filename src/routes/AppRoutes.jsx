@@ -20,6 +20,8 @@ import PermisConstruction from "../components/PermisConstruction";
 import ConstructionListPage from "../pages/ConstructionListPage";
 import ConstructionDetailsPage from '../pages/ConstructionDetailsPage';
 import PermisRemblai from '../pages/PermisRemblai';
+import PrescriptionUrbanisme from '../pages/PrescriptionUrbanisme';
+
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -108,6 +110,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/prescription-urbanisme"
+          element={
+            <ProtectedRoute>
+              <PrescriptionUrbanisme />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Permis */}
         <Route
           path="/permis-list"
@@ -133,6 +144,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
 
         {/* Admin */}
         <Route
