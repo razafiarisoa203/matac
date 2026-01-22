@@ -1,6 +1,7 @@
 // HeaderDashboard.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Menu, User, Globe, Sun, Moon } from "lucide-react";
+import { LuBellRing } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { citoyenService } from "../services/api/citoyenService";
@@ -143,6 +144,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
 
 
       <div className="flex items-center space-x-2 mr-5">
+
         {/* Bouton profil */}
         <button
           onClick={handleProfileClick}
@@ -158,6 +160,13 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
               <p className="text-xs text-gray-500 dark:text-gray-400">{citizenData.email}</p>
             </div>
           </div>
+        </button>
+
+                <button
+          className="p-2 text-black dark:text-white hover:bg-green-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+          aria-label={darkMode ? 'Désactiver le mode sombre' : 'Activer le mode sombre'}
+        >
+            <LuBellRing  className="w-5 h-5" />
         </button>
 
         {/* Bouton thème */}
