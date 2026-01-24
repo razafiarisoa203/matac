@@ -1,4 +1,3 @@
-import React from "react";
 import ServicesSection from "../components/ServicesSection";
 import ObjectifsSection from "../components/ObjectifsSection";
 import ActesUrbanisme from "../components/ActesUrbanisme";
