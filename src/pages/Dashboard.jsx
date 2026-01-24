@@ -191,7 +191,7 @@ const ActionsDashboard = () => {
                 <div className="flex gap-3">
                   <button onClick={() => navigate('/alignement')} className="bg-lime-600 hover:bg-lime-700 text-white px-6 py-2.5 flex items-center space-x-2 transition-colors shadow-sm">
                     <span className="text-lg">+</span>
-                    <span>Nouvel alignement</span>
+                    <span>Nouvelle alignement</span>
                   </button>
                   <button onClick={() => navigate('/permis')} className="bg-lime-600 hover:bg-lime-700 text-white px-6 py-2.5 flex items-center space-x-2 transition-colors shadow-sm">
                     <span className="text-lg">+</span>

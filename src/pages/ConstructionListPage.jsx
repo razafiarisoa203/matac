@@ -145,7 +145,7 @@ const ConstructionListPage = () => {
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-500 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
                   <p className="mt-4 text-gray-600">Chargement des permis de construction...</p>
                 </div>
               </div>
@@ -184,7 +184,7 @@ const ConstructionListPage = () => {
               </div>
               <div className="flex items-center space-x-4 mt-4 lg:mt-0">
                 <div className="bg-white shadow-sm p-3 rounded-lg flex items-center space-x-2">
-                  <Building className="w-5 h-5 text-lime-600" />
+                  <Building className="w-5 h-5 text-green-600" />
                   <span className="text-sm font-medium text-gray-700">Total: {constructions.length}</span>
                 </div>
               </div>
@@ -199,7 +199,7 @@ const ConstructionListPage = () => {
                     setSelectedStatus(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="tous">Tous les statuts</option>
                   {Object.values(STATUS_MAPPING).map(label => (
@@ -224,7 +224,7 @@ const ConstructionListPage = () => {
             <div className="ml-4 mr-4 lg:ml-20 lg:mr-20">
               <button
                 onClick={() => navigate('/permis')}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium shadow-sm text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Nouveau permis de construction
@@ -266,7 +266,7 @@ const ConstructionListPage = () => {
                         setSearchTerm('');
                         setSelectedStatus('tous');
                       }}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium shadow-sm text-white bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     >
                       Réinitialiser les filtres
                     </button>
@@ -308,7 +308,7 @@ const ConstructionListPage = () => {
                             <div className="flex justify-end space-x-2">
                               <button
                                 onClick={() => viewDetails(construction.id_const)}
-                                className="inline-flex items-center px-3 py-1.5 border border-lime-600 text-sm font-medium rounded-md text-lime-600 bg-white hover:bg-lime-50 hover:text-lime-700 transition-colors"
+                                className="inline-flex items-center px-3 py-1.5 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 hover:text-green-700 transition-colors"
                                 title="Voir détails"
                               >
                                 <Eye className="w-4 h-4 mr-1" />
@@ -359,7 +359,7 @@ const ConstructionListPage = () => {
                               onClick={() => setCurrentPage(pageNum)}
                               className={`px-3 py-1 border rounded-md text-sm ${
                                 currentPage === pageNum
-                                  ? 'bg-lime-500 text-white border-lime-500'
+                                  ? 'bg-green-500 text-white border-green-500'
                                   : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                               }`}
                             >

@@ -1,14 +1,18 @@
 import { handleNavClick } from "../utils/scrollToSection";
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useContext } from "react";
 import { useTranslation } from 'react-i18next';
 import { User, Globe, Menu, X, Sun, Moon } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
+import { authService } from "../services/api/authService";
 
-function NavigationBar() {
+function NavigationBar({ activeSection, setActiveSection }) {
   const { t, i18n } = useTranslation();
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("accueil");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
   });
@@ -25,13 +29,35 @@ function NavigationBar() {
   };
 
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
+    const checkAuth = () => {
+      if (!authService.isAuthenticated()) {
+        // If not authenticated, logout to clear state
+        logout();
+      }
+    };
+
+    // Check on mount
+    checkAuth();
+
+    // Check on window focus
+    const handleFocus = () => checkAuth();
+    window.addEventListener('focus', handleFocus);
+
+    // Check every 5 minutes
+    const interval = setInterval(checkAuth, 5 * 60 * 1000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, [logout]);
   
+  useEffect(() => {
+    const handleLanguageChange = (lng) => setCurrentLanguage(lng);
+    i18n.on('languageChanged', handleLanguageChange);
+    return () => i18n.off('languageChanged', handleLanguageChange);
+  }, [i18n]);
+
   // Mettre à jour le document title et la direction du texte en fonction de la langue
   useEffect(() => {
     document.documentElement.lang = i18n.language;
@@ -41,6 +67,14 @@ function NavigationBar() {
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
     setIsLanguageOpen(false);
+  };
+
+  const handleAuthClick = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
   };
 
   const handleClick = (e, section) => {
@@ -60,7 +94,9 @@ function NavigationBar() {
               href={`#${section}`}
               onClick={(e) => handleClick(e, section)}
               className={`px-3 py-2 text-sm font-medium cursor-pointer transition-colors duration-300 ${
-                activeSection === section ? "text-[#269745]" : "text-gray-800 hover:text-[#269745]"
+                activeSection === section 
+                  ? "text-[#269745] border-b-2 border-[#269745]" 
+                  : "text-gray-800 hover:text-[#269745]"
               }`}
             >
               {section === "accueil" && t('navigation.home')}
@@ -84,13 +120,13 @@ function NavigationBar() {
               <Moon className="w-5 h-5" />
             )}
           </button>
-          <Link
-            to="/login"
+          <button
+            onClick={handleAuthClick}
             className="bg-[#269745] text-white px-4 py-2 rounded-lg hover:bg-[#1e7e3a] flex items-center space-x-2 transition-colors duration-300"
           >
             <User className="w-4 h-4" />
-            <span>{t('common.login')}</span>
-          </Link>
+            <span>{user ? (user.username || t('common.connected')) : t('common.login')}</span>
+          </button>
 
           <div className="relative">
             <button
@@ -98,7 +134,7 @@ function NavigationBar() {
               className="flex items-center space-x-1 text-gray-800 hover:text-[#269745] dark:text-green-500 dark:hover:text-green-400 transition-colors"
             >
               <Globe className="w-5 h-5" />
-              <span className="text-sm font-medium">{i18n.language.toUpperCase()}</span>
+              <span className="text-sm font-medium">{currentLanguage.toUpperCase()}</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className={`h-4 w-4 transition-transform ${isLanguageOpen ? "rotate-180" : ""}`}
@@ -173,7 +209,9 @@ function NavigationBar() {
                 href={`#${section}`}
                 onClick={(e) => handleClick(e, section)}
                 className={`block px-4 py-2 text-base font-medium ${
-                  activeSection === section ? "text-[#269745]" : "text-gray-800 hover:text-[#269745]"
+                  activeSection === section 
+                    ? "text-[#269745] border-l-4 border-[#269745] bg-green-50" 
+                    : "text-gray-800 hover:text-[#269745]"
                 }`}
               >
                 {sectionName}
@@ -181,13 +219,16 @@ function NavigationBar() {
             );
           })}
           <div className="border-t border-gray-200 my-2"></div>
-          <Link
-            to="/login"
-            className="block px-4 py-2 text-base font-medium text-gray-800 hover:text-[#269745]"
-            onClick={() => setIsMobileMenuOpen(false)}
+          <button
+            onClick={() => {
+              handleAuthClick();
+              setIsMobileMenuOpen(false);
+            }}
+            className="block px-4 py-2 text-base font-medium text-gray-800 hover:text-[#269745] flex items-center space-x-2"
           >
-            {t('common.login')}
-          </Link>
+            <User className="w-4 h-4" />
+            <span>{user ? (user.username || t('common.connected')) : t('common.login')}</span>
+          </button>
           <div className="px-4 py-2">
             <div className="flex items-center space-x-2 text-gray-800">
               <Globe className="w-5 h-5" />

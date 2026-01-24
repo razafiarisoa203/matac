@@ -19,6 +19,9 @@ import AlignmentListPage from "../pages/AlignmentListPage";
 import PermisConstruction from "../components/PermisConstruction";
 import ConstructionListPage from "../pages/ConstructionListPage";
 import ConstructionDetailsPage from '../pages/ConstructionDetailsPage';
+import PermisRemblai from '../pages/PermisRemblai';
+import PrescriptionUrbanisme from '../pages/PrescriptionUrbanisme';
+
 
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -38,16 +41,29 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+/**
+ * PublicRoute vérifie si l'utilisateur est authentifié.
+ * Si authentifié => redirect vers /
+ */
+const PublicRoute = ({ children }) => {
+  const user = localStorage.getItem("access_token");
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <Router>
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<UserRegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><UserRegisterPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
         <Route path="/permis" element={<PermisConstruction />} />
 
         {/* Protected Routes */}
@@ -94,6 +110,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/prescription-urbanisme"
+          element={
+            <ProtectedRoute>
+              <PrescriptionUrbanisme />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Permis */}
         <Route
           path="/permis-list"
@@ -111,6 +136,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/permis-remblai"
+          element={
+            <ProtectedRoute>
+              <PermisRemblai />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* Admin */}
         <Route

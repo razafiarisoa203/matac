@@ -2,6 +2,7 @@
   "common": {
     "login": "Hiditra",
     "logout": "Hivoaka",
+    "connected": "Mifandray",
     "register": "Hisoratra anarana",
     "forgotPassword": "Hadino ny teny miafina",
     "home": "Fandraisana",
@@ -24,7 +25,8 @@
     "warning": "Fampitandremana",
     "info": "Fampahafantarana",
     "configure": "Hamaha",
-    "admin": "Mpandrindra"
+    "admin": "Mpandrindra",
+    "language": "Fiteny"
   },
   "navigation": {
     "home": "Fandraisana",

@@ -11,7 +11,6 @@ import "react-toastify/dist/ReactToastify.css";
 import bgImage from "../../assets/image/construction-bg.jpeg";
 import mdatLogo from "../../assets/logo/MDAT.jpeg";
 
-
 export default function Register() {
   usePageTitle("Création de compte utilisateur");
   const navigate = useNavigate();
@@ -22,11 +21,11 @@ export default function Register() {
   const { t } = useTranslation();
 
   const handleVerifyCIN = async (cin) => {
-    console.log('handleVerifyCIN appelé avec CIN:', cin);
+    console.log("handleVerifyCIN appelé avec CIN:", cin);
     setIsVerifying(true);
     setVerifiedCin(cin);
     setError("");
-  
+
     try {
       // Vérifier si CIN vide
       if (!cin || cin.trim() === "") {
@@ -34,10 +33,9 @@ export default function Register() {
         setIsVerifying(false);
         return;
       }
-  
+
       const result = await citoyenService.checkCIN(cin);
-      console.log("Résultat de checkCIN:", result);
-  
+
       // Si le CIN n'existe pas, on passe à l'inscription
       if (!result.exists) {
         console.log("CIN non trouvé → passage à l'inscription");
@@ -45,23 +43,23 @@ export default function Register() {
         setIsVerifying(false);
         return;
       }
-  
+
       // Si le CIN existe déjà, redirection vers la page de connexion
       if (result.exists) {
         console.log("CIN existe déjà → redirection vers /login");
-        toast.info("Ce numéro CIN est déjà enregistré. Veuillez vous connecter.");
+        toast.info(
+          "Ce numéro CIN est déjà enregistré. Veuillez vous connecter."
+        );
         setIsVerifying(false);
         navigate("/login");
         return;
       }
-  
     } catch (error) {
       console.error("Erreur lors de la vérification du CIN:", error);
       setError("Erreur serveur, veuillez réessayer plus tard.");
       setIsVerifying(false);
     }
   };
-  
 
   return (
     <div
@@ -95,23 +93,23 @@ export default function Register() {
 
               {/* Contenu de l'étape actuelle */}
               {step === "verification" ? (
-  <CINVerificationStep 
-    onVerify={handleVerifyCIN} 
-    isVerifying={isVerifying}
-    error={error}
-  />
-) : (
-  <RegistrationForm cin={verifiedCin} />
-)}
+                <CINVerificationStep
+                  onVerify={handleVerifyCIN}
+                  isVerifying={isVerifying}
+                  error={error}
+                />
+              ) : (
+                <RegistrationForm cin={verifiedCin} />
+              )}
 
               {/* Lien de connexion */}
               <div className="text-center text-sm text-gray-600 mt-6">
-                {t('register.haveAccount')} {" "}
+                {t("register.haveAccount")}{" "}
                 <Link
                   to="/login"
                   className="font-medium text-green-600 hover:text-green-700"
                 >
-                  {t('login.submit')}
+                  {t("login.submit")}
                 </Link>
               </div>
 
@@ -121,10 +119,20 @@ export default function Register() {
                   onClick={() => navigate("/")}
                   className="inline-flex items-center text-sm text-green-600 hover:text-green-500"
                 >
-                  <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  <svg
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                    />
                   </svg>
-                  {t('login.backToHome')}
+                  {t("login.backToHome")}
                 </button>
               </div>
             </div>
