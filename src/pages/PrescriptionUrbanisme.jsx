@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
 import { ChevronRight } from 'lucide-react';
 import { Link } from "react-router-dom";
+import Carte from '../components/cartographie/carte';
 
 const PrescriptionUrbanisme = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -61,15 +62,8 @@ const PrescriptionUrbanisme = () => {
             </div>
 
             {/* Contenu principal */}
-            <div className="bg-white rounded-lg shadow-sm p-6 ml-4 mr-4 lg:ml-14 lg:mr-16">
-              <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  Prescription d'urbanisme
-                </h2>
-                <p className="text-gray-600">
-                  Cette fonctionnalité est en cours de développement.
-                </p>
-              </div>
+            <div className="bg-white rounded-lg shadow-sm p-6 ml-4 mr-4 lg:ml-14 lg:mr-16" style={{ height: 'calc(100vh - 200px)' }}>
+              <Carte/>
             </div>
           </div>
         </main>

@@ -26,6 +26,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/geoserver': {
+          target: "http://31.220.94.42:5353/",
+          changeOrigin: true,
+          secure: false,
+      },
+      '/servicecarto': {
+          target: 'https://gateway.tsirylab.com',
+          changeOrigin: true,
+          secure: false,
+      },
     },
   },
 });

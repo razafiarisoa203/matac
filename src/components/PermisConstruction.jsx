@@ -137,7 +137,7 @@ const PermisConstruction = () => {
     });
   };
 
-  // ✅ Fonction corrigée : utilise getAlignmentById
+  // Fonction corrigée : utilise getAlignmentByreferenceAlignement
   const handleVerifyAlignementExiste = async (referenceAlignement) => {
   if (!referenceAlignement) return null;
 
@@ -553,68 +553,80 @@ const PermisConstruction = () => {
     return total > 0 ? Math.round((done / total) * 100) : 0;
   };
 
-  // ✅ handleNext modifié : vérification automatique si dans la section "Référence alignement"
+  // handleNext modifié : vérification automatique si dans la section "Référence alignement"
   const handleNext = async () => {
-      if (!validateCurrentSection()) {
-        return;
-      }
+  if (!validateCurrentSection()) {
+    return;
+  }
 
-      const isInReferenceAlignementSection = currentStep === 1 && currentSection === 2;
-      if (isInReferenceAlignementSection && formData.referenceAlignement) {
-        // ✅ Récupère les données de l'alignement (ou false/null si invalide)
-        const alignmentData = await handleVerifyAlignementExiste(formData.referenceAlignement);
-        const constructionData = await handleVerifyConstructionExiste(formData.referenceAlignement);
+  const isInReferenceAlignementSection = currentStep === 1 && currentSection === 2;
 
-        if (!alignmentData || constructionData) {
-          setErrors(prev => ({
-            ...prev,
-            referenceAlignement: 'La référence d’alignement est invalide ou introuvable.'
-          }));
-          return;
-        }
+  if (isInReferenceAlignementSection) {
 
-        // ✅ ICI : alignmentData est défini et contient les données de l'API
-        const {
-          nom_demandaire,
-          prenom_mandataire,
-          cin_passeport_demandaire,
-          adresse_demandaire
-        } = alignmentData;
+    // Bloque si le champ est vide
+    if (!formData.referenceAlignement || formData.referenceAlignement.trim() === "") {
+      setErrors(prev => ({
+        ...prev,
+        referenceAlignement: "Ce champ est obligatoire."
+      }));
+      return;
+    }
 
-        const nomComplet = [prenom_mandataire, nom_demandaire]
-        .filter(part => part && part.trim() !== '') // Évite les valeurs vides/null
-        .join(' ');
+    // Vérification API
+    const alignmentData = await handleVerifyAlignementExiste(formData.referenceAlignement);
+    const constructionData = await handleVerifyConstructionExiste(formData.referenceAlignement);
 
-    // ✅ Mettre à jour formData
+    if (!alignmentData || constructionData) {
+      setErrors(prev => ({
+        ...prev,
+        referenceAlignement: "La référence d’alignement est invalide ou introuvable."
+      }));
+      return;
+    }
+
+    // Si valide → remplir les champs
+    const {
+      nom_demandaire,
+      prenom_mandataire,
+      cin_passeport_demandaire,
+      adresse_demandaire
+    } = alignmentData;
+
+    const nomComplet = [prenom_mandataire, nom_demandaire]
+      .filter(x => x && x.trim() !== "")
+      .join(" ");
+
     setFormData(prev => ({
       ...prev,
-      nomProprietaire: nomComplet || prev.nomProprietaire || '',
-      cinProprietaire: cin_passeport_demandaire ? String(cin_passeport_demandaire) : prev.cinProprietaire || '',
-      adresseProprietaire: adresse_demandaire || prev.adresseProprietaire || ''
+      nomProprietaire: nomComplet || prev.nomProprietaire,
+      cinProprietaire: cin_passeport_demandaire ? String(cin_passeport_demandaire) : prev.cinProprietaire,
+      adresseProprietaire: adresse_demandaire || prev.adresseProprietaire
     }));
-      }
+  }
 
-      // ✅ Marquer comme complété et avancer
-      setCompletedSections(prev => ({
-        ...prev,
-        [`${currentStep}-${currentSection}`]: true
-      }));
+  // Marquer la section comme complétée
+  setCompletedSections(prev => ({
+    ...prev,
+    [`${currentStep}-${currentSection}`]: true
+  }));
 
-      const isLastStep = currentStep === steps.length;
-      const isLastSection = currentSection === (sidebarItems[currentStep]?.length || 1);
+  // Logique navigation
+  const isLastStep = currentStep === steps.length;
+  const isLastSection = currentSection === (sidebarItems[currentStep]?.length || 1);
 
-      if (isLastStep && isLastSection) {
-        await handleSubmit();
-      } else {
-        const maxSections = sidebarItems[currentStep]?.length || 0;
-        if (currentSection < maxSections) {
-          setCurrentSection(currentSection + 1);
-        } else if (currentStep < steps.length) {
-          setCurrentStep(currentStep + 1);
-          setCurrentSection(1);
-        }
-      }
-  };
+  if (isLastStep && isLastSection) {
+    await handleSubmit();
+  } else {
+    const maxSections = sidebarItems[currentStep]?.length || 0;
+    if (currentSection < maxSections) {
+      setCurrentSection(currentSection + 1);
+    } else if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+      setCurrentSection(1);
+    }
+  }
+};
+
 
   const handlePrevious = () => {
     if (currentSection > 1) {
