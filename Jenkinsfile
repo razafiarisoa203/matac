@@ -16,6 +16,9 @@ pipeline {
         VITE_PORT        = '4015'
         VITE_API_URL     = 'https://gateway.tsirylab.com'
         VITE_APP_ID = '32'
+        VITE_GEOSERVER_URL = '/geoserver/Fianarantsoa'
+        VITE_WORKSPACE= 'Fianarantsoa'
+        VITE_API_BASE_URL = 'http://31.220.94.42:5353/'
     }
 
     stages {
@@ -34,6 +37,9 @@ pipeline {
                           --build-arg VITE_API_URL=${VITE_API_URL} \
                           --build-arg VITE_PORT=${VITE_PORT} \
                           --build-arg VITE_APP_ID=${VITE_APP_ID} \
+                          --build-arg VITE_GEOSERVER_URL=${VITE_GEOSERVER_URL} \
+                          --build-arg VITE_WORKSPACE=${VITE_WORKSPACE} \
+                          --build-arg VITE_API_BASE_URL=${VITE_API_BASE_URL} \
                           -t ${FULL_IMAGE_NAME} .
 
                         echo ${HARBOR_PASS} | \
@@ -72,6 +78,9 @@ pipeline {
                           --from-literal=VITE_API_URL="${VITE_API_URL}" \
                           --from-literal=VITE_APP_ID="${VITE_APP_ID}" \
                           --from-literal=VITE_PORT="${VITE_PORT}" \
+                          --from-literal=VITE_GEOSERVER_URL="${VITE_GEOSERVER_URL}" \
+                          --from-literal=VITE_WORKSPACE="${VITE_WORKSPACE}" \
+                          --from-literal=VITE_API_BASE_URL="${VITE_API_BASE_URL}" \
                           --namespace=${NAMESPACE}
 
                         # template toutes les ressources
