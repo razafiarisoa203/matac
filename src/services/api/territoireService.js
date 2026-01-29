@@ -61,35 +61,93 @@ export const territoireService = {
     }
   },
 
-  async getCommunesByRegion() {
-    try {
-      let allCommunes = [];
-      let currentPage = 1;
-      let hasMorePages = true;
-
-      while (hasMorePages) {
-        const response = await axiosConfig.get(`/serviceterritoire-v2/communes/basic?page=${currentPage}&limit=100`);
-        const data = response.data?.data || response.data;
-        const communes = Array.isArray(data) ? data : [];
-        
-        allCommunes = [...allCommunes, ...communes];
-
-        hasMorePages = communes.length === 100;
-        currentPage++;
-      }
-
-      return allCommunes;
-    } catch (error) {
-      console.error('[API] Erreur lors de la récupération des communes par région:', error);
-      throw error;
+  async getCommunesByRegion(regionId) {
+  try {
+    if (!regionId) {
+      console.warn('[API] Aucun ID de région fourni');
+      return [];
     }
-  },
+
+    console.log(`[API] Récupération des communes pour la région ${regionId}...`);
+
+    let allCommunes = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    while (hasMorePages) {
+      // Utiliser un endpoint qui filtre par région
+      const response = await axiosConfig.get(
+        `/serviceterritoire-v2/communes/basic?page=${currentPage}&limit=100&region_id=${regionId}`
+      );
+      
+      const data = response.data?.data || response.data;
+      const communes = Array.isArray(data) ? data : [];
+      
+      allCommunes = [...allCommunes, ...communes];
+
+      hasMorePages = communes.length === 100;
+      currentPage++;
+    }
+
+    console.log(`[API] ${allCommunes.length} communes récupérées pour la région ${regionId}`);
+    
+    // Formater les données
+    return allCommunes.map(commune => ({
+      id: commune.commune_id || commune.id || '',
+      commune_id: commune.commune_id || commune.id || '',
+      formatted_id: commune.formatted_id || commune.commune_id || commune.id || '',
+      name: commune.name || commune.nom || `Commune ${commune.id || ''}`,
+      region_id: commune.region_id || '',
+      ...commune
+    }));
+
+  } catch (error) {
+    console.error('[API] Erreur lors de la récupération des communes par région:', {
+      regionId,
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    throw new Error(`Impossible de charger les communes pour la région ${regionId}.`);
+  }
+},
 
   //Recuperer tous region
+  // async getRegions() {
+  //   const response = await axiosConfig.get('/serviceterritoire-v2/regions?page=1&limit=100');
+  //   return response.data;
+  // },
   async getRegions() {
+  try {
     const response = await axiosConfig.get('/serviceterritoire-v2/regions?page=1&limit=100');
-    return response.data;
-  },
+    
+    // Vérifier la structure de la réponse
+    console.log('[API] Réponse des régions:', response.data);
+    
+    // Si la réponse a une propriété data qui est un tableau
+    if (response.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    
+    // Si la réponse est directement un tableau
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    
+    // Si c'est un objet avec d'autres propriétés
+    if (response.data && response.data.regions) {
+      return response.data.regions;
+    }
+    
+    // Par défaut, retourner un tableau vide
+    console.warn('[API] Format de réponse des régions inattendu:', response.data);
+    return [];
+    
+  } catch (error) {
+    console.error('[API] Erreur lors de la récupération des régions:', error);
+    throw new Error('Impossible de charger les régions. Veuillez réessayer plus tard.');
+  }
+},
 
   // Fonction de recherche pour les fokotanys
   async searchFokotanys(communeFormattedId, searchTerm) {

@@ -79,3 +79,13 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+.react-select__control {
+  @apply h-12 border border-gray-300 rounded-md;
+}
+.react-select__control--is-focused {
+  @apply ring-2 ring-green-500 border-transparent;
+}
+.react-select__menu {
+  @apply z-50;
+}
