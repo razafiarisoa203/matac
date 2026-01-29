@@ -1,161 +1,194 @@
 import { useTranslation } from 'react-i18next';
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { territoireService } from "../../services/api/territoireService";
+import Select from "react-select";
 
 const Step1Implantation = ({
-  regions: parentRegions = [],
-  communes: parentCommunes = [],
   selectedRegion,
   selectedCommune,
   setSelectedRegion,
   setSelectedCommune
 }) => {
   const { t } = useTranslation();
-  const [regions, setRegions] = useState(parentRegions);
-  const [communes, setCommunes] = useState(parentCommunes);
-  const [isMobile, setIsMobile] = useState(false);
+  const [regions, setRegions] = useState([]);
+  const [communes, setCommunes] = useState([]);
+  const [loadingRegions, setLoadingRegions] = useState(true);
+  const [loadingCommunes, setLoadingCommunes] = useState(false);
+  const [error, setError] = useState('');
 
-  // Détecter la taille de l'écran
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Charger toutes les régions au montage
+  // Charger les régions
   useEffect(() => {
     const loadRegions = async () => {
       try {
+        setLoadingRegions(true);
+        setError('');
+        
         const regionsData = await territoireService.getRegions();
-        setRegions(regionsData.data || []);
-      } catch (error) {
-        console.error(t('alignment.erreur_chargement_regions'), error);
+        console.log('Régions chargées:', regionsData.length);
+        
+        if (regionsData.length === 0) {
+          setError('Aucune région disponible');
+        }
+        
+        setRegions(regionsData);
+        
+      } catch (err) {
+        console.error('Erreur chargement régions:', err);
+        setError('Erreur lors du chargement des régions');
         setRegions([]);
+      } finally {
+        setLoadingRegions(false);
       }
     };
+    
     loadRegions();
-  }, [t]);
+  }, []);
 
-  // Charger les communes lorsque la région change
+  // Charger les communes quand la région change
   useEffect(() => {
     if (!selectedRegion) {
       setCommunes([]);
+      setSelectedCommune('');
       return;
     }
-
+    
     const loadCommunes = async () => {
       try {
+        setLoadingCommunes(true);
+        setError('');
+        
+        console.log('Chargement communes pour région:', selectedRegion);
+        
         const communesData = await territoireService.getCommunesByRegion(selectedRegion);
-        setCommunes(communesData.data || []);
-      } catch (error) {
-        console.error(t('alignment.erreur_chargement_communes'), error);
+        console.log('Communes chargées:', communesData.length);
+        
+        // Si aucune commune, chercher le nom de la région pour le message
+        if (communesData.length === 0) {
+          const regionName = regions.find(r => 
+            r.formatted_id === selectedRegion || 
+            r.region_id === selectedRegion
+          )?.name || selectedRegion;
+          
+          setError(`Aucune commune trouvée pour la région: ${regionName}`);
+        }
+        
+        setCommunes(communesData);
+        setSelectedCommune('');
+        
+      } catch (err) {
+        console.error('Erreur chargement communes:', err);
+        setError('Erreur lors du chargement des communes');
         setCommunes([]);
+      } finally {
+        setLoadingCommunes(false);
       }
     };
-    loadCommunes();
-  }, [selectedRegion, t]);
+    
+    // Délai pour éviter les appels trop rapides
+    const timer = setTimeout(loadCommunes, 300);
+    return () => clearTimeout(timer);
+    
+  }, [selectedRegion, regions, setSelectedCommune]);
 
   return (
     <div className="w-full">
-      <h3 className="text-lg sm:text-xl font-medium text-gray-800 mb-4 sm:mb-6 md:mb-8">
-        {t('alignment.choix_implantation')}
+      <h3 className="text-lg sm:text-xl font-medium text-gray-800 mb-6">
+        {t('alignment.choix_implantation') || "Choix d'implantation"}
       </h3>
       
-      <div className="space-y-4 sm:space-y-6">
-        {/* Région */}
-        <div className="w-full">
-          <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-            {t('alignment.choix_implantation')}
-          </label>
-          <div className="relative w-full">
-            {!selectedRegion && (
-              <span className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none text-sm sm:text-base">
-                {t('alignment.selectionnez_region')}
-              </span>
-            )}
-            <select
-              value={selectedRegion || ""}
-              onChange={(e) => {
-                setSelectedRegion(e.target.value);
-                setSelectedCommune(""); // reset commune
-              }}
-              className="w-full p-2 sm:p-3 pr-10 border border-gray-300 rounded-md appearance-none bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
-              style={{
-                height: isMobile ? '44px' : '48px'
-              }}
-            >
-              <option value="" hidden></option>
-              {regions.map((reg) => (
-                <option 
-                  key={reg.region_id} 
-                  value={reg.formatted_id}
-                  className="text-sm sm:text-base"
-                >
-                  {reg.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Commune */}
-        <div className="w-full">
-          <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-            {t('alignment.specifiez_commune')}
-          </label>
-          <div className="relative w-full">
-            {!selectedCommune && (
-              <span className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 pointer-events-none text-sm sm:text-base">
-                {t('alignment.selectionnez_commune')}
-              </span>
-            )}
-            <select
-              value={selectedCommune || ""}
-              onChange={(e) => setSelectedCommune(e.target.value)}
-              className="w-full p-2 sm:p-3 pr-10 border border-gray-300 rounded-md appearance-none bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
-              disabled={!selectedRegion}
-              style={{
-                height: isMobile ? '44px' : '48px'
-              }}
-            >
-              <option value="" hidden></option>
-              {communes.map((commune) => (
-                <option 
-                  key={commune.commune_id} 
-                  value={commune.commune_id}
-                  className="text-sm sm:text-base"
-                >
-                  {commune.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 pointer-events-none" />
-          </div>
-          
-          {/* Message d'information si région non sélectionnée */}
-          {!selectedRegion && (
-            <p className="mt-1 text-xs text-gray-500">
-              {t('alignment.select_region_first') || "Veuillez d'abord sélectionner une région"}
-            </p>
-          )}
-        </div>
-      </div>
-      
-      {/* Indicateur de chargement pour mobile */}
-      {isMobile && selectedRegion && communes.length === 0 && (
-        <div className="mt-2 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500 mr-2"></div>
-          <span className="text-xs text-gray-500">
-            {t('alignment.loading_communes') || "Chargement des communes..."}
-          </span>
+      {/* Message d'erreur global */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{error}</p>
         </div>
       )}
+      
+      <div className="space-y-6">
+
+      {/* Sélection Région */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Région *
+        </label>
+
+        {loadingRegions ? (
+          <div className="flex items-center h-12 border border-green-300 rounded-md px-3 bg-green-50">
+            <Loader2 className="animate-spin h-5 w-5 text-green-500 mr-2" />
+            <span className="text-sm text-gray-600">Chargement des régions...</span>
+          </div>
+        ) : (
+          <Select 
+            options={regions.map(region => ({
+              value: region.formatted_id || region.region_id || region.id,
+              label: region.name
+            }))}
+            onChange={(option) => {
+              console.log("Région sélectionnée:", option.value);
+              setSelectedRegion(option.value);
+            }}
+            placeholder="Sélectionnez une région"
+            isSearchable
+            classNamePrefix="react-select"
+          />
+        )}
+      </div>
+        
+      {/* Sélection Commune */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Commune *
+        </label>
+
+        {!selectedRegion ? (
+          <div className="h-12 border border-green-300 rounded-md bg-green-50 flex items-center justify-center">
+            <span className="text-sm text-gray-500">
+              Sélectionnez d'abord une région
+            </span>
+          </div>
+        ) : loadingCommunes ? (
+          <div className="flex items-center h-12 border border-green-300 rounded-md px-3 bg-green-50">
+            <Loader2 className="animate-spin h-5 w-5 text-green-500 mr-2" />
+            <span className="text-sm text-gray-600">
+              Chargement des communes...
+            </span>
+          </div>
+        ) : communes.length === 0 ? (
+          <div className="h-12 border border-green-200 rounded-md bg-green-50 flex items-center justify-center">
+            <span className="text-sm text-yellow-700">
+              Aucune commune disponible pour cette région
+            </span>
+          </div>
+        ) : (
+          <Select
+            options={communes.map(commune => ({
+              value: commune.formatted_id || commune.commune_id || commune.id,
+              label: commune.name
+            }))}
+            value={
+              selectedCommune
+                ? {
+                    value: selectedCommune,
+                    label: communes.find(c =>
+                      (c.formatted_id || c.commune_id || c.id) === selectedCommune
+                    )?.name
+                  }
+                : null
+            }
+            onChange={(option) => {
+              console.log("Commune sélectionnée:", option.value);
+              setSelectedCommune(option.value);
+            }}
+            placeholder="Sélectionnez une commune"
+            isSearchable
+            isDisabled={!selectedRegion}
+            classNamePrefix="react-select"
+          />
+        )}
+      </div>
+
+      </div>
+    
     </div>
   );
 };
