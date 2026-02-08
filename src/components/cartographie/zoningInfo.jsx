@@ -95,7 +95,7 @@ export default function ZoneInfoModal({ isOpen, onClose, lng, lat }) {
                 <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Building2 size={20} className="text-blue-600" />
-                    <h3 className="font-semibold text-gray-800">Zonage 2035</h3>
+                    <h3 className="font-semibold text-gray-800">Zonaging</h3>
                   </div>
                   <p className="text-lg font-medium text-blue-900">{data.zonage2035}</p>
                 </div>
