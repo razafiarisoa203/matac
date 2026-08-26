@@ -90,13 +90,13 @@ const DashboardClient = () => {
   // Fonction pour obtenir le badge de statut
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'reçu': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
-      'en cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', text: 'En cours' },
-      'approuve': { color: 'bg-green-100 text-green-800 border-green-200', text: 'Approuvé' },
-      'rejete': { color: 'bg-red-100 text-red-800 border-red-200', text: 'Rejeté' },
-      'en attente': { color: 'bg-blue-100 text-blue-800 border-blue-200', text: 'En attente' }
+      'reçu': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800', text: 'En cours' },
+      'en cours': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800', text: 'En cours' },
+      'approuve': { color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800', text: 'Approuvé' },
+      'rejete': { color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800', text: 'Rejeté' },
+      'en attente': { color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800', text: 'En attente' }
     };
-    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: status || 'Inconnu' };
+    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600', text: status || 'Inconnu' };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
         {config.text}
@@ -107,10 +107,10 @@ const DashboardClient = () => {
   // Fonction pour obtenir le tag de type
   const getTypeTag = (type) => {
     const typeConfig = {
-      'alignment': { color: 'bg-purple-100 text-purple-800 border-purple-200', text: 'Alignement' },
-      'construction': { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', text: 'Construction' }
+      'alignment': { color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800', text: 'Alignement' },
+      'construction': { color: 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800', text: 'Construction' }
     };
-    const config = typeConfig[type] || { color: 'bg-gray-100 text-gray-800 border-gray-200', text: type || 'Inconnu' };
+    const config = typeConfig[type] || { color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600', text: type || 'Inconnu' };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
         {config.text}
@@ -193,7 +193,7 @@ const DashboardClient = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex transition-colors duration-300">
         <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
 
         {isMobile && isSidebarOpen && (
@@ -211,7 +211,7 @@ const DashboardClient = () => {
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-500 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Chargement des demandes...</p>
+                  <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des demandes...</p>
                 </div>
               </div>
             </div>
@@ -222,7 +222,7 @@ const DashboardClient = () => {
   }
 
   return (
-    <div className="min-h-screen bg-green-50 flex">
+    <div className="min-h-screen bg-green-50 dark:bg-gray-900 flex transition-colors duration-300">
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
 
       {isMobile && isSidebarOpen && (
@@ -241,7 +241,7 @@ const DashboardClient = () => {
             {...statsData}
           />
 
-          <div className="space-y-8 bg-white -mt-10 pt-8 pb-12">
+          <div className="space-y-8 bg-white dark:bg-gray-800 -mt-10 pt-8 pb-12 transition-colors duration-300">
             <SearchBar
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
