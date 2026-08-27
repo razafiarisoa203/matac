@@ -26,44 +26,76 @@ const PrescriptionUrbanisme = () => {
   };
 
   return (
-    <div className="min-h-screen bg-green-50 flex">
-      <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
+    <div className="min-h-screen bg-green-50 dark:bg-gray-900 flex">
+      <Sidebar 
+        isSidebarOpen={isSidebarOpen} 
+        toggleSidebar={toggleSidebar} 
+        isMobile={isMobile} 
+      />
 
+      {/* Overlay mobile */}
       {isMobile && isSidebarOpen && (
         <div
           onClick={toggleSidebar}
-          className="fixed inset-0 bg-transparent z-30 lg:hidden"
+          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
           style={{ pointerEvents: 'all' }}
-        ></div>
+        />
       )}
 
       <div className="lg:ml-65 flex-1 flex flex-col overflow-hidden">
-        <HeaderDashboard toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} isMobile={isMobile} />
+        <HeaderDashboard 
+          toggleSidebar={toggleSidebar} 
+          isSidebarOpen={isSidebarOpen} 
+          isMobile={isMobile} 
+        />
 
         <main className="flex-1 overflow-y-auto p-0 mt-25">
           {/* Header avec breadcrumb */}
-          <div className="bg-green-50 p-6 mb-8 -mt-6">
-            <nav className="flex items-center text-sm text-gray-100 mb-6" aria-label="Breadcrumb">
-              <Link to="/" className="text-black">Accueil</Link>
-              <ChevronRight className="w-4 h-4 mx-2 text-black" />
-              <Link to="/dashboard" className="text-black">Dashboard</Link>
-              <ChevronRight className="w-4 h-4 mx-2 text-black" />
-              <span className="text-black">Prescription d'urbanisme</span>
+          <div className="bg-green-50 dark:bg-gray-900 p-6 mb-8 -mt-6">
+            {/* Breadcrumb */}
+            <nav 
+              className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-6" 
+              aria-label="Breadcrumb"
+            >
+              <Link 
+                to="/" 
+                className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+              >
+                Accueil
+              </Link>
+              <ChevronRight className="w-4 h-4 mx-2 text-gray-400 dark:text-gray-500" />
+              <Link 
+                to="/dashboard" 
+                className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <ChevronRight className="w-4 h-4 mx-2 text-gray-400 dark:text-gray-500" />
+              <span className="text-gray-900 dark:text-gray-200 font-medium">
+                Prescription d'urbanisme
+              </span>
             </nav>
 
             {/* Titre */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 ml-4 mr-4 lg:ml-14 lg:mr-16">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Prescription d'Urbanisme</h1>
-                <p className="text-gray-600 mt-1">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Prescription d'Urbanisme
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Gestion des prescriptions d'urbanisme
                 </p>
               </div>
             </div>
 
-            {/* Contenu principal */}
-            <div className="bg-white rounded-lg shadow-sm p-6 ml-4 mr-4 lg:ml-14 lg:mr-16" style={{ height: 'calc(100vh - 200px)' }}>
-              <Carte/>
+            {/* Contenu principal - Carte */}
+            <div 
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-none 
+                         border border-transparent dark:border-gray-700 
+                         p-6 ml-4 mr-4 lg:ml-14 lg:mr-16 overflow-hidden"
+              style={{ height: 'calc(100vh - 200px)' }}
+            >
+              <Carte />
             </div>
           </div>
         </main>
