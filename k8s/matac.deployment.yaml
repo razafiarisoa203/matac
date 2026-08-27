@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: matac
-  namespace: pnud-agvm
+  namespace: ${NAMESPACE}
 spec:
   replicas: 1
   selector:
