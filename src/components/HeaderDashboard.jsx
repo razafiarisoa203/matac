@@ -179,10 +179,10 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
         <div className="relative" ref={languageRef}>
           <button
             onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-            className="flex items-center space-x-1 text-black dark:text-white hover:bg-green-200 dark:hover:bg-gray-700 rounded-full p-2 transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-2 text-sm font-semibold text-black dark:text-white bg-green-100 dark:bg-gray-800 hover:bg-green-200 dark:hover:bg-gray-700 rounded-full transition-colors border border-green-200 dark:border-gray-600"
           >
-            <Globe className="w-5 h-5" />
-            <span className="text-sm font-medium">{currentLanguage.toUpperCase()}</span>
+            <Globe className="w-4 h-4" />
+            <span>{i18n.language === 'fr' ? 'FR' : i18n.language === 'mg' ? 'MG' : i18n.language.split('-')[0].toUpperCase()}</span>
           </button>
 
           {isLanguageOpen && (
