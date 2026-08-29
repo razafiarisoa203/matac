@@ -1,9 +1,9 @@
 // HeaderDashboard.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Menu, User, Globe, Sun, Moon } from "lucide-react";
+import { ArrowLeft, Menu, Globe, Sun, Moon, Mail, Phone, X } from "lucide-react";
 import { LuBellRing } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import { citoyenService } from "../services/api/citoyenService";
 import { authService } from "../services/api/authService";
 
@@ -14,7 +14,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('darkMode') === 'true';
+    return localStorage.getItem("darkMode") === "true";
   });
   const [citizenData, setCitizenData] = useState({
     nom: "",
@@ -31,11 +31,11 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
   const toggleDarkMode = () => {
     const newDarkMode = !darkMode;
     setDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
+    localStorage.setItem("darkMode", newDarkMode);
     if (newDarkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   };
 
@@ -47,33 +47,33 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
 
   // 🔹 Navigation vers la page d'accueil
   const handleGoHome = () => {
-    navigate('/');
+    navigate("/");
   };
 
   // 🔹 Initialisation du thème
   useEffect(() => {
     if (darkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   }, []);
 
   // 🔹 Écouteur des changements de langue
   useEffect(() => {
     const handleLanguageChange = (lng) => setCurrentLanguage(lng);
-    i18n.on('languageChanged', handleLanguageChange);
-    return () => i18n.off('languageChanged', handleLanguageChange);
+    i18n.on("languageChanged", handleLanguageChange);
+    return () => i18n.off("languageChanged", handleLanguageChange);
   }, [i18n]);
 
-  // 🔹 Charger les données citoyen (dans useEffect)
+  // 🔹 Charger les données citoyen
   useEffect(() => {
     const fetchCitizenData = async () => {
       try {
         if (id_citizen) {
           const data = await citoyenService.getCitizenData(id_citizen);
           const formattedData = {
-            nom: `${data?.citizen_lastname || ""} ${data?.citizen_name || ""}`,
+            nom: `${data?.citizen_lastname || ""} ${data?.citizen_name || ""}`.trim(),
             email: userData?.user_email || "",
             telephone: userData?.user_phone || "",
           };
@@ -103,145 +103,181 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
 
   // 🔹 Gestion du clic sur le profil
   const handleProfileClick = () => {
-    setIsProfileFormOpen(!isProfileFormOpen);
+    setIsProfileFormOpen((prev) => !prev);
     if (onProfileClick) onProfileClick();
   };
 
   // 🔹 Générer les initiales
   const getInitials = (name) => {
     if (!name) return "U";
-    const words = name.trim().split(" ");
+    const words = name.trim().split(/\s+/).filter(Boolean);
     return words.length > 1
       ? `${words[0][0]}${words[1][0]}`.toUpperCase()
       : name.slice(0, 2).toUpperCase();
   };
 
   return (
-    <header className="fixed top-0 left-0 w-screen bg-green-50 dark:bg-gray-900 border-b border-transparent dark:border-gray-700 text-gray-800 dark:text-gray-100 flex items-center justify-between p-10 h-16 z-50 shadow-sm dark:shadow-black/30 transition-colors duration-300">
-      <div className="flex items-center space-x-4">
+    <header className="fixed top-0 left-0 w-full bg-green-50/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-green-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 flex items-center justify-between px-4 h-16 z-50 shadow-sm dark:shadow-black/30 transition-colors duration-300">
+      {/* Left */}
+      <div className="flex items-center space-x-3">
         {isMobile ? (
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-full hover:bg-green-200 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-green-200/80 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Menu"
           >
-            <Menu size={24} className="text-black dark:text-white" />
+            <Menu size={22} className="text-gray-800 dark:text-white" />
           </button>
         ) : (
           <button
             onClick={handleGoHome}
-            className="p-2 rounded-full hover:bg-green-200 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-green-200/80 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Retour à l'accueil"
           >
-            <ArrowLeft size={24} className="text-black dark:text-white" />
+            <ArrowLeft size={22} className="text-gray-800 dark:text-white" />
           </button>
         )}
       </div>
 
-      <div className="flex items-center space-x-2 mr-5">
-
+      {/* Right */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Bouton profil */}
-        <button
-          onClick={handleProfileClick}
-          className="flex items-center rounded-full bg-green-100 dark:bg-gray-800 hover:bg-green-200 dark:hover:bg-gray-700 transition-colors"
-        >
-          <div className="flex items-center space-x-3 border-b border-gray-100 dark:border-gray-600 p-2 pr-5">
-            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white text-sm font-semibold">
+        <div className="relative" ref={profileRef}>
+          <button
+            onClick={handleProfileClick}
+            className="flex items-center gap-2.5 rounded-full bg-green-100/80 dark:bg-gray-800 hover:bg-green-200/80 dark:hover:bg-gray-700 transition-all duration-200 border border-green-200/60 dark:border-gray-600 pl-1.5 pr-3 py-1.5 group"
+          >
+            <div className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 text-white text-sm font-semibold shadow-sm ring-2 ring-white/30 dark:ring-gray-900/50 group-hover:scale-105 transition-transform">
               {getInitials(citizenData.nom)}
             </div>
-            <div className="flex-1 text-left">
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{citizenData.nom || "—"}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{citizenData.email || "—"}</p>
+            <div className="hidden sm:block text-left min-w-0">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate max-w-[140px]">
+                {citizenData.nom || "Utilisateur"}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]">
+                {citizenData.email || "—"}
+              </p>
             </div>
-          </div>
-        </button>
+          </button>
 
-        {/* Bouton notifications */}
+          {/* Dropdown profil */}
+          {isProfileFormOpen && (
+            <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-black/50 border border-gray-200/80 dark:border-gray-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150 z-50">
+              {/* Header du dropdown */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white text-lg font-bold ring-2 ring-white/40">
+                    {getInitials(citizenData.nom)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-semibold text-white truncate">
+                      {citizenData.nom || "Utilisateur"}
+                    </h3>
+                    <p className="text-sm text-green-100/90 truncate">Citoyen</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Infos */}
+              <div className="px-4 py-3 space-y-2.5">
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-gray-700/60 flex items-center justify-center shrink-0">
+                    <Mail className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
+                      {citizenData.email || "—"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-gray-700/60 flex items-center justify-center shrink-0">
+                    <Phone className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Téléphone</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
+                      {citizenData.telephone || "—"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="border-t border-gray-100 dark:border-gray-700 px-3 py-3">
+                <button
+                  onClick={() => setIsProfileFormOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Fermer
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Notifications */}
         <button
-          className="p-2 text-black dark:text-white hover:bg-green-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+          className="p-2.5 text-gray-700 dark:text-gray-200 hover:bg-green-200/70 dark:hover:bg-gray-700 rounded-full transition-colors relative"
           aria-label="Notifications"
         >
           <LuBellRing className="w-5 h-5" />
         </button>
 
-        {/* Bouton thème */}
+        {/* Thème */}
         <button
           onClick={toggleDarkMode}
-          className="p-2 text-black dark:text-white hover:bg-green-200 dark:hover:bg-gray-700 rounded-full transition-colors"
-          aria-label={darkMode ? 'Désactiver le mode sombre' : 'Activer le mode sombre'}
+          className="p-2.5 text-gray-700 dark:text-gray-200 hover:bg-green-200/70 dark:hover:bg-gray-700 rounded-full transition-colors"
+          aria-label={darkMode ? "Désactiver le mode sombre" : "Activer le mode sombre"}
         >
-          {darkMode ? (
-            <Sun className="w-5 h-5" />
-          ) : (
-            <Moon className="w-5 h-5" />
-          )}
+          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
-        {/* Bouton langue */}
+        {/* Langue */}
         <div className="relative" ref={languageRef}>
           <button
             onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-            className="flex items-center space-x-1.5 px-3 py-2 text-sm font-semibold text-black dark:text-white bg-green-100 dark:bg-gray-800 hover:bg-green-200 dark:hover:bg-gray-700 rounded-full transition-colors border border-green-200 dark:border-gray-600"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-800 dark:text-white bg-green-100/80 dark:bg-gray-800 hover:bg-green-200/80 dark:hover:bg-gray-700 rounded-full transition-colors border border-green-200/60 dark:border-gray-600"
           >
             <Globe className="w-4 h-4" />
-            <span>{i18n.language === 'fr' ? 'FR' : i18n.language === 'mg' ? 'MG' : i18n.language.split('-')[0].toUpperCase()}</span>
+            <span>
+              {i18n.language === "fr"
+                ? "FR"
+                : i18n.language === "mg"
+                ? "MG"
+                : i18n.language.split("-")[0].toUpperCase()}
+            </span>
           </button>
 
           {isLanguageOpen && (
-            <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg dark:shadow-black/40 py-1 z-50">
+            <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-black/40 py-1 z-50 overflow-hidden">
               <button
-                onClick={() => changeLanguage('fr')}
-                className={`block px-4 py-2 text-sm w-full text-left ${i18n.language === 'fr'
-                    ? 'bg-gray-100 dark:bg-gray-700 text-green-600 dark:text-green-400 font-medium'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                onClick={() => changeLanguage("fr")}
+                className={`block w-full px-4 py-2.5 text-sm text-left transition-colors ${
+                  i18n.language === "fr"
+                    ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
               >
-                FR
+                Français
               </button>
               <button
-                onClick={() => changeLanguage('mg')}
-                className={`block px-4 py-2 text-sm w-full text-left ${i18n.language === 'mg'
-                    ? 'bg-gray-100 dark:bg-gray-700 text-green-600 dark:text-green-400 font-medium'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                onClick={() => changeLanguage("mg")}
+                className={`block w-full px-4 py-2.5 text-sm text-left transition-colors ${
+                  i18n.language === "mg"
+                    ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
               >
-                MG
+                Malagasy
               </button>
             </div>
           )}
         </div>
-
       </div>
-
-      {isProfileFormOpen && (
-        <div
-          ref={profileRef}
-          className="absolute top-14 right-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-black/40 border border-gray-200 dark:border-gray-700 p-4 animate-fadeIn"
-        >
-          {/* Détails utilisateur */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{citizenData.nom || "—"}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{citizenData.email || "—"}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{citizenData.telephone || "—"}</span>
-            </div>
-          </div>
-
-          {/* Boutons d'action */}
-          <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-gray-100 dark:border-gray-600">
-            <button
-              onClick={() => setIsProfileFormOpen(false)}
-              className="px-4 py-2 text-sm bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors"
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 }
