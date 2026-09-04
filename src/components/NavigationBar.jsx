@@ -4,11 +4,10 @@ import { useState, useEffect, useContext } from "react";
 import { useTranslation } from 'react-i18next';
 import { User, Globe, Menu, X, Sun, Moon } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
-import { authService } from "../services/api/authService";
 
 function NavigationBar({ activeSection, setActiveSection }) {
   const { t, i18n } = useTranslation();
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,30 +27,6 @@ function NavigationBar({ activeSection, setActiveSection }) {
     }
   };
 
-  useEffect(() => {
-    const checkAuth = () => {
-      if (!authService.isAuthenticated()) {
-        // If not authenticated, logout to clear state
-        logout();
-      }
-    };
-
-    // Check on mount
-    checkAuth();
-
-    // Check on window focus
-    const handleFocus = () => checkAuth();
-    window.addEventListener('focus', handleFocus);
-
-    // Check every 5 minutes
-    const interval = setInterval(checkAuth, 5 * 60 * 1000);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      clearInterval(interval);
-    };
-  }, [logout]);
-  
   useEffect(() => {
     const handleLanguageChange = (lng) => setCurrentLanguage(lng);
     i18n.on('languageChanged', handleLanguageChange);

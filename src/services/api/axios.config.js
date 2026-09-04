@@ -1,15 +1,16 @@
 import axios from 'axios';
 import Cookies from "js-cookie";
+import { ENV } from "../../config/env";
 
 const axiosConfig = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: ENV.API_BASE_URL,
 });
 
 // Add a request interceptor
 axiosConfig.interceptors.request.use(
     (config) => {
-        // Get the token from local storage or cookies
-        const token = localStorage.getItem('access_token') || Cookies.get('access_token');
+        // Get the token from local storage or cookies or SSO session storage
+        const token = localStorage.getItem('access_token') || Cookies.get('access_token') || sessionStorage.getItem('app_jwt');
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }

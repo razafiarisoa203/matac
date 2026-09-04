@@ -1,10 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-// Auth
+// Auth SSO
 import Login from "../pages/Authentification/Login";
-import UserRegisterPage from "../pages/Authentification/Register";
-import ForgotPassword from "../pages/Authentification/ForgotPassword";
-import ResetPassword from "../pages/Authentification/ResetPassword";
+import Callback from "../pages/Authentification/Callback";
+import RegisterComplete from "../pages/Authentification/RegisterComplete";
 
 // Pages principales
 import HomePage from "../pages/HomePage";
@@ -22,37 +21,13 @@ import ConstructionDetailsPage from '../pages/ConstructionDetailsPage';
 import PermisRemblai from '../pages/PermisRemblai';
 import PrescriptionUrbanisme from '../pages/PrescriptionUrbanisme';
 
-
 // Admin & Profile
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import UsersList from "../components/Users/UsersList";
 import RoleManagement from "../pages/RoleAppli/Role";
 
-/**
- * ProtectedRoute vérifie uniquement localStorage (clé "user").
- * Si la valeur est absente / invalide => redirect vers /login
- */
-const ProtectedRoute = ({ children }) => {
-  const user = localStorage.getItem("access_token");
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
-};
-
-/**
- * PublicRoute vérifie si l'utilisateur est authentifié.
- * Si authentifié => redirect vers /
- */
-const PublicRoute = ({ children }) => {
-  const user = localStorage.getItem("access_token");
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
+// Route protégée (vérifie le JWT via /serviceauth/auth/verify-token)
+import PrivateRoute from "../components/auth/PrivateRoute";
 
 function App() {
   return (
@@ -60,27 +35,26 @@ function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><UserRegisterPage /></PublicRoute>} />
-        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/callback" element={<Callback />} />
+        <Route path="/register-complete" element={<RegisterComplete />} />
         <Route path="/permis" element={<PermisConstruction />} />
 
         {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <DashboardClient />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/dashboard-client"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <DashboardClient />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
 
@@ -88,34 +62,34 @@ function App() {
         <Route
           path="/alignement"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <Allignement />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/alignement-list"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <AlignmentListPage />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/alignment-details/:id"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <AlignmentDetailsPage />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/prescription-urbanisme"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <PrescriptionUrbanisme />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
 
@@ -123,52 +97,51 @@ function App() {
         <Route
           path="/permis-list"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <ConstructionListPage />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/permis-details/:id"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <ConstructionDetailsPage />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/permis-remblai"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <PermisRemblai />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
-
 
         {/* Admin */}
         <Route
           path="/admin-dashboard"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/users"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <UsersList />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/RoleManagement"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <RoleManagement />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
 

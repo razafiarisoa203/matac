@@ -28,7 +28,9 @@ export const authService = {
 
   getToken: () => {
     const token =
-      localStorage.getItem(AUTH_TOKEN_KEY) || Cookies.get(AUTH_TOKEN_KEY);
+      localStorage.getItem(AUTH_TOKEN_KEY) ||
+      Cookies.get(AUTH_TOKEN_KEY) ||
+      sessionStorage.getItem("app_jwt");
     if (!token) return null;
     try {
       const decodedToken = jwtDecode(token);

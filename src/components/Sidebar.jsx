@@ -10,13 +10,12 @@ import {
 } from 'lucide-react';
 import { LuLayoutDashboard, LuMapPinHouse } from "react-icons/lu";
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { authService } from '../services/api/authService';
+import { Link, useLocation } from 'react-router-dom';
+import { logout as ssoLogout } from '../utils/logout';
 
 
 const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const menuItems = [
     {
@@ -48,8 +47,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, isMobile }) => {
 
   const handleLogout = async () => {
     try {
-      await authService.logout(); 
-      navigate('/'); 
+      await ssoLogout();
     } catch (error) {
       console.error('Erreur de déconnexion :', error);
     }
