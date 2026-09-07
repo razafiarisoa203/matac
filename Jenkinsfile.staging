@@ -18,7 +18,7 @@ pipeline {
         VITE_APP_ID = '32'
         VITE_GEOSERVER_URL = '/geoserver/Fianarantsoa'
         VITE_WORKSPACE= 'Fianarantsoa'
-        VITE_API_BASE_URL = 'http://31.220.94.42:5353/'
+        VITE_API_BASE_URL = 'https://gateway.ilafitany.mg/'
 
         # Keycloak - staging (ajout demandé)
         VITE_KEYCLOAK_URL = 'https://iaho.mg'
