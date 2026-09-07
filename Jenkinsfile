@@ -18,7 +18,7 @@ pipeline {
         VITE_APP_ID = '32'
         VITE_GEOSERVER_URL = '/geoserver/Fianarantsoa'
         VITE_WORKSPACE= 'Fianarantsoa'
-        VITE_API_BASE_URL = 'http://31.220.94.42:5353/'
+        VITE_API_BASE_URL = 'https://gateway.tsirylab.com/'
         VITE_KEYCLOAK_URL = 'https://auth.tsirylab.com'
         VITE_KEYCLOAK_REALM = 'master'
         VITE_KEYCLOAK_CLIENT_ID = 'matac-develop'
