@@ -19,6 +19,11 @@ pipeline {
         VITE_GEOSERVER_URL = '/geoserver/Fianarantsoa'
         VITE_WORKSPACE= 'Fianarantsoa'
         VITE_API_BASE_URL = 'http://31.220.94.42:5353/'
+        VITE_KEYCLOAK_URL = 'https://auth.tsirylab.com'
+        VITE_KEYCLOAK_REALM = 'master'
+        VITE_KEYCLOAK_CLIENT_ID = 'matac-develop'
+        VITE_KEYCLOAK_REDIRECT_URI = 'https://matac.tsirylab.com'
+
     }
 
     stages {
@@ -40,6 +45,10 @@ pipeline {
                           --build-arg VITE_GEOSERVER_URL=${VITE_GEOSERVER_URL} \
                           --build-arg VITE_WORKSPACE=${VITE_WORKSPACE} \
                           --build-arg VITE_API_BASE_URL=${VITE_API_BASE_URL} \
+                          --build-arg VITE_KEYCLOAK_URL="${VITE_KEYCLOAK_URL}" \ 
+                          --build-arg VITE_KEYCLOAK_REALM="${VITE_KEYCLOAK_REALM}" \ 
+                          --build-arg VITE_KEYCLOAK_CLIENT_ID="${VITE_KEYCLOAK_CLIENT_ID}" \ 
+                          --build-arg VITE_KEYCLOAK_REDIRECT_URI="${VITE_KEYCLOAK_REDIRECT_URI}" \
                           -t ${FULL_IMAGE_NAME} .
 
                         echo ${HARBOR_PASS} | \
@@ -81,6 +90,10 @@ pipeline {
                           --from-literal=VITE_GEOSERVER_URL="${VITE_GEOSERVER_URL}" \
                           --from-literal=VITE_WORKSPACE="${VITE_WORKSPACE}" \
                           --from-literal=VITE_API_BASE_URL="${VITE_API_BASE_URL}" \
+                          --from-literal=VITE_KEYCLOAK_URL="${VITE_KEYCLOAK_URL}" \ 
+                          --from-literal=VITE_KEYCLOAK_REALM="${VITE_KEYCLOAK_REALM}" \ 
+                          --from-literal=VITE_KEYCLOAK_CLIENT_ID="${VITE_KEYCLOAK_CLIENT_ID}" \ 
+                          --from-literal=VITE_KEYCLOAK_REDIRECT_URI="${VITE_KEYCLOAK_REDIRECT_URI}" \
                           --namespace=${NAMESPACE}
 
                         # template toutes les ressources
