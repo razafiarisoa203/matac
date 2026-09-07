@@ -5,21 +5,34 @@ import { handleSsoLogin } from "../../auth/ssoFlow";
 
 /**
  * Page de callback appelée par Keycloak après authentification.
- * Tente le flux SSO (étape 1/2) et redirige selon le résultat.
+ * Attend que keycloak-js soit bien authentifié (et que le token soit dispo)
+ * avant de lancer le flux SSO, pour éviter toute redirection parasite vers
+ * /login ou la page d'accueil pendant le chargement.
  */
 export default function Callback() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let active = true;
+
     const process = async () => {
-      try {
-        if (!keycloak.authenticated || !keycloak.token) {
-          navigate("/login", { replace: true });
+      // Attendre que keycloak-js ait fini de traiter le retour (code/state)
+      // et soit authentifié avec un token disponible.
+      const started = Date.now();
+      while (!keycloak.authenticated || !keycloak.token) {
+        if (!active) return;
+        // Garde-fou : si Keycloak n'a pas authenticifié sous 15s, abandonner.
+        if (Date.now() - started > 15000) {
+          if (active) navigate("/login", { replace: true });
           return;
         }
+        await new Promise((r) => setTimeout(r, 100));
+      }
 
+      try {
         const result = await handleSsoLogin(keycloak.token);
 
+        if (!active) return;
         if ("needsCitizenForm" in result) {
           navigate("/register-complete", { replace: true });
         } else if (result.loggedIn) {
@@ -27,11 +40,15 @@ export default function Callback() {
         }
       } catch (err) {
         console.error("[Callback] Erreur SSO:", err);
-        navigate("/login", { replace: true });
+        if (active) navigate("/login", { replace: true });
       }
     };
 
     process();
+
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
   return (

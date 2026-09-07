@@ -1,7 +1,4 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import keycloak from "../../auth/keycloak";
-import { handleSsoLogin } from "../../auth/ssoFlow";
 import { ENV } from "../../config/env";
 import Header from "../../components/Header";
 import bgImage from "../../assets/image/construction-bg.jpeg";
@@ -10,25 +7,11 @@ import bgImage from "../../assets/image/construction-bg.jpeg";
  * Écran de connexion SSO.
  * L'utilisateur est redirigé vers Keycloak (realm IAHO) pour s'authentifier
  * ou s'inscrire. Aucun mot de passe n'est géré côté MATAC.
+ *
+ * handleLogin est exécuté UNIQUEMENT au clic sur le bouton « Connexion » :
+ * aucune exécution automatique au chargement de la page.
  */
 const Login = () => {
-  const navigate = useNavigate();
-
-  // Si déjà connecté via Keycloak, tenter le flux SSO directement.
-  useEffect(() => {
-    const checkExisting = async () => {
-      if (keycloak.authenticated && keycloak.token) {
-        const result = await handleSsoLogin(keycloak.token);
-        if ("needsCitizenForm" in result) {
-          navigate("/register-complete", { replace: true });
-        } else if (result.loggedIn) {
-          navigate("/dashboard", { replace: true });
-        }
-      }
-    };
-    checkExisting();
-  }, [navigate]);
-
   const handleLogin = () => {
     keycloak.login({
       redirectUri: ENV.KEYCLOAK_REDIRECT_URI,

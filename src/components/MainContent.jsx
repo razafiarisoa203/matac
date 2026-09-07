@@ -1,9 +1,14 @@
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import keycloak from "../auth/keycloak";
+import { ENV } from "../config/env";
 
 const MainContent = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+
+  // Exécutée UNIQUEMENT au clic sur le bouton « Connexion » de la page d'accueil.
+  const handleLogin = () => {
+    keycloak.login({ redirectUri: ENV.KEYCLOAK_REDIRECT_URI });
+  };
   return (
     <>
       {/* Contenu principal avec padding-top réduit */}
@@ -32,7 +37,7 @@ const MainContent = () => {
               style={{ backgroundColor: "#269745" }}
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#1e7a38")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#269745")}
-              onClick={() => navigate("/login")}
+              onClick={handleLogin}
             >
               {t('home.login')}
             </button>

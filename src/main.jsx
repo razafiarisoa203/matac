@@ -12,28 +12,34 @@ import CustomToast from "./components/customToast";
 import keycloak from "./auth/keycloak";
 import { handleSsoLogin } from "./auth/ssoFlow";
 import { ENV } from "./config/env";
-import { getAppToken, clearAppToken } from "./services/api/tokenStorage";
+import { clearAppToken } from "./services/api/tokenStorage";
 
 // La config ENV est résolue ici volontairement pour lever une erreur explicite
 // au démarrage si une variable d'environnement obligatoire est absente.
 const bootEnv = ENV; // eslint-disable-line no-unused-vars
 
 const initAuth = async () => {
-  // onLoad absent : Keycloak ne redirige PAS automatiquement vers la page
-  // YAHO au chargement. La redirection ne se produit que lorsqu'on appelle
-  // keycloak.login()/keycloak.register() (boutons des écrans
-  // login / inscription / mot de passe oublié). Les autres pages publiques
-  // de la plateforme MATAC ne sont donc pas détournées vers Keycloak.
   // onLoad: 'check-sso' (conforme guide officiel) : ne force PAS de redirection
   // systématique vers Keycloak. L'utilisateur non connecté reste sur la page
   // d'accueil MATAC et n'est redirigé vers YAHO qu'au clic sur un bouton de
-  // connexion/inscription (Login.jsx). La redirection massive précédente venait
-  // du logout() automatique dans NavigationBar, désormais supprimé.
-  const authenticated = await keycloak.init({
-    onLoad: "check-sso",
-    pkceMethod: "S256",
-    checkLoginIframe: false,
-  });
+  // connexion/inscription (Login.jsx).
+  //
+  // silentCheckSsoRedirectUri : indispensable pour que 'check-sso' s'exécute en
+  // arrière-plan (iframe silencieuse public/silent-check-sso.html) SANS
+  // rechargement complet de la page. Sans lui, keycloak-js fait un aller-retour
+  // complet vers Keycloak -> la page "revient sur l'accueil" et le chargement
+  // devient long après la connexion.
+  try {
+    await keycloak.init({
+      onLoad: "check-sso",
+      pkceMethod: "S256",
+      silentCheckSsoRedirectUri:
+        window.location.origin + "/silent-check-sso.html",
+      checkLoginIframe: false,
+    });
+  } catch (err) {
+    console.error("[bootstrap] Erreur d'init Keycloak:", err);
+  }
 
   keycloak.onTokenExpired = async () => {
     try {
@@ -46,23 +52,14 @@ const initAuth = async () => {
       clearAppToken();
     }
   };
-
-  // Si une session Keycloak est déjà détectée au chargement et qu'aucun
-  // JWT applicatif n'est présent, on exécute le flux SSO.
-  if (authenticated && keycloak.token && !getAppToken()) {
-    try {
-      const result = await handleSsoLogin(keycloak.token);
-      if ("needsCitizenForm" in result) {
-        window.location.href = "/register-complete";
-      }
-    } catch (err) {
-      console.error("[bootstrap] Erreur lors du flux SSO:", err);
-    }
-  }
 };
 
-initAuth().then(() => {
-  createRoot(document.getElementById("root")).render(
+// L'application est rendue immédiatement ; l'init Keycloak s'exécute en
+// arrière-plan sans bloquer le premier affichage (évite l'écran blanc / le
+// chargement long perçu après la connexion).
+initAuth();
+
+createRoot(document.getElementById("root")).render(
     <StrictMode>
       <Provider store={store}>
         <I18nextProvider i18n={i18n}>
@@ -76,4 +73,3 @@ initAuth().then(() => {
       </Provider>
     </StrictMode>
   );
-});
