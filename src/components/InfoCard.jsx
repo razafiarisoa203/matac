@@ -1,15 +1,12 @@
-import { useNavigate } from "react-router-dom";
+import { loginWithYaho, registerWithYaho } from "../auth/authActions";
 
 const InfoCard = ({ title, icon, items }) => {
-  const navigate = useNavigate();
-
   const handleLinkClick = (item) => {
     if (item.text === "Connexion") {
-      navigate("/login");
+      loginWithYaho();
     } else if (item.text === "Inscrivez-vous") {
-      navigate("/login");
+      registerWithYaho();
     }
-    // Add other navigation logic as needed
   };
 
   return (

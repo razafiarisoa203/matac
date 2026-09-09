@@ -4,6 +4,7 @@ import { useState, useEffect, useContext } from "react";
 import { useTranslation } from 'react-i18next';
 import { User, Globe, Menu, X, Sun, Moon } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
+import { loginWithYaho, registerWithYaho } from "../auth/authActions";
 
 function NavigationBar({ activeSection, setActiveSection }) {
   const { t, i18n } = useTranslation();
@@ -48,7 +49,7 @@ function NavigationBar({ activeSection, setActiveSection }) {
     if (user) {
       navigate('/dashboard');
     } else {
-      navigate('/login');
+      loginWithYaho();
     }
   };
 
@@ -102,6 +103,14 @@ function NavigationBar({ activeSection, setActiveSection }) {
             <User className="w-4 h-4" />
             <span>{user ? (user.username || t('common.connected')) : t('common.login')}</span>
           </button>
+          {!user && (
+            <button
+              onClick={registerWithYaho}
+              className="border-2 border-[#269745] text-[#269745] px-4 py-1.5 rounded-lg hover:bg-[#269745] hover:text-white flex items-center space-x-2 transition-colors duration-300"
+            >
+              <span>{t('common.register')}</span>
+            </button>
+          )}
 
           <div className="relative">
             <button
@@ -204,6 +213,17 @@ function NavigationBar({ activeSection, setActiveSection }) {
             <User className="w-4 h-4" />
             <span>{user ? (user.username || t('common.connected')) : t('common.login')}</span>
           </button>
+          {!user && (
+            <button
+              onClick={() => {
+                registerWithYaho();
+                setIsMobileMenuOpen(false);
+              }}
+              className="block px-4 py-2 text-base font-medium text-[#269745] hover:underline flex items-center space-x-2"
+            >
+              <span>{t('common.register')}</span>
+            </button>
+          )}
           <div className="px-4 py-2">
             <div className="flex items-center space-x-2 text-gray-800">
               <Globe className="w-5 h-5" />

@@ -1,14 +1,8 @@
 import { useTranslation } from "react-i18next";
-import keycloak from "../auth/keycloak";
-import { ENV } from "../config/env";
+import { loginWithYaho, registerWithYaho } from "../auth/authActions";
 
 const MainContent = () => {
   const { t } = useTranslation();
-
-  // Exécutée UNIQUEMENT au clic sur le bouton « Connexion » de la page d'accueil.
-  const handleLogin = () => {
-    keycloak.login({ redirectUri: ENV.KEYCLOAK_REDIRECT_URI });
-  };
   return (
     <>
       {/* Contenu principal avec padding-top réduit */}
@@ -37,12 +31,15 @@ const MainContent = () => {
               style={{ backgroundColor: "#269745" }}
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#1e7a38")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#269745")}
-              onClick={handleLogin}
+              onClick={loginWithYaho}
             >
               {t('home.login')}
             </button>
-            <button className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 border-2 border-[#269745] bg-white text-[#269745] hover:bg-[#269745] hover:text-white w-full sm:w-auto text-sm sm:text-base">
-              {t('home.contact')}
+            <button
+              onClick={registerWithYaho}
+              className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 border-2 border-[#269745] bg-white text-[#269745] hover:bg-[#269745] hover:text-white w-full sm:w-auto text-sm sm:text-base"
+            >
+              {t('home.register')}
             </button>
           </div>
 

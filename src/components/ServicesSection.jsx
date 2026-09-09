@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { loginWithYaho } from "../auth/authActions";
 
 const ServicesSection = () => {
   const { t } = useTranslation();
@@ -106,8 +106,8 @@ const ServicesSection = () => {
                 <p className="text-gray-600 leading-relaxed mb-6 text-sm">
                   {t('services.platformDescription')}
                 </p>
-                <Link
-                  to="/login"
+                <button
+                  onClick={loginWithYaho}
                   className="bg-[#269745] text-white px-6 py-3 rounded-full hover:bg-[#1e7a3a] transition-colors duration-300 flex items-center gap-2 text-sm font-semibold"
                 >
                   {t('services.myPlatform')}
@@ -124,7 +124,7 @@ const ServicesSection = () => {
                       d="M9 5l7 7-7 7"
                     />
                   </svg>
-                </Link>
+                </button>
               </div>
             </div>
           </div>

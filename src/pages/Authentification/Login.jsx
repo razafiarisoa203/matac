@@ -1,4 +1,5 @@
 import keycloak from "../../auth/keycloak";
+import { loginWithYaho, registerWithYaho } from "../../auth/authActions";
 import { ENV } from "../../config/env";
 import Header from "../../components/Header";
 import bgImage from "../../assets/image/construction-bg.jpeg";
@@ -12,18 +13,6 @@ import bgImage from "../../assets/image/construction-bg.jpeg";
  * aucune exécution automatique au chargement de la page.
  */
 const Login = () => {
-  const handleLogin = () => {
-    keycloak.login({
-      redirectUri: ENV.KEYCLOAK_REDIRECT_URI,
-    });
-  };
-
-  const handleRegister = () => {
-    keycloak.register({
-      redirectUri: ENV.KEYCLOAK_REDIRECT_URI,
-    });
-  };
-
   const handleForgotPassword = () => {
     keycloak.login({
       redirectUri: ENV.KEYCLOAK_REDIRECT_URI,
@@ -57,7 +46,7 @@ const Login = () => {
               </div>
 
               <button
-                onClick={handleLogin}
+                onClick={loginWithYaho}
                 className="w-full flex justify-center items-center py-2.5 px-4 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition"
               >
                 Se connecter avec YAHO
@@ -70,7 +59,7 @@ const Login = () => {
               </div>
 
               <button
-                onClick={handleRegister}
+                onClick={registerWithYaho}
                 className="w-full flex justify-center items-center py-2.5 px-4 rounded-md text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition"
               >
                 Créer un compte (S'inscrire)
