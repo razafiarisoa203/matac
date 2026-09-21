@@ -4,7 +4,7 @@ import { authHeader } from "./tokenStorage";
 
 /**
  * Service d'appel aux endpoints SSO du Service Auth.
- * Utilise VITE_API_BASE_URL comme base et gère proprement les statuts
+ * Utilise VITE_API_URL comme base et gère proprement les statuts
  * 200/201/400/401/409/5xx sans faire planter l'application.
  */
 

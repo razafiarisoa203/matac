@@ -65,14 +65,23 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
       alert("Aucun token trouvé. Veuillez vous reconnecter.");
       return;
     }
-  
-    // URL du projet B en local
-    const projectBUrl = "http://localhost:5174";
-  
-    // Ouvrir le projet B avec le token
+
+    const projectBUrl = "https://matac-commune.tsirylab.com/";
     window.open(`${projectBUrl}/auth?token=${token}`, "_blank");
   };
-  
+
+  const communeAuthorizedRoles = ["Service-technique", "Maire", "Chef-Service-technique"];
+
+  const canAccessCommune = React.useMemo(() => {
+    if (!Array.isArray(userRoles)) return false;
+
+    return userRoles.some((role) => {
+      const roleValue = role?.role_slug || role?.role_name || role;
+      return communeAuthorizedRoles.some((allowedRole) =>
+        String(roleValue).trim().toLowerCase() === allowedRole.toLowerCase()
+      );
+    });
+  }, [userRoles]);
 
   const handleContinueAsClient = () => {
     console.log('AdminAccessDialog - Continuation en tant que client');
@@ -180,12 +189,14 @@ const AdminAccessDialog = ({ onClose, token, userData }) => {
           >
             Interface d'administration
           </button>
-          <button
-            onClick={handleCommuneAccess}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            Interface commune
-          </button>
+          {canAccessCommune && (
+            <button
+              onClick={handleCommuneAccess}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              Interface commune
+            </button>
+          )}
         </div>
       </div>
     </div>

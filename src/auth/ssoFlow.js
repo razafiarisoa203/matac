@@ -1,19 +1,6 @@
 import { ssoApi } from "../services/api/ssoApi";
 import { setAppToken } from "../services/api/tokenStorage";
 
-/**
- * Orchestrateur du flux SSO Keycloak côté Service Auth.
- *
- * Étape 1 : POST /auth/sso/token { sso_token }
- *   - 200/201 : utilisateur connu -> JWT applicatif
- *   - 401     : utilisateur inconnu -> étape 2
- * Étape 2 : POST /auth/sso/register { sso_token, ... }
- *   - 200/201 : utilisateur créé -> JWT applicatif
- *   - 400     : données citoyen manquantes -> { needsCitizenForm: true }
- * Étape 3 (via completeCitizenRegistration) : POST /auth/sso/register-complete
- *   -> puis rappel systématique de l'étape 1 pour le JWT final.
- */
-
 const extractAppToken = (data) =>
   data?.app_token || data?.access_token || data?.token || data?.jwt;
 
