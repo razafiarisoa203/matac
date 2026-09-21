@@ -53,6 +53,13 @@ function NavigationBar({ activeSection, setActiveSection }) {
     }
   };
 
+  const userName =
+    user?.user_pseudo ||
+    user?.username ||
+    user?.name ||
+    [user?.citizen_name, user?.citizen_lastname].filter(Boolean).join(" ") ||
+    t('common.connected');
+
   const handleClick = (e, section) => {
     handleNavClick(e, section);
     setActiveSection(section);
@@ -101,7 +108,7 @@ function NavigationBar({ activeSection, setActiveSection }) {
             className="bg-[#269745] text-white px-4 py-2 rounded-lg hover:bg-[#1e7e3a] flex items-center space-x-2 transition-colors duration-300"
           >
             <User className="w-4 h-4" />
-            <span>{user ? (user.username || t('common.connected')) : t('common.login')}</span>
+            <span>{user ? userName : t('common.login')}</span>
           </button>
           {!user && (
             <button
@@ -211,7 +218,7 @@ function NavigationBar({ activeSection, setActiveSection }) {
             className="block px-4 py-2 text-base font-medium text-gray-800 hover:text-[#269745] flex items-center space-x-2"
           >
             <User className="w-4 h-4" />
-            <span>{user ? (user.username || t('common.connected')) : t('common.login')}</span>
+            <span>{user ? userName : t('common.login')}</span>
           </button>
           {!user && (
             <button
