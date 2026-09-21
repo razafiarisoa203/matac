@@ -22,19 +22,8 @@ const bootEnv = ENV;
 
 const initAuth = async () => {
   try {
-    console.log("[bootstrap] Initialisation Keycloak...");
-    console.log("[bootstrap] URL actuelle:", window.location.href);
-    console.log("[bootstrap] Options:", keycloakInitOptions);
 
     const authenticated = await keycloak.init(keycloakInitOptions);
-
-    console.log("[bootstrap] Keycloak initialisé");
-    console.log("[bootstrap] authenticated:", authenticated);
-    console.log("[bootstrap] keycloak.authenticated:", keycloak.authenticated);
-    console.log("[bootstrap] token présent:", !!keycloak.token);
-    console.log("[bootstrap] tokenParsed:", keycloak.tokenParsed);
-    console.log("[bootstrap] subject:", keycloak.subject);
-
 
     if (authenticated && keycloak.token) {
       try {
