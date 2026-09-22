@@ -20,6 +20,9 @@ export const alignmentService = {
       const response = await axiosConfig.get(`/servicealignement/alignment?mandataire=${mandataire}`);
       return response.data;
     } catch (error) {
+      if (error.response?.status === 404) {
+        return [];
+      }
       console.error("Erreur lors de la récupération des alignements:", error);
       throw error;
     }

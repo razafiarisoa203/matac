@@ -8,6 +8,9 @@ export const constructionService = {
         const response = await axiosConfig.get(`/serviceconstruction/construction/by-mandataire/${id_mandataire}`);
         return response.data.constructions || [];
       } catch (error) {
+        if (error.response?.status === 404) {
+          return [];
+        }
         console.error('Erreur lors de la récupération des constructions:', error);
         throw error;
       }
