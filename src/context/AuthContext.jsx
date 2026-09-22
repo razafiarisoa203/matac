@@ -4,6 +4,7 @@ import { logout as ssoLogout } from "../utils/logout";
 import { getAppToken } from "../services/api/tokenStorage";
 import { ssoApi } from "../services/api/ssoApi";
 import { ENV } from "../config/env";
+import { authService } from "../services/api/authService";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext(undefined);
@@ -18,7 +19,21 @@ export const AuthProvider = ({ children }) => {
       return;
     }
     const res = await ssoApi.verifyToken();
-    setUser(res.ok ? keycloak?.profile || null : null);
+    if (!res.ok) {
+      authService.clearUserProfile();
+      setUser(null);
+      return;
+    }
+
+    const tokenUser = authService.getUserInfo();
+    const profile = await authService.getUserProfile();
+    const resolvedProfile = profile?.user || profile?.data || profile;
+
+    if (resolvedProfile && typeof resolvedProfile === "object") {
+      authService.setUserProfile(resolvedProfile);
+    }
+
+    setUser({ ...tokenUser, ...(resolvedProfile || {}) });
   }, []);
 
   useEffect(() => {

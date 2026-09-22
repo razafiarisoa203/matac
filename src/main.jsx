@@ -14,9 +14,6 @@ import { handleSsoLogin } from "./auth/ssoFlow";
 import { ENV } from "./config/env";
 import { clearAppToken } from "./services/api/tokenStorage";
 
-console.log("========== MATAC MAIN.JSX CHARGE ==========");
-console.log("[MATAC] URL:", window.location.href);
-
 const bootEnv = ENV; 
 
 

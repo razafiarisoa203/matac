@@ -3,6 +3,7 @@ import Cookies from "js-cookie";
 import axiosConfig from "./axios.config";
 
 const AUTH_TOKEN_KEY = "access_token";
+const USER_PROFILE_KEY = "user_profile";
 
 const isSecure = () => window.location.protocol === "https:";
 
@@ -52,12 +53,33 @@ export const authService = {
     return token ? jwtDecode(token) : null;
   },
 
+  setUserProfile: (profile) => {
+    if (profile) sessionStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+  },
+
+  clearUserProfile: () => {
+    sessionStorage.removeItem(USER_PROFILE_KEY);
+  },
+
   isAuthenticated: () => {
     return !!authService.getToken();
   },
 
   getUserInfo: () => {
-    return authService.decodedToken();
+    const tokenUser = authService.decodedToken() || {};
+    let profile = {};
+
+    try {
+      profile = JSON.parse(sessionStorage.getItem(USER_PROFILE_KEY) || "{}");
+    } catch {
+      profile = {};
+    }
+
+    return {
+      ...tokenUser,
+      ...(tokenUser.user || {}),
+      ...profile,
+    };
   },
 
   getUserId: () => {

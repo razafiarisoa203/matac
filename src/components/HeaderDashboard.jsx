@@ -25,7 +25,11 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
   const languageRef = useRef(null);
 
   const userData = authService.getUserInfo();
-  const id_citizen = userData?.id_citizen || null;
+  const id_citizen = userData?.id_citizen || userData?.citizen_id || null;
+  const fallbackName =
+    userData?.user_pseudo ||
+    userData?.username ||
+    [userData?.citizen_name, userData?.citizen_lastname].filter(Boolean).join(" ");
 
   // 🔹 Gestion du thème sombre
   const toggleDarkMode = () => {
@@ -73,11 +77,20 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
         if (id_citizen) {
           const data = await citoyenService.getCitizenData(id_citizen);
           const formattedData = {
-            nom: `${data?.citizen_lastname || ""} ${data?.citizen_name || ""}`.trim(),
-            email: userData?.user_email || "",
-            telephone: userData?.user_phone || "",
+            nom:
+              `${data?.citizen_lastname || ""} ${data?.citizen_name || ""}`.trim() ||
+              fallbackName ||
+              "Utilisateur",
+            email: userData?.user_email || userData?.email || "",
+            telephone: userData?.user_phone || userData?.phone_number || "",
           };
           setCitizenData(formattedData);
+        } else {
+          setCitizenData({
+            nom: fallbackName || "Utilisateur",
+            email: userData?.user_email || userData?.email || "",
+            telephone: userData?.user_phone || userData?.phone_number || "",
+          });
         }
       } catch (error) {
         console.error("Erreur lors du chargement des données citoyen:", error);
@@ -85,7 +98,14 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     };
 
     fetchCitizenData();
-  }, [id_citizen, userData]);
+  }, [
+    id_citizen,
+    fallbackName,
+    userData?.user_email,
+    userData?.email,
+    userData?.user_phone,
+    userData?.phone_number,
+  ]);
 
   // 🔹 Fermer les menus si clic en dehors
   useEffect(() => {
