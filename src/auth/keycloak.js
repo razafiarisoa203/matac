@@ -15,7 +15,7 @@ const keycloak = new Keycloak({
 
 
 export const keycloakInitOptions = {
-  onLoad: "login-required",
+  onLoad: "check-sso",
   pkceMethod: "S256",
   checkLoginIframe: false,
   locale: "fr",
