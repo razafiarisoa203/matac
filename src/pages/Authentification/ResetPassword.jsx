@@ -57,7 +57,7 @@ export default function ResetPassword() {
 
       // Rediriger vers la page de connexion après 3 secondes
       setTimeout(() => {
-        navigate("/login");
+        navigate("/");
       }, 3000);
 
     } catch (err) {
@@ -183,7 +183,7 @@ export default function ResetPassword() {
           {!message && (
             <div className="mt-4 text-center">
               <button
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/')}
                 className="text-green-600 hover:text-green-800 text-sm font-medium"
               >
                 Retour à la connexion

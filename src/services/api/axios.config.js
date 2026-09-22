@@ -31,7 +31,7 @@ axiosConfig.interceptors.response.use(
         if (error.response?.status === 401) {
             // Token expiré ou invalide
             Cookies.remove("access_token");
-            window.location.href = "/login";
+            window.location.href = "/";
         }
         return Promise.reject(error);
     }

@@ -7,7 +7,7 @@ import { handleSsoLogin } from "../../auth/ssoFlow";
  * Page de callback appelée par Keycloak après authentification.
  * Attend que keycloak-js soit bien authentifié (et que le token soit dispo)
  * avant de lancer le flux SSO, pour éviter toute redirection parasite vers
- * /login ou la page d'accueil pendant le chargement.
+ * la page d'accueil pendant le chargement.
  */
 export default function Callback() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function Callback() {
         if (!active) return;
         // Garde-fou : si Keycloak n'a pas authenticifié sous 15s, abandonner.
         if (Date.now() - started > 15000) {
-          if (active) navigate("/login", { replace: true });
+          if (active) navigate("/", { replace: true });
           return;
         }
         await new Promise((r) => setTimeout(r, 100));
@@ -33,14 +33,14 @@ export default function Callback() {
         const result = await handleSsoLogin(keycloak.token);
 
         if (!active) return;
-        if ("needsCitizenForm" in result) {
+        if (result.loggedIn) {
           navigate("/register-complete", { replace: true });
-        } else if (result.loggedIn) {
-          navigate("/dashboard", { replace: true });
+        } else if ("needsCitizenForm" in result) {
+          navigate("/register-complete", { replace: true });
         }
       } catch (err) {
         console.error("[Callback] Erreur SSO:", err);
-        if (active) navigate("/login", { replace: true });
+        if (active) navigate("/", { replace: true });
       }
     };
 

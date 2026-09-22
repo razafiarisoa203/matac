@@ -82,6 +82,13 @@ export const authService = {
     };
   },
 
+  getUserById: async (userId) => {
+    if (!userId) return null;
+
+    const response = await axiosConfig.get(`/serviceauth/users/${userId}`);
+    return response.data?.user || response.data;
+  },
+
   getUserId: () => {
     const decodedToken = authService.decodedToken();
     if (decodedToken) {

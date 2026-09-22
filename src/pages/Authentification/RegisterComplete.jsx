@@ -1,377 +1,240 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Select from "react-select";
-import Header from "../../components/Header";
-import { territoireService } from "../../services/api/territoireService";
-import { completeCitizenRegistration } from "../../auth/ssoFlow";
+import { CheckCircle2, ChevronRight, Loader2, UserRound } from "lucide-react";
+import { authService } from "../../services/api/authService";
+import { citoyenService } from "../../services/api/citoyenService";
 import keycloak from "../../auth/keycloak";
-import bgImage from "../../assets/image/construction-bg.jpeg";
+import { completeCitizenRegistration } from "../../auth/ssoFlow";
 
-const initialForm = {
-  citizen_national_card_number: "",
-  municipality_id: "",
-  fokotany_formatted_id: "",
-  citizen_work: "",
-  citizen_prise_service: "",
-  citizen_adress: "",
-  citizen_national_card_location: "",
-  citizen_national_card_date: "",
-  user_phone: "",
+const profileFields = [
+	["Nom", "citizen_name"],
+	["Prénom", "citizen_lastname"],
+	["Téléphone", "user_phone"],
+	["Numéro de carte nationale", "citizen_national_card_number"],
+	["Adresse e-mail", "citizen_mail"],
+];
+
+const completionFields = [
+	["Téléphone", "user_phone", "tel"],
+	["Adresse e-mail", "user_email", "email"],
+	["Nom", "citizen_name", "text"],
+	["Prénom", "citizen_lastname", "text"],
+	["Numéro de carte nationale", "citizen_national_card_number", "text"],
+];
+
+const formatValue = (value) => {
+	if (value === null || value === undefined || value === "") return "Non renseigné";
+	return String(value);
 };
 
 export default function RegisterComplete() {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState(initialForm);
-  const [communes, setCommunes] = useState([]);
-  const [fokotanys, setFokotanys] = useState([]);
-  const [isLoading, setIsLoading] = useState({ communes: false, fokotanys: false });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [apiError, setApiError] = useState("");
+	const navigate = useNavigate();
+	const [user, setUser] = useState(() => authService.getUserInfo());
+	const [completionData, setCompletionData] = useState({});
+	const [loading, setLoading] = useState(true);
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState("");
+	const [submitError, setSubmitError] = useState("");
 
-  useEffect(() => {
-    const loadCommunes = async () => {
-      setIsLoading((p) => ({ ...p, communes: true }));
-      try {
-        const data = await territoireService.getCommunes();
-        setCommunes(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setApiError(err.message || "Impossible de charger les communes.");
-      } finally {
-        setIsLoading((p) => ({ ...p, communes: false }));
-      }
-    };
-    loadCommunes();
-  }, []);
+	useEffect(() => {
+		let active = true;
 
-  const handleInputChange = async (e) => {
-    const { name, value } = e.target;
-    setApiError("");
+		const loadProfile = async () => {
+			if (!authService.isAuthenticated()) {
+				navigate("/", { replace: true });
+				return;
+			}
 
-    if (name === "citizen_national_card_number") {
-      const numeric = value.replace(/\D/g, "").slice(0, 12);
-      setFormData((p) => ({ ...p, [name]: numeric }));
-      return;
-    }
+			try {
+				const tokenUser = authService.getUserInfo();
+				const userId = tokenUser.user_id || tokenUser.id || tokenUser.sub;
+				const userProfile = await authService.getUserById(userId);
+				const citizenId =
+					userProfile?.id_citizen || userProfile?.citizen_id || tokenUser.id_citizen;
+				const citizenProfile = citizenId
+					? await citoyenService.getCitizenData(citizenId)
+					: null;
 
-    if (name === "user_phone") {
-      const numeric = value.replace(/\D/g, "").slice(0, 10);
-      setFormData((p) => ({ ...p, [name]: numeric }));
-      return;
-    }
+				if (citizenProfile?.id_citizen) {
+					authService.setUserProfile({ ...userProfile, ...citizenProfile });
+				}
 
-    if (name === "municipality_id" && value) {
-      setFormData((p) => ({
-        ...p,
-        municipality_id: value,
-        fokotany_formatted_id: "",
-      }));
-      setFokotanys([]);
-      try {
-        setIsLoading((p) => ({ ...p, fokotanys: true }));
-        const data = await territoireService.getFokotanys(value);
-        setFokotanys(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setApiError(err.message || "Erreur lors du chargement des fokotanys.");
-        setFokotanys([]);
-      } finally {
-        setIsLoading((p) => ({ ...p, fokotanys: false }));
-      }
-      return;
-    }
+				if (active) {
+					const mergedProfile = {
+						...tokenUser,
+						...(userProfile || {}),
+						...(citizenProfile?.id_citizen ? citizenProfile : {}),
+					};
+					if (!mergedProfile.citizen_mail && mergedProfile.user_email) {
+						mergedProfile.citizen_mail = mergedProfile.user_email;
+					}
+					if (!mergedProfile.user_email && mergedProfile.citizen_mail) {
+						mergedProfile.user_email = mergedProfile.citizen_mail;
+					}
+					setUser(mergedProfile);
+					setCompletionData(
+						Object.fromEntries(
+							completionFields
+								.filter(([, key]) => !mergedProfile[key])
+								.map(([, key]) => [key, ""])
+						)
+					);
+				}
+			} catch (profileError) {
+				console.error("Erreur lors du chargement du profil :", profileError);
+				if (active) setError("Les informations du profil n'ont pas pu être chargées.");
+			} finally {
+				if (active) setLoading(false);
+			}
+		};
 
-    setFormData((p) => ({ ...p, [name]: value }));
-  };
+		loadProfile();
+		return () => {
+			active = false;
+		};
+	}, [navigate]);
 
-  const validate = () => {
-    const errs = {};
-    if (!/^\d{12}$/.test(formData.citizen_national_card_number)) {
-      errs.citizen_national_card_number = "Le numéro CIN doit contenir exactement 12 chiffres.";
-    }
-    if (!formData.municipality_id) errs.municipality_id = "Veuillez sélectionner une commune.";
-    if (!formData.fokotany_formatted_id) errs.fokotany_formatted_id = "Veuillez sélectionner un fokotany.";
-    return errs;
-  };
+	const handleCompletionChange = (event) => {
+		const { name, value } = event.target;
+		setCompletionData((current) => ({ ...current, [name]: value }));
+	};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setApiError("");
+	const handleContinue = async () => {
+		setSubmitError("");
+		const fieldsToSend = Object.fromEntries(
+			Object.entries(completionData).filter(([, value]) => value.trim() !== "")
+		);
 
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+		if (Object.keys(fieldsToSend).length === 0) {
+			navigate("/dashboard", { replace: true });
+			return;
+		}
 
-    setIsSubmitting(true);
-    try {
-      if (!keycloak.token) {
-        setApiError("Session expirée. Veuillez vous reconnecter.");
-        setIsSubmitting(false);
-        return;
-      }
+		if (!keycloak.token) {
+			setSubmitError("La session SSO a expiré. Veuillez vous reconnecter.");
+			return;
+		}
 
-      const payload = {
-        citizen_national_card_number: formData.citizen_national_card_number,
-        fokotany_formatted_id: formData.fokotany_formatted_id,
-        municipality_id: formData.municipality_id,
-        citizen_work: formData.citizen_work || undefined,
-        citizen_prise_service: formData.citizen_prise_service || undefined,
-        citizen_adress: formData.citizen_adress || undefined,
-        citizen_national_card_location:
-          formData.citizen_national_card_location || undefined,
-        citizen_national_card_date:
-          formData.citizen_national_card_date || undefined,
-        user_phone: formData.user_phone || undefined,
-      };
+		setSubmitting(true);
+		try {
+			await completeCitizenRegistration(keycloak.token, fieldsToSend);
+			navigate("/dashboard", { replace: true });
+		} catch (submitErrorValue) {
+			console.error("Erreur lors de la complétion du profil :", submitErrorValue);
+			setSubmitError("Impossible d'enregistrer les informations. Veuillez réessayer.");
+		} finally {
+			setSubmitting(false);
+		}
+	};
 
-      const result = await completeCitizenRegistration(keycloak.token, payload);
-      if (result.loggedIn) {
-        navigate("/dashboard", { replace: true });
-      }
-    } catch (err) {
-      setApiError(err.message || "Une erreur est survenue lors de l'inscription.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+	if (loading) {
+		return (
+			<main className="min-h-screen bg-green-50 flex items-center justify-center">
+				<div className="flex items-center gap-3 text-green-800" role="status">
+					<Loader2 className="h-6 w-6 animate-spin" />
+					Chargement de votre profil...
+				</div>
+			</main>
+		);
+	}
 
-  const inputClass = (name) =>
-    `mt-1 block w-full rounded-lg border ${
-      errors[name] ? "border-red-500" : "border-gray-300"
-    } bg-white text-gray-900 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 p-2.5 text-sm`;
+	return (
+		<main className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-100 px-4 py-8 sm:px-6 lg:px-8">
+			<div className="mx-auto max-w-5xl">
+				<header className="mb-6 rounded-2xl bg-green-800 px-6 py-8 text-white shadow-lg sm:px-10">
+					<div className="flex items-start gap-4">
+						{user.citizen_photo ? (
+							<img
+								src={user.citizen_photo}
+								alt="Photo du citoyen"
+								className="h-20 w-20 rounded-full border-4 border-white/70 object-cover"
+							/>
+						) : (
+							<div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/15">
+								<UserRound className="h-10 w-10" />
+							</div>
+						)}
+						<div>
+							<p className="text-sm font-medium uppercase tracking-wider text-green-100">
+								Connexion réussie
+							</p>
+							<h1 className="mt-1 text-2xl font-bold sm:text-3xl">
+								Vérifiez vos informations
+							</h1>
+							<p className="mt-2 text-green-100">
+								Consultez vos données avant d'accéder à votre tableau de bord.
+							</p>
+						</div>
+					</div>
+				</header>
 
-  const communeOptions = communes.map((c) => ({
-    value: c.formatted_id || c.commune_id || c.id,
-    label: c.name || c.nom || `Commune ${c.formatted_id || c.id}`,
-  }));
+				<section className="rounded-2xl bg-white p-6 shadow-md sm:p-10" aria-labelledby="profile-title">
+					<div className="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
+						<CheckCircle2 className="h-6 w-6 text-green-600" />
+						<h2 id="profile-title" className="text-xl font-semibold text-gray-900">
+							Informations du compte
+						</h2>
+					</div>
 
-  const fokotanyOptions = fokotanys.map((f) => ({
-    value: f.formatted_id || f.fokotany_id || f.id,
-    label: f.name || f.nom || `Fokotany ${f.formatted_id || f.id}`,
-  }));
+					{error && (
+						<p className="mb-5 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+							{error}
+						</p>
+					)}
 
-  return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed flex flex-col"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15,23,42,0.7), rgba(15,23,42,0.7)), url(${bgImage})`,
-      }}
-    >
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white">
-        <Header />
-      </div>
+					<dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+						{profileFields.map(([label, key]) => (
+							<div key={key} className="border-b border-gray-100 pb-3">
+								<dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+								<dd className="mt-1 break-words text-sm font-medium ">
+										{formatValue(user[key])}
+								</dd>
+							</div>
+						))}
+					</dl>
 
-      <div className="flex-1 flex items-center justify-center mt-40 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="w-full max-w-2xl">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-            <div className="px-8 py-10">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Compléter votre inscription
-                </h1>
-                <p className="text-gray-500 text-sm mt-2">
-                  Pour finaliser votre compte, veuillez renseigner les informations
-                  de votre dossier citoyen.
-                </p>
-              </div>
+							{Object.keys(completionData).length > 0 && (
+								<div className="mt-8 border-t border-gray-200 pt-6">
+									<h3 className="text-lg font-semibold text-gray-900">Informations à compléter</h3>
+									<p className="mt-1 text-sm text-gray-500">
+										Ces champs sont envoyés après validation de votre profil.
+									</p>
+									<div className="mt-4 grid gap-4 sm:grid-cols-2">
+										{completionFields
+											.filter(([, key]) => Object.prototype.hasOwnProperty.call(completionData, key))
+											.map(([label, key, type]) => (
+												<label key={key} className="text-sm font-medium text-gray-700">
+													{label}
+													<input
+														type={type}
+														name={key}
+														value={completionData[key]}
+														onChange={handleCompletionChange}
+														className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-200"
+													/>
+												</label>
+											))}
+									</div>
+								</div>
+							)}
 
-              {apiError && (
-                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-                  {apiError}
-                </div>
-              )}
+							{submitError && (
+								<p className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{submitError}</p>
+							)}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Numéro CIN <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    name="citizen_national_card_number"
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.citizen_national_card_number}
-                    onChange={handleInputChange}
-                    className={inputClass("citizen_national_card_number")}
-                    placeholder="12 chiffres"
-                  />
-                  {errors.citizen_national_card_number && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.citizen_national_card_number}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Commune <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    name="municipality_id"
-                    value={
-                      communeOptions.find(
-                        (o) => o.value === formData.municipality_id
-                      ) || null
-                    }
-                    onChange={(o) =>
-                      handleInputChange({
-                        target: { name: "municipality_id", value: o?.value || "" },
-                      })
-                    }
-                    options={communeOptions}
-                    isLoading={isLoading.communes}
-                    isDisabled={isLoading.communes}
-                    placeholder="Sélectionnez une commune"
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    filterOption={(option, input) =>
-                      option.label.toLowerCase().startsWith(input.toLowerCase())
-                    }
-                  />
-                  {errors.municipality_id && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.municipality_id}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fokotany <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    name="fokotany_formatted_id"
-                    value={
-                      fokotanyOptions.find(
-                        (o) => o.value === formData.fokotany_formatted_id
-                      ) || null
-                    }
-                    onChange={(o) =>
-                      handleInputChange({
-                        target: {
-                          name: "fokotany_formatted_id",
-                          value: o?.value || "",
-                        },
-                      })
-                    }
-                    options={fokotanyOptions}
-                    isLoading={isLoading.fokotanys}
-                    isDisabled={!formData.municipality_id || isLoading.fokotanys}
-                    placeholder={
-                      !formData.municipality_id
-                        ? "Sélectionnez d'abord une commune"
-                        : "Sélectionnez un fokotany"
-                    }
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    filterOption={(option, input) =>
-                      option.label.toLowerCase().startsWith(input.toLowerCase())
-                    }
-                  />
-                  {errors.fokotany_formatted_id && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.fokotany_formatted_id}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Profession
-                    </label>
-                    <input
-                      name="citizen_work"
-                      value={formData.citizen_work}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_work")}
-                      placeholder="Ex : Ingénieur"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date de prise de service
-                    </label>
-                    <input
-                      name="citizen_prise_service"
-                      type="date"
-                      value={formData.citizen_prise_service}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_prise_service")}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adresse
-                  </label>
-                  <textarea
-                    name="citizen_adress"
-                    value={formData.citizen_adress}
-                    onChange={handleInputChange}
-                    rows="2"
-                    className={inputClass("citizen_adress")}
-                    placeholder="Ex : Lot 123, Andohatapenaka"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Lieu de délivrance du CIN
-                    </label>
-                    <input
-                      name="citizen_national_card_location"
-                      value={formData.citizen_national_card_location}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_national_card_location")}
-                      placeholder="Ex : Commissariat Central Antanimena"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date de délivrance du CIN
-                    </label>
-                    <input
-                      name="citizen_national_card_date"
-                      type="date"
-                      value={formData.citizen_national_card_date}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_national_card_date")}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Téléphone
-                  </label>
-                  <input
-                    name="user_phone"
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.user_phone}
-                    onChange={handleInputChange}
-                    className={inputClass("user_phone")}
-                    placeholder="Ex : 0341234567"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full flex justify-center items-center py-2.5 px-4 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Enregistrement..." : "Finaliser l'inscription"}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+					<div className="mt-8 flex justify-end border-t border-gray-200 pt-6">
+						<button
+							type="button"
+							onClick={handleContinue}
+							disabled={submitting}
+							className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+						>
+							{submitting ? "Enregistrement..." : "Accéder au tableau de bord"}
+							<ChevronRight className="h-5 w-5" />
+						</button>
+					</div>
+				</section>
+			</div>
+		</main>
+	);
 }

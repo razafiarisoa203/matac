@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
 // Auth SSO
-import Login from "../pages/Authentification/Login";
 import Callback from "../pages/Authentification/Callback";
 import RegisterComplete from "../pages/Authentification/RegisterComplete";
 
@@ -35,7 +34,6 @@ function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
         <Route path="/callback" element={<Callback />} />
         <Route path="/register-complete" element={<RegisterComplete />} />
         <Route path="/permis" element={<PermisConstruction />} />
