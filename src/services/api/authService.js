@@ -359,6 +359,22 @@ export const authService = {
     }
   },
 
+  updateUserById: async (userId, payload) => {
+  const token = authService.getToken();
+
+  const response = await axiosConfig.put(
+    `/serviceauth/users/${userId}`,
+    payload,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+},
+
   forgotPassword: async (email) => {
     try {
       // Call the auth endpoint to register the forgot password request
