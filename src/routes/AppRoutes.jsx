@@ -27,6 +27,8 @@ import RoleManagement from "../pages/RoleAppli/Role";
 
 // Route protégée (vérifie le JWT via /serviceauth/auth/verify-token)
 import PrivateRoute from "../components/auth/PrivateRoute";
+import AuthenticatedRoute from "../components/auth/AuthenticatedRoute";
+import ProfileRequiredRoute from "../components/auth/ProfileRequiredRoute";
 
 function App() {
   return (
@@ -35,24 +37,31 @@ function App() {
         {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/callback" element={<Callback />} />
-        <Route path="/register-complete" element={<RegisterComplete />} />
+        <Route
+          path="/register-complete"
+          element={
+            <AuthenticatedRoute>
+              <RegisterComplete />
+            </AuthenticatedRoute>
+          }
+        />
         <Route path="/permis" element={<PermisConstruction />} />
 
         {/* Protected Routes */}
         <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <DashboardClient />
-            </PrivateRoute>
-          }
-        />
+            path="/dashboard"
+            element={
+              <ProfileRequiredRoute>
+                <DashboardClient />
+              </ProfileRequiredRoute>
+            }
+          />
         <Route
           path="/dashboard-client"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <DashboardClient />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
 
@@ -60,34 +69,34 @@ function App() {
         <Route
           path="/alignement"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <Allignement />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
         <Route
           path="/alignement-list"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <AlignmentListPage />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
         <Route
           path="/alignment-details/:id"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <AlignmentDetailsPage />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
 
         <Route
           path="/prescription-urbanisme"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <PrescriptionUrbanisme />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
 
@@ -95,25 +104,25 @@ function App() {
         <Route
           path="/permis-list"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <ConstructionListPage />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
         <Route
           path="/permis-details/:id"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <ConstructionDetailsPage />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
         <Route
           path="/permis-remblai"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <PermisRemblai />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
 
@@ -121,25 +130,25 @@ function App() {
         <Route
           path="/admin-dashboard"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <AdminDashboard />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
         <Route
           path="/users"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <UsersList />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
         <Route
           path="/RoleManagement"
           element={
-            <PrivateRoute>
+            <ProfileRequiredRoute>
               <RoleManagement />
-            </PrivateRoute>
+            </ProfileRequiredRoute>
           }
         />
 
