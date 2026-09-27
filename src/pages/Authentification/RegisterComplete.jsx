@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {authService} from "../../services/api/authService";
 import {citoyenService} from "../../services/api/citoyenService";
+import { AuthContext } from "../../context/AuthContext";
 
 const hasValue = (value) =>
   value !== null &&
@@ -22,6 +23,7 @@ const formatDateForInput = (value) => {
 
 const RegisterComplete = () => {
   const navigate = useNavigate();
+  const { refreshUser } = useContext(AuthContext);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -495,6 +497,7 @@ const RegisterComplete = () => {
         await authService.getUserProfile();
 
       setUserProfile(updatedProfile);
+      await refreshUser();
 
       /**
        * ----------------------------------------------------------------------
@@ -506,19 +509,8 @@ const RegisterComplete = () => {
         updatedProfile?.citizen;
 
       const isComplete =
-        hasValue(updatedProfile?.municipality_id) &&
-        hasValue(
-          updatedCitizen?.citizen_national_card_number
-        ) &&
-        hasValue(
-          updatedCitizen?.fokotany_formatted_id
-        ) &&
-        hasValue(
-          updatedCitizen?.citizen_work
-        ) &&
-        hasValue(
-          updatedCitizen?.citizen_prise_service
-        );
+        hasValue(updatedProfile?.id_citizen) &&
+        hasValue(updatedCitizen?.citizen_national_card_number);
 
       if (!isComplete) {
         throw new Error(

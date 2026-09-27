@@ -25,14 +25,8 @@ export const AuthProvider = ({ children }) => {
     const citizen = profile.citizen;
 
     return Boolean(
-      // Information portée par ServiceAuth User
-      profile.municipality_id &&
-
-      // Informations portées par Citizen
-      citizen?.citizen_national_card_number &&
-      citizen?.fokotany_formatted_id &&
-      citizen?.citizen_work &&
-      citizen?.citizen_prise_service
+      profile.id_citizen &&
+      citizen?.citizen_national_card_number
     );
   }, []);
 
