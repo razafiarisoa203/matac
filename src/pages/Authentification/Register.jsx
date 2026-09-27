@@ -46,12 +46,12 @@ export default function Register() {
 
       // Si le CIN existe déjà, redirection vers la page de connexion
       if (result.exists) {
-        console.log("CIN existe déjà → redirection vers /login");
+        console.log("CIN existe déjà → retour à l'accueil");
         toast.info(
           "Ce numéro CIN est déjà enregistré. Veuillez vous connecter."
         );
         setIsVerifying(false);
-        navigate("/login");
+        navigate("/");
         return;
       }
     } catch (error) {
@@ -106,7 +106,7 @@ export default function Register() {
               <div className="text-center text-sm text-gray-600 mt-6">
                 {t("register.haveAccount")}{" "}
                 <Link
-                  to="/login"
+                  to="/"
                   className="font-medium text-green-600 hover:text-green-700"
                 >
                   {t("login.submit")}

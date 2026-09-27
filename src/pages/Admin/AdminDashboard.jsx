@@ -31,7 +31,7 @@ const AdminDashboard = () => {
       setToken(tokenFromState);
       localStorage.setItem('access_token', tokenFromState); // attention, clé cohérente !
     } else {
-      navigate('/login');
+      navigate('/');
     }
   }, [location, navigate]);
 

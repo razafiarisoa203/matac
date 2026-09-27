@@ -325,7 +325,7 @@ export default function RegistrationForm({ cin }) {
       toast.success(t("registrationForm.successMessage"));
 
       setTimeout(() => {
-        navigate("/login");
+        navigate("/");
       }, 1500);
       // Réinitialiser le formulaire après succès
       setFormData({

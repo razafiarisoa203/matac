@@ -207,7 +207,7 @@ export default function ForgotPassword() {
           
           <div className="mt-4 text-center">
             <Link 
-              to="/login" 
+              to="/"
               className="text-green-600 hover:text-green-800 text-sm font-medium"
             >
               Retour à la connexion

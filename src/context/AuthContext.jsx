@@ -13,12 +13,31 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Vérifie si toutes les informations obligatoires
+   * du profil citoyen sont présentes.
+   */
+  const checkProfileComplete = useCallback((profile) => {
+    if (!profile) {
+      return false;
+    }
+
+    const citizen = profile.citizen;
+
+    return Boolean(
+      profile.id_citizen &&
+      citizen?.citizen_national_card_number
+    );
+  }, []);
+
   const refreshUser = useCallback(async () => {
     if (!getAppToken()) {
       setUser(null);
       return;
     }
+
     const res = await ssoApi.verifyToken();
+
     if (!res.ok) {
       authService.clearUserProfile();
       setUser(null);
@@ -26,14 +45,24 @@ export const AuthProvider = ({ children }) => {
     }
 
     const tokenUser = authService.getUserInfo();
+
     const profile = await authService.getUserProfile();
-    const resolvedProfile = profile?.user || profile?.data || profile;
+
+    const resolvedProfile =
+      profile?.user ||
+      profile?.data ||
+      profile;
 
     if (resolvedProfile && typeof resolvedProfile === "object") {
       authService.setUserProfile(resolvedProfile);
     }
 
-    setUser({ ...tokenUser, ...(resolvedProfile || {}) });
+    const resolvedUser = {
+      ...tokenUser,
+      ...(resolvedProfile || {}),
+    };
+
+    setUser(resolvedUser);
   }, []);
 
   useEffect(() => {
@@ -41,11 +70,12 @@ export const AuthProvider = ({ children }) => {
       await refreshUser();
       setLoading(false);
     };
+
     init();
   }, [refreshUser]);
 
   const login = useCallback(async () => {
-    keycloak.login({
+    await keycloak.login({
       redirectUri: ENV.KEYCLOAK_REDIRECT_URI,
     });
   }, []);
@@ -56,8 +86,16 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const isAuthenticated = useCallback(() => {
-    return !!getAppToken() && keycloak.authenticated === true;
+    return (
+      !!getAppToken() &&
+      keycloak.authenticated === true
+    );
   }, []);
+
+  /**
+   * Profil complet ou non.
+   */
+  const isProfileComplete = checkProfileComplete(user);
 
   if (loading) {
     return (
@@ -69,7 +107,14 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, isAuthenticated, refreshUser }}
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated,
+        refreshUser,
+        isProfileComplete,
+      }}
     >
       {children}
     </AuthContext.Provider>

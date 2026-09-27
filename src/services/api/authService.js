@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 import Cookies from "js-cookie";
 import axiosConfig from "./axios.config";
+import { citoyenService } from "./citoyenService";
 
 const AUTH_TOKEN_KEY = "access_token";
 const USER_PROFILE_KEY = "user_profile";
@@ -82,10 +83,17 @@ export const authService = {
     };
   },
 
+  getUserById: async (userId) => {
+    if (!userId) return null;
+
+    const response = await axiosConfig.get(`/serviceauth/users/${userId}`);
+    return response.data?.user || response.data;
+  },
+
   getUserId: () => {
     const decodedToken = authService.decodedToken();
     if (decodedToken) {
-      return decodedToken.sub || decodedToken.user_id;
+      return decodedToken.user_id || decodedToken.sub;
     }
     return null;
   },
@@ -108,7 +116,30 @@ export const authService = {
           Authorization: `Bearer ${token}`,
         },
       });
-      return response.data; // Retourne les infos complètes de l'utilisateur
+      const user = response.data?.user || response.data?.data || response.data;
+
+      if (!user) return null;
+
+      const idCitizen = user.id_citizen;
+
+      if (!idCitizen) {
+        return {
+          ...user,
+          citizen: null,
+        };
+      }
+
+      const citizenResponse = await citoyenService.getCitizenData(idCitizen);
+      const citizen =
+        citizenResponse?.citizen ||
+        citizenResponse?.data ||
+        citizenResponse;
+
+      return {
+        ...user,
+        id_citizen: idCitizen,
+        citizen,
+      };
     } catch (error) {
       console.error("Erreur lors de la récupération de l'utilisateur :", error);
       return null;
@@ -351,6 +382,22 @@ export const authService = {
       throw error;
     }
   },
+
+  updateUserById: async (userId, payload) => {
+  const token = authService.getToken();
+
+  const response = await axiosConfig.put(
+    `/serviceauth/users/${userId}`,
+    payload,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+},
 
   forgotPassword: async (email) => {
     try {

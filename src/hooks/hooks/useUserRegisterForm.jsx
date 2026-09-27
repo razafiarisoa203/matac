@@ -173,7 +173,7 @@ const useUserRegisterForm = () => {
       const response = await citoyenService.createCitizen(userData);
       
       // Rediriger vers la page de connexion avec un message de succès
-      navigate('/login', { 
+      navigate('/', {
         state: { 
           success: 'Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.' 
         } 
