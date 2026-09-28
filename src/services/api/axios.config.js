@@ -27,11 +27,11 @@ axiosConfig.interceptors.response.use(
         return response;
     },
     (error) => {
-        // Gérer les erreurs de réponse
         if (error.response?.status === 401) {
-            // Token expiré ou invalide
-            Cookies.remove("access_token");
-            window.location.href = "/";
+            console.error("[API] Requête refusée (401):", {
+                method: error.config?.method,
+                url: error.config?.url,
+            });
         }
         return Promise.reject(error);
     }
