@@ -114,17 +114,19 @@ export const authService = {
       const response = await axiosConfig.get("/serviceauth/auth/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
-        },
+        }, 
       });
       const user = response.data?.user || response.data?.data || response.data;
 
       if (!user) return null;
 
       const idCitizen = user.id_citizen;
+      const userId = user.user_id || authService.getUserId();
 
       if (!idCitizen) {
         return {
           ...user,
+          user_id: userId,
           citizen: null,
         };
       }
@@ -132,11 +134,14 @@ export const authService = {
       const citizenResponse = await citoyenService.getCitizenData(idCitizen);
       const citizen =
         citizenResponse?.citizen ||
+        citizenResponse?.data?.citizen ||
+        citizenResponse?.data?.data?.citizen ||
         citizenResponse?.data ||
         citizenResponse;
 
       return {
         ...user,
+        user_id: userId,
         id_citizen: idCitizen,
         citizen,
       };

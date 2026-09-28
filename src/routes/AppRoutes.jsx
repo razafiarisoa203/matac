@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useContext, useEffect } from "react";
 
 // Auth SSO
 import Callback from "../pages/Authentification/Callback";
@@ -29,10 +30,32 @@ import RoleManagement from "../pages/RoleAppli/Role";
 import PrivateRoute from "../components/auth/PrivateRoute";
 import AuthenticatedRoute from "../components/auth/AuthenticatedRoute";
 import ProfileRequiredRoute from "../components/auth/ProfileRequiredRoute";
+import { AuthContext } from "../context/AuthContext";
+import { getProfileCompletion } from "../utils/profileUtils";
+
+function ProfileVerificationLogger() {
+  const { pathname } = useLocation();
+  const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    const profileStatus = getProfileCompletion(user);
+
+    console.info("[Vérification profil]", {
+      page: pathname,
+      user_id: profileStatus.user_id,
+      id_citizen: profileStatus.id_citizen,
+      complete: profileStatus.complete,
+      champs_manquants: profileStatus.missingFields,
+    });
+  }, [pathname, user]);
+
+  return null;
+}
 
 function App() {
   return (
     <Router>
+      <ProfileVerificationLogger />
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
