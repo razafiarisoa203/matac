@@ -274,7 +274,7 @@ export const roleService = {
       const payload = {
         role_name: data.role_name,
         role_slug: data.role_slug,
-        app_id: APP_ID // utilise 15, pas import.meta.env si jamais il n'est pas défini !
+        app_id: APP_ID 
       };
       const response = await axiosConfig.post('serviceauth/roles', payload, {
         headers: { Authorization: `Bearer ${token}` }

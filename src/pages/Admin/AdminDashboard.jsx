@@ -14,7 +14,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('users');
 
-  // --- État du tableau des utilisateurs ---
+  
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -27,10 +27,10 @@ const AdminDashboard = () => {
   const [photos, setPhotos] = useState({}); // { [id_citizen]: photo_url }
 
   const [roleToAdd, setRoleToAdd] = useState('');
-  // Pour éviter les doubles clics pendant qu'une requête d'ajout/suppression est en cours
+  
   const [roleActionLoading, setRoleActionLoading] = useState(false);
 
-  // Utilisateur actuellement affiché dans le modal "Voir"
+  
   const [profileUser, setProfileUser] = useState(null);
 
   // --- Récupération des photos des citoyens ---
@@ -93,7 +93,7 @@ const AdminDashboard = () => {
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  // Chargement des utilisateurs avec extraction de données renforcée
+  
   useEffect(() => {
     let isMounted = true;
 
@@ -554,7 +554,7 @@ const AdminDashboard = () => {
         </div>
       </main>
 
-      {/* Carte / Modal "Voir" : Détails & Ajout/Gestion des rôles de l'utilisateur */}
+      
       {profileUser && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
