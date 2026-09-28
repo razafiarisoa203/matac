@@ -4,6 +4,8 @@ import {authService} from "../../services/api/authService";
 import {citoyenService} from "../../services/api/citoyenService";
 import { AuthContext } from "../../context/AuthContext";
 import { getProfileCompletion } from "../../utils/profileUtils";
+import keycloak from "../../auth/keycloak";
+import { handleSsoLogin } from "../../auth/ssoFlow";
 
 const hasValue = (value) =>
   value !== null &&
@@ -495,10 +497,28 @@ const RegisterComplete = () => {
       /**
        * ----------------------------------------------------------------------
        * ÉTAPE 3
-       * Recharger et vérifier le profil depuis ServiceAuth
+       * Renouveler le JWT applicatif puis recharger le profil
        * ----------------------------------------------------------------------
        */
+      if (keycloak.authenticated && keycloak.token) {
+        await keycloak.updateToken(30);
+        const ssoResult = await handleSsoLogin(keycloak.token);
+
+        if (!ssoResult.loggedIn) {
+          throw new Error(
+            "Votre profil est enregistré, mais votre session n'a pas pu être renouvelée."
+          );
+        }
+      }
+
       const refreshedUser = await refreshUser();
+
+      if (!refreshedUser) {
+        throw new Error(
+          "Votre profil est enregistré, mais votre session n'a pas pu être actualisée."
+        );
+      }
+
       setUserProfile(refreshedUser);
 
       /**

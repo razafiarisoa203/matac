@@ -30,9 +30,9 @@ export const authService = {
 
   getToken: () => {
     const token =
+      sessionStorage.getItem("app_jwt") ||
       localStorage.getItem(AUTH_TOKEN_KEY) ||
-      Cookies.get(AUTH_TOKEN_KEY) ||
-      sessionStorage.getItem("app_jwt");
+      Cookies.get(AUTH_TOKEN_KEY);
     if (!token) return null;
     try {
       const decodedToken = jwtDecode(token);

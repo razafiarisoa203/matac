@@ -9,8 +9,8 @@ const axiosConfig = axios.create({
 // Add a request interceptor
 axiosConfig.interceptors.request.use(
     (config) => {
-        // Get the token from local storage or cookies or SSO session storage
-        const token = localStorage.getItem('access_token') || Cookies.get('access_token') || sessionStorage.getItem('app_jwt');
+        // Prefer the current SSO application token over legacy token storage.
+        const token = sessionStorage.getItem('app_jwt') || localStorage.getItem('access_token') || Cookies.get('access_token');
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
