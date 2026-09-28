@@ -33,13 +33,14 @@ const AdminDashboard = () => {
   // Utilisateur actuellement affiché dans le modal "Voir"
   const [profileUser, setProfileUser] = useState(null);
 
+  // --- Récupération des photos des citoyens ---
   useEffect(() => {
     users.forEach((user) => {
-      if (user.id_citizen && !photos[user.id_citizen]) {
+      if (user?.id_citizen && !photos[user.id_citizen]) {
         axios
           .get(`https://gateway.tsirylab.com/serviceauth/users/user-citizen/${user.id_citizen}`)
           .then((res) => {
-            const photoPath = res.data.citizen?.citizen_photo;
+            const photoPath = res.data?.citizen?.citizen_photo;
             let fullPhotoUrl = null;
 
             if (photoPath) {
@@ -74,7 +75,7 @@ const AdminDashboard = () => {
     const loadRoles = async () => {
       try {
         const rolesData = await roleService.getRoles();
-        setRoles(rolesData);
+        setRoles(rolesData || []);
         setRolesLoading(false);
       } catch (error) {
         console.error('Erreur lors du chargement des rôles:', error);
@@ -92,7 +93,7 @@ const AdminDashboard = () => {
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  // Chargement des utilisateurs
+  // Chargement des utilisateurs avec extraction de données renforcée
   useEffect(() => {
     let isMounted = true;
 
@@ -103,15 +104,35 @@ const AdminDashboard = () => {
 
         if (!isMounted) return;
 
-        const usersData = response.data || response.users || [];
-        setUsers(usersData.map(u => u._raw || u));
+        // Log de débogage : vérifie dans la console F12 la structure reçue
+        console.log("Données brutes reçues de getUsers:", response);
 
+        // Récupération flexible de la liste selon la structure backend
+        let rawList = [];
+        if (Array.isArray(response)) {
+          rawList = response;
+        } else if (Array.isArray(response?.data)) {
+          rawList = response.data;
+        } else if (Array.isArray(response?.users)) {
+          rawList = response.users;
+        } else if (Array.isArray(response?.data?.users)) {
+          rawList = response.data.users;
+        } else if (Array.isArray(response?.data?.items)) {
+          rawList = response.data.items;
+        }
+
+        // Mappage sécurisé
+        const formattedUsers = rawList.map(u => u?._raw || u);
+        setUsers(formattedUsers);
+
+        // Extraction de la pagination
         const newPagination = {
-          page: response.page || page,
-          limit: response.limit || limit,
-          total: response.total || 0,
-          totalPages: response.totalPages || 1
+          page: response?.page || response?.data?.page || page,
+          limit: response?.limit || response?.data?.limit || limit,
+          total: response?.total || response?.data?.total || formattedUsers.length,
+          totalPages: response?.totalPages || response?.data?.totalPages || Math.ceil((response?.total || formattedUsers.length) / limit) || 1
         };
+
         setPagination(prev => {
           if (
             prev.page === newPagination.page &&
@@ -152,15 +173,28 @@ const AdminDashboard = () => {
   const refreshUsers = async () => {
     try {
       const response = await getUsers(page, limit, debouncedSearchTerm);
-      const usersData = response.data || response.users || [];
-      const updatedList = usersData.map(u => u._raw || u);
+      
+      let rawList = [];
+      if (Array.isArray(response)) {
+        rawList = response;
+      } else if (Array.isArray(response?.data)) {
+        rawList = response.data;
+      } else if (Array.isArray(response?.users)) {
+        rawList = response.users;
+      } else if (Array.isArray(response?.data?.users)) {
+        rawList = response.data.users;
+      } else if (Array.isArray(response?.data?.items)) {
+        rawList = response.data.items;
+      }
+
+      const updatedList = rawList.map(u => u?._raw || u);
       setUsers(updatedList);
 
       const newPagination = {
-        page: response.page || page,
-        limit: response.limit || limit,
-        total: response.total || 0,
-        totalPages: response.totalPages || 1
+        page: response?.page || response?.data?.page || page,
+        limit: response?.limit || response?.data?.limit || limit,
+        total: response?.total || response?.data?.total || updatedList.length,
+        totalPages: response?.totalPages || response?.data?.totalPages || Math.ceil((response?.total || updatedList.length) / limit) || 1
       };
       setPagination(prev => ({ ...prev, ...newPagination }));
 
@@ -203,7 +237,10 @@ const AdminDashboard = () => {
       return;
     }
 
-    const alreadyAssignedIds = (profileUser.appUserRoles || []).map(ur => ur.role.role_id.toString());
+    const alreadyAssignedIds = (profileUser.appUserRoles || [])
+      .filter(ur => ur?.role?.role_id)
+      .map(ur => ur.role.role_id.toString());
+
     if (alreadyAssignedIds.includes(roleToAdd.toString())) {
       toast.error('Ce rôle est déjà assigné à cet utilisateur');
       return;
@@ -226,8 +263,10 @@ const AdminDashboard = () => {
   // Rôles disponibles à l'ajout pour l'utilisateur sélectionné dans le modal
   const getAvailableRolesForProfileUser = () => {
     if (!profileUser) return [];
-    const assignedIds = (profileUser.appUserRoles || []).map(ur => ur.role.role_id.toString());
-    return roles.filter(r => !assignedIds.includes(r.role_id.toString()));
+    const assignedIds = (profileUser.appUserRoles || [])
+      .filter(ur => ur?.role?.role_id)
+      .map(ur => ur.role.role_id.toString());
+    return roles.filter(r => r?.role_id && !assignedIds.includes(r.role_id.toString()));
   };
 
   return (
@@ -237,7 +276,6 @@ const AdminDashboard = () => {
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <button
-              variant="ghost"
               onClick={() => navigate(-1)}
               className="mr-4 text-gray-600 hover:text-gray-800"
             >
@@ -247,8 +285,8 @@ const AdminDashboard = () => {
           </h1>
           <div className="flex items-center space-x-4">
             <button
-              variant="outline"
               onClick={() => navigate('/admin/settings')}
+              className="inline-flex items-center text-sm font-medium px-4 py-2 border rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               <Settings className="h-5 w-5 mr-2" />
               Paramètres
@@ -265,27 +303,33 @@ const AdminDashboard = () => {
               <div className="flex space-x-2 border-b border-gray-200 w-full">
                 <button
                   onClick={() => setActiveTab('users')}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'users'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'}`}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'users'
+                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
                 >
                   <Users className="h-4 w-4" />
                   Utilisateurs
                 </button>
                 <button
                   onClick={() => setActiveTab('roles')}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'roles'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'}`}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'roles'
+                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
                 >
                   <Shield className="h-4 w-4" />
                   Rôles
                 </button>
                 <button
                   onClick={() => setActiveTab('permissions')}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'permissions'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'}`}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'permissions'
+                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
                 >
                   <KeyIcon className="h-4 w-4" />
                   Permissions
@@ -294,14 +338,20 @@ const AdminDashboard = () => {
 
               <div className="ml-4 flex-shrink-0">
                 {activeTab === 'users' && (
-                  <button onClick={() => navigate('/admin/users/new')} className="inline-flex items-center bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                  <button
+                    onClick={() => navigate('/admin/users/new')}
+                    className="inline-flex items-center bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                  >
                     <PersonAddAltIcon className="h-4 w-4 mr-2" />
                     Nouvel utilisateur
                   </button>
                 )}
 
                 {activeTab === 'roles' && (
-                  <button onClick={() => navigate('/admin/roles/new')} className="inline-flex items-center bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                  <button
+                    onClick={() => navigate('/admin/roles/new')}
+                    className="inline-flex items-center bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                  >
                     <ShieldIcon className="h-4 w-4 mr-2" />
                     Nouveau rôle
                   </button>
@@ -364,9 +414,9 @@ const AdminDashboard = () => {
                                 </td>
                               </tr>
                             ) : (
-                              users.map(user => {
-                                const userId = user.user_id || user.id;
-                                const photoUrl = photos[user.id_citizen];
+                              users.map((user, index) => {
+                                const userId = user?.user_id || user?.id || user?.id_citizen || `user-idx-${index}`;
+                                const photoUrl = user?.id_citizen ? photos[user.id_citizen] : null;
 
                                 return (
                                   <tr key={userId} className="hover:bg-slate-800 transition-colors align-middle">
@@ -374,7 +424,7 @@ const AdminDashboard = () => {
                                       {photoUrl ? (
                                         <img
                                           src={photoUrl}
-                                          alt={`Photo de ${user.user_pseudo}`}
+                                          alt={`Photo de ${user.user_pseudo || 'l\'utilisateur'}`}
                                           className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-600"
                                           onError={(e) => {
                                             e.target.style.display = 'none';
@@ -387,41 +437,49 @@ const AdminDashboard = () => {
                                       )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-100">
-                                      {user.user_pseudo || 'Non défini'}
+                                      {user?.user_pseudo || user?.username || 'Non défini'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{user.user_email}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                                      {user.user_phone || 'Non défini'}
+                                      {user?.user_email || user?.email || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                                      {user?.user_phone || user?.phone || 'Non défini'}
                                     </td>
 
                                     {/* Colonne Rôles : pastilles avec ✕ pour retirer */}
                                     <td className="px-6 py-4 align-middle">
                                       <div className="flex flex-wrap gap-1.5 max-w-[220px] sm:max-w-xs">
-                                        {user.appUserRoles && user.appUserRoles.length > 0 ? (
-                                          user.appUserRoles.map(ur => (
-                                            <span
-                                              key={ur.role.role_id}
-                                              className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                                            >
-                                              <span className="whitespace-nowrap">{ur.role.role_name}</span>
-                                              <button
-                                                type="button"
-                                                onClick={() => handleRemoveRole(userId, ur.role.role_id)}
-                                                disabled={roleActionLoading}
-                                                title={`Retirer le rôle ${ur.role.role_name}`}
-                                                className="flex flex-shrink-0 items-center justify-center h-4 w-4 rounded-full text-green-700 hover:bg-green-200 hover:text-red-600 leading-none disabled:opacity-50 transition-colors"
+                                        {user?.appUserRoles && user.appUserRoles.length > 0 ? (
+                                          user.appUserRoles.map((ur, rIndex) => {
+                                            const roleId = ur?.role?.role_id;
+                                            const roleName = ur?.role?.role_name || 'Inconnu';
+                                            if (!roleId) return null;
+
+                                            return (
+                                              <span
+                                                key={`role-${roleId}-${rIndex}`}
+                                                className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
                                               >
-                                                ✕
-                                              </button>
-                                            </span>
-                                          ))
+                                                <span className="whitespace-nowrap">{roleName}</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleRemoveRole(userId, roleId)}
+                                                  disabled={roleActionLoading}
+                                                  title={`Retirer le rôle ${roleName}`}
+                                                  className="flex flex-shrink-0 items-center justify-center h-4 w-4 rounded-full text-green-700 hover:bg-green-200 hover:text-red-600 leading-none disabled:opacity-50 transition-colors"
+                                                >
+                                                  ✕
+                                                </button>
+                                              </span>
+                                            );
+                                          })
                                         ) : (
                                           <span className="text-xs text-slate-400 font-medium italic">Aucun rôle</span>
                                         )}
                                       </div>
                                     </td>
 
-                                    {/* Colonne Actions : Seul le bouton "Voir" est présent */}
+                                    {/* Colonne Actions */}
                                     <td className="px-6 py-4 text-right text-sm align-middle">
                                       <button
                                         onClick={() => {
@@ -517,10 +575,10 @@ const AdminDashboard = () => {
             </div>
 
             <div className="flex items-center gap-4 mb-4">
-              {photos[profileUser.id_citizen] ? (
+              {profileUser?.id_citizen && photos[profileUser.id_citizen] ? (
                 <img
                   src={photos[profileUser.id_citizen]}
-                  alt={`Photo de ${profileUser.user_pseudo}`}
+                  alt={`Photo de ${profileUser.user_pseudo || 'l\'utilisateur'}`}
                   className="h-16 w-16 rounded-full object-cover ring-1 ring-slate-600"
                 />
               ) : (
@@ -529,21 +587,21 @@ const AdminDashboard = () => {
                 </div>
               )}
               <div>
-                <p className="font-semibold text-lg text-slate-100">{profileUser.user_pseudo || 'Non défini'}</p>
-                <p className="text-sm text-slate-300">{profileUser.user_email}</p>
+                <p className="font-semibold text-lg text-slate-100">{profileUser?.user_pseudo || profileUser?.username || 'Non défini'}</p>
+                <p className="text-sm text-slate-300">{profileUser?.user_email || profileUser?.email || 'N/A'}</p>
               </div>
             </div>
 
             <dl className="grid grid-cols-3 gap-y-3 text-sm border-b border-slate-700 pb-4 mb-4">
               <dt className="text-slate-400 font-medium">Téléphone</dt>
-              <dd className="col-span-2 text-slate-100">{profileUser.user_phone || 'Non défini'}</dd>
+              <dd className="col-span-2 text-slate-100">{profileUser?.user_phone || profileUser?.phone || 'Non défini'}</dd>
 
               <dt className="text-slate-400 font-medium">ID Utilisateur</dt>
-              <dd className="col-span-2 break-all text-slate-100">{profileUser.user_id || profileUser.id}</dd>
+              <dd className="col-span-2 break-all text-slate-100">{profileUser?.user_id || profileUser?.id || 'N/A'}</dd>
 
               <dt className="text-slate-400 font-medium">Créé le</dt>
               <dd className="col-span-2 text-slate-100">
-                {profileUser.createdAt
+                {profileUser?.createdAt
                   ? new Date(profileUser.createdAt).toLocaleDateString('fr-FR', {
                       year: 'numeric', month: 'long', day: 'numeric'
                     })
@@ -552,25 +610,31 @@ const AdminDashboard = () => {
 
               <dt className="text-slate-400 font-medium">Rôles actuels</dt>
               <dd className="col-span-2">
-                {profileUser.appUserRoles && profileUser.appUserRoles.length > 0 ? (
+                {profileUser?.appUserRoles && profileUser.appUserRoles.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {profileUser.appUserRoles.map(ur => (
-                      <span
-                        key={ur.role.role_id}
-                        className="inline-flex items-center gap-1.5 whitespace-nowrap pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                      >
-                        <span>{ur.role.role_name}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveRole(profileUser.user_id || profileUser.id, ur.role.role_id)}
-                          disabled={roleActionLoading}
-                          title={`Retirer le rôle ${ur.role.role_name}`}
-                          className="flex flex-shrink-0 items-center justify-center h-4 w-4 rounded-full text-green-700 hover:bg-green-200 hover:text-red-600 leading-none disabled:opacity-50 transition-colors"
+                    {profileUser.appUserRoles.map((ur, idx) => {
+                      const roleId = ur?.role?.role_id;
+                      const roleName = ur?.role?.role_name || 'Inconnu';
+                      if (!roleId) return null;
+
+                      return (
+                        <span
+                          key={`modal-user-role-${roleId}-${idx}`}
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
                         >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
+                          <span>{roleName}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRole(profileUser.user_id || profileUser.id, roleId)}
+                            disabled={roleActionLoading}
+                            title={`Retirer le rôle ${roleName}`}
+                            className="flex flex-shrink-0 items-center justify-center h-4 w-4 rounded-full text-green-700 hover:bg-green-200 hover:text-red-600 leading-none disabled:opacity-50 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      );
+                    })}
                   </div>
                 ) : (
                   <span className="text-xs text-slate-400 font-medium italic">Aucun rôle</span>
