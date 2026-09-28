@@ -7,6 +7,7 @@ import SearchBar from '../components/SearchBar';
 import { alignmentService } from '../services/api/alignmentService';
 import { Eye, FileText, Download, AlertCircle, MapPin, ChevronRight, Plus } from 'lucide-react';
 import { authService } from "../services/api/authService";
+import { jsPDF } from "jspdf";
 
 const AlignmentListPage = () => {
   const [alignments, setAlignments] = useState([]);
@@ -101,8 +102,241 @@ const AlignmentListPage = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedAlignments = filteredAlignments.slice(startIndex, startIndex + itemsPerPage);
 
+  /**
+   * Génère réellement un PDF à partir des données de l'alignement sélectionné.
+   * Cette fonction utilise uniquement les données déjà récupérées par
+   * getAllAlignment(), donc aucune donnée statique n'est ajoutée.
+   */
   const generatePDF = (alignment) => {
-    alert(`Génération du PDF pour l'alignement #${alignment.id_align}`);
+    try {
+      if (!alignment) {
+        throw new Error("Aucun alignement sélectionné.");
+      }
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 18;
+      const contentWidth = pageWidth - margin * 2;
+      let y = 20;
+
+      const value = (v) => {
+        if (v === null || v === undefined || v === "") return "N/A";
+        if (typeof v === "boolean") return v ? "Oui" : "Non";
+        if (typeof v === "object") return JSON.stringify(v);
+        return String(v);
+      };
+
+      const addPageNumber = () => {
+        const pageCount = doc.getNumberOfPages();
+        for (let page = 1; page <= pageCount; page += 1) {
+          doc.setPage(page);
+          doc.setFontSize(8);
+          doc.setTextColor(110, 110, 110);
+          doc.text(
+            `Alignement #${value(alignment.id_align)} - Page ${page}/${pageCount}`,
+            pageWidth / 2,
+            pageHeight - 8,
+            { align: "center" }
+          );
+        }
+      };
+
+      const ensureSpace = (height = 12) => {
+        if (y + height > pageHeight - 18) {
+          doc.addPage();
+          y = 20;
+        }
+      };
+
+      const addSection = (title) => {
+        ensureSpace(18);
+        doc.setFillColor(22, 101, 52);
+        doc.roundedRect(margin, y - 5, contentWidth, 9, 1.5, 1.5, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        doc.text(title, margin + 4, y + 1);
+        y += 13;
+        doc.setTextColor(35, 35, 35);
+      };
+
+      const addField = (label, fieldValue) => {
+        const textValue = value(fieldValue);
+        const labelWidth = 58;
+        const valueWidth = contentWidth - labelWidth - 4;
+        const lines = doc.splitTextToSize(textValue, valueWidth);
+        const rowHeight = Math.max(7, lines.length * 5 + 2);
+
+        ensureSpace(rowHeight + 2);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.setTextColor(70, 70, 70);
+        doc.text(label, margin, y);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(35, 35, 35);
+        doc.text(lines, margin + labelWidth, y);
+
+        y += rowHeight;
+        doc.setDrawColor(225, 225, 225);
+        doc.line(margin, y - 2, margin + contentWidth, y - 2);
+        y += 2;
+      };
+
+      // En-tête
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(22, 101, 52);
+      doc.text("DOSSIER D'ALIGNEMENT", margin, y);
+      y += 8;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(90, 90, 90);
+      doc.text(
+        `Document généré le ${new Date().toLocaleString("fr-FR")}`,
+        margin,
+        y
+      );
+      y += 9;
+
+      doc.setDrawColor(22, 101, 52);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 10;
+
+      // Identification
+      addSection("1. Identification de l'alignement");
+      addField("N° dossier", `#${value(alignment.id_align)}`);
+      addField(
+        "Statut",
+        alignment.statut_alignement || alignment.status || "N/A"
+      );
+      addField("Date de création", formatDate(alignment.created_at));
+      addField("Statut propriétaire", alignment.status_proprietaire);
+      addField("Qualité demandeur", alignment.qualite_demandeur);
+
+      // Demandeur
+      addSection("2. Informations du demandeur");
+      addField("Nom", alignment.nom_demandaire);
+      addField("Prénom / mandataire", alignment.prenom_mandataire);
+      addField("CIN / Passeport", alignment.cin_passeport_demandaire);
+      addField("Adresse", alignment.adresse_demandaire);
+      addField("Téléphone", alignment.telephone_demandaire);
+      addField("Email", alignment.email_demandaire);
+
+      // Terrain
+      addSection("3. Informations du terrain");
+      const terrain = alignment.terrain || {};
+      addField("Adresse du terrain", terrain.adresse || alignment.adresse_terrain);
+      addField("Référence terrain", terrain.reference || terrain.reference_fonciere);
+      addField("Lot", terrain.lot || alignment.lot);
+      addField("Parcelle", terrain.parcelle || alignment.parcelle);
+      addField("Commune", terrain.commune || alignment.commune);
+      addField("Fokontany", terrain.fokontany || alignment.fokontany);
+
+      if (terrain.superficie !== undefined || alignment.superficie !== undefined) {
+        addField(
+          "Superficie",
+          terrain.superficie !== undefined
+            ? terrain.superficie
+            : alignment.superficie
+        );
+      }
+
+      if (terrain.latitude !== undefined || alignment.latitude !== undefined) {
+        addField(
+          "Latitude",
+          terrain.latitude !== undefined ? terrain.latitude : alignment.latitude
+        );
+      }
+
+      if (terrain.longitude !== undefined || alignment.longitude !== undefined) {
+        addField(
+          "Longitude",
+          terrain.longitude !== undefined
+            ? terrain.longitude
+            : alignment.longitude
+        );
+      }
+
+      // Informations complémentaires : primitives disponibles dans la réponse API.
+      const excludedKeys = new Set([
+        "id_align",
+        "statut_alignement",
+        "status",
+        "created_at",
+        "nom_demandaire",
+        "prenom_mandataire",
+        "cin_passeport_demandaire",
+        "adresse_demandaire",
+        "telephone_demandaire",
+        "email_demandaire",
+        "qualite_demandeur",
+        "status_proprietaire",
+        "terrain",
+        "adresse_terrain",
+        "lot",
+        "parcelle",
+        "commune",
+        "fokontany",
+        "superficie",
+        "latitude",
+        "longitude",
+      ]);
+
+      const extraEntries = Object.entries(alignment).filter(
+        ([key, val]) =>
+          !excludedKeys.has(key) &&
+          val !== null &&
+          val !== undefined &&
+          val !== "" &&
+          (typeof val !== "object" || Array.isArray(val))
+      );
+
+      if (extraEntries.length > 0) {
+        addSection("4. Informations complémentaires");
+        extraEntries.forEach(([key, val]) => {
+          const label = key
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+          addField(label, Array.isArray(val) ? val.join(", ") : val);
+        });
+      }
+
+      // Pied de document
+      ensureSpace(20);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        "Document généré automatiquement à partir des données de l'alignement.",
+        margin,
+        y
+      );
+
+      addPageNumber();
+
+      const fileName = `alignement_${value(alignment.id_align)
+        .replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+
+      doc.save(fileName);
+    } catch (err) {
+      console.error("Erreur lors de la génération du PDF :", err);
+      setError(
+        err?.message ||
+          "Une erreur est survenue lors de la génération du PDF."
+      );
+    }
   };
 
   const viewDetails = (alignmentId) => {
