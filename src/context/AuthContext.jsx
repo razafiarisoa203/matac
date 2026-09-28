@@ -5,6 +5,7 @@ import { getAppToken } from "../services/api/tokenStorage";
 import { ssoApi } from "../services/api/ssoApi";
 import { ENV } from "../config/env";
 import { authService } from "../services/api/authService";
+import { getProfileCompletion } from "../utils/profileUtils";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext(undefined);
@@ -18,22 +19,13 @@ export const AuthProvider = ({ children }) => {
    * du profil citoyen sont présentes.
    */
   const checkProfileComplete = useCallback((profile) => {
-    if (!profile) {
-      return false;
-    }
-
-    const citizen = profile.citizen;
-
-    return Boolean(
-      profile.id_citizen &&
-      citizen?.citizen_national_card_number
-    );
+    return getProfileCompletion(profile).complete;
   }, []);
 
   const refreshUser = useCallback(async () => {
     if (!getAppToken()) {
       setUser(null);
-      return;
+      return null;
     }
 
     const res = await ssoApi.verifyToken();
@@ -41,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     if (!res.ok) {
       authService.clearUserProfile();
       setUser(null);
-      return;
+      return null;
     }
 
     const tokenUser = authService.getUserInfo();
@@ -60,9 +52,15 @@ export const AuthProvider = ({ children }) => {
     const resolvedUser = {
       ...tokenUser,
       ...(resolvedProfile || {}),
+      user_id:
+        resolvedProfile?.user_id ||
+        tokenUser?.user_id ||
+        tokenUser?.sub ||
+        null,
     };
 
     setUser(resolvedUser);
+    return resolvedUser;
   }, []);
 
   useEffect(() => {
@@ -86,11 +84,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const isAuthenticated = useCallback(() => {
-    return (
-      !!getAppToken() &&
-      keycloak.authenticated === true
-    );
-  }, []);
+    return !!getAppToken() && !!user;
+  }, [user]);
 
   /**
    * Profil complet ou non.

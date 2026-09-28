@@ -9,8 +9,8 @@ const axiosConfig = axios.create({
 // Add a request interceptor
 axiosConfig.interceptors.request.use(
     (config) => {
-        // Get the token from local storage or cookies or SSO session storage
-        const token = localStorage.getItem('access_token') || Cookies.get('access_token') || sessionStorage.getItem('app_jwt');
+        // Prefer the current SSO application token over legacy token storage.
+        const token = sessionStorage.getItem('app_jwt') || localStorage.getItem('access_token') || Cookies.get('access_token');
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
@@ -27,11 +27,11 @@ axiosConfig.interceptors.response.use(
         return response;
     },
     (error) => {
-        // Gérer les erreurs de réponse
         if (error.response?.status === 401) {
-            // Token expiré ou invalide
-            Cookies.remove("access_token");
-            window.location.href = "/";
+            console.error("[API] Requête refusée (401):", {
+                method: error.config?.method,
+                url: error.config?.url,
+            });
         }
         return Promise.reject(error);
     }
