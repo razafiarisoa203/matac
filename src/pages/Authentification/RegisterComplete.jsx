@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {authService} from "../../services/api/authService";
 import {citoyenService} from "../../services/api/citoyenService";
 import { AuthContext } from "../../context/AuthContext";
+import { getProfileCompletion } from "../../utils/profileUtils";
+import keycloak from "../../auth/keycloak";
+import { handleSsoLogin } from "../../auth/ssoFlow";
 
 const hasValue = (value) =>
   value !== null &&
@@ -128,15 +131,9 @@ const RegisterComplete = () => {
        * plus aucune raison d'être affichée.
        */
       const citizen = profile.citizen;
+      const profileStatus = getProfileCompletion(profile);
 
-      const isComplete =
-        hasValue(profile.municipality_id) &&
-        hasValue(citizen?.citizen_national_card_number) &&
-        hasValue(citizen?.fokotany_formatted_id) &&
-        hasValue(citizen?.citizen_work) &&
-        hasValue(citizen?.citizen_prise_service);
-
-      if (isComplete) {
+      if (profileStatus.complete) {
         navigate("/dashboard", { replace: true });
         return;
       }
@@ -330,8 +327,16 @@ const RegisterComplete = () => {
       return "La fonction est obligatoire.";
     }
 
-    if (!hasValue(formData.citizen_prise_service)) {
-      return "La date de prise de service est obligatoire.";
+    if (!hasValue(formData.citizen_national_card_location)) {
+      return "Le lieu de délivrance de la CIN est obligatoire.";
+    }
+
+    if (!hasValue(formData.citizen_national_card_date)) {
+      return "La date de délivrance de la CIN est obligatoire.";
+    }
+
+    if (!hasValue(formData.citizen_adress)) {
+      return "L'adresse est obligatoire.";
     }
 
     return null;
@@ -406,10 +411,12 @@ const RegisterComplete = () => {
         formData.citizen_work.trim()
       );
 
-      citizenPayload.append(
-        "citizen_prise_service",
-        formData.citizen_prise_service
-      );
+      if (hasValue(formData.citizen_prise_service)) {
+        citizenPayload.append(
+          "citizen_prise_service",
+          formData.citizen_prise_service
+        );
+      }
 
       if (hasValue(formData.citizen_national_card_location)) {
         citizenPayload.append(
@@ -490,14 +497,29 @@ const RegisterComplete = () => {
       /**
        * ----------------------------------------------------------------------
        * ÉTAPE 3
-       * Recharger le profil depuis ServiceAuth
+       * Renouveler le JWT applicatif puis recharger le profil
        * ----------------------------------------------------------------------
        */
-      const updatedProfile =
-        await authService.getUserProfile();
+      if (keycloak.authenticated && keycloak.token) {
+        await keycloak.updateToken(30);
+        const ssoResult = await handleSsoLogin(keycloak.token);
 
-      setUserProfile(updatedProfile);
-      await refreshUser();
+        if (!ssoResult.loggedIn) {
+          throw new Error(
+            "Votre profil est enregistré, mais votre session n'a pas pu être renouvelée."
+          );
+        }
+      }
+
+      const refreshedUser = await refreshUser();
+
+      if (!refreshedUser) {
+        throw new Error(
+          "Votre profil est enregistré, mais votre session n'a pas pu être actualisée."
+        );
+      }
+
+      setUserProfile(refreshedUser);
 
       /**
        * ----------------------------------------------------------------------
@@ -505,34 +527,18 @@ const RegisterComplete = () => {
        * Vérifier que le profil est réellement complet
        * ----------------------------------------------------------------------
        */
-      const updatedCitizen =
-        updatedProfile?.citizen;
+      const profileStatus = getProfileCompletion(refreshedUser);
 
-      const isComplete =
-        hasValue(updatedProfile?.id_citizen) &&
-        hasValue(updatedCitizen?.citizen_national_card_number);
-
-      if (!isComplete) {
+      if (!profileStatus.complete) {
         throw new Error(
-          "Votre profil a été enregistré, mais certaines informations obligatoires sont encore absentes."
+          `Votre profil a été enregistré, mais il reste à compléter : ${profileStatus.missingFields.join(", ")}.`
         );
       }
 
-      setSuccess(
-        "Votre profil a été complété avec succès."
-      );
+      setSuccess("Votre profil a été complété avec succès.");
 
-      /**
-       * ----------------------------------------------------------------------
-       * ÉTAPE 5
-       * Dashboard
-       * ----------------------------------------------------------------------
-       */
-      setTimeout(() => {
-        navigate("/dashboard", {
-          replace: true,
-        });
-      }, 500);
+      navigate("/dashboard", { replace: true });
+
     } catch (err) {
       console.error(
         "[RegisterComplete] Erreur enregistrement:",
@@ -834,7 +840,6 @@ const RegisterComplete = () => {
                   name="citizen_prise_service"
                   value={formData.citizen_prise_service}
                   onChange={handleChange}
-                  required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -852,6 +857,7 @@ const RegisterComplete = () => {
                     formData.citizen_national_card_location
                   }
                   onChange={handleChange}
+                  required
                   placeholder="Ex : Isotry"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -870,6 +876,7 @@ const RegisterComplete = () => {
                     formData.citizen_national_card_date
                   }
                   onChange={handleChange}
+                  required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -885,6 +892,7 @@ const RegisterComplete = () => {
                   value={formData.citizen_adress}
                   onChange={handleChange}
                   rows={3}
+                  required
                   placeholder="Votre adresse"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

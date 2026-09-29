@@ -3,62 +3,40 @@ const hasValue = (value) =>
   value !== undefined &&
   String(value).trim() !== "";
 
-export const isProfileComplete = (profile) => {
-  console.log(
-    "========== isProfileComplete =========="
-  );
+const REQUIRED_CITIZEN_FIELDS = [
+  "citizen_national_card_number",
+  "fokotany_formatted_id",
+  "citizen_work",
+  "citizen_national_card_location",
+  "citizen_national_card_date",
+  "citizen_adress",
+];
 
-  console.log("profile :", profile);
+export const getProfileCompletion = (profile) => {
+  const citizen = profile?.citizen;
+  const missingFields = [];
 
-  if (!profile) {
-    console.log("❌ profile absent");
-    return false;
+  if (!hasValue(profile?.id_citizen)) {
+    missingFields.push("id_citizen");
   }
 
-  const citizen = profile.citizen;
-
-  if (!citizen) {
-    console.log("❌ citizen absent");
-    return false;
+  if (!hasValue(profile?.municipality_id)) {
+    missingFields.push("municipality_id");
   }
 
-  console.log(
-    "municipality_id :",
-    profile.municipality_id
-  );
+  for (const field of REQUIRED_CITIZEN_FIELDS) {
+    if (!hasValue(citizen?.[field])) {
+      missingFields.push(field);
+    }
+  }
 
-  console.log(
-    "CIN :",
-    citizen.citizen_national_card_number
-  );
-
-  console.log(
-    "fokontany :",
-    citizen.fokotany_formatted_id
-  );
-
-  console.log(
-    "work :",
-    citizen.citizen_work
-  );
-
-  console.log(
-    "prise service :",
-    citizen.citizen_prise_service
-  );
-
-  const complete =
-    hasValue(profile.id_citizen) &&
-    hasValue(profile.municipality_id) &&
-    hasValue(citizen.citizen_national_card_number) &&
-    hasValue(citizen.fokotany_formatted_id) &&
-    hasValue(citizen.citizen_work) &&
-    hasValue(citizen.citizen_prise_service);
-
-  console.log(
-    "✅ PROFILE COMPLET =",
-    complete
-  );
-
-  return complete;
+  return {
+    user_id: profile?.user_id || null,
+    id_citizen: profile?.id_citizen || null,
+    complete: missingFields.length === 0,
+    missingFields,
+  };
 };
+
+export const isProfileComplete = (profile) =>
+  getProfileCompletion(profile).complete;

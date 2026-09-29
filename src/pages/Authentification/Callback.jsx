@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import keycloak from "../../auth/keycloak";
 import { handleSsoLogin } from "../../auth/ssoFlow";
+import { AuthContext } from "../../context/AuthContext";
 
 /**
  * Page de callback appelée par Keycloak après authentification.
@@ -11,6 +12,7 @@ import { handleSsoLogin } from "../../auth/ssoFlow";
  */
 export default function Callback() {
   const navigate = useNavigate();
+  const { refreshUser } = useContext(AuthContext);
 
   useEffect(() => {
     let active = true;
@@ -34,6 +36,8 @@ export default function Callback() {
 
         if (!active) return;
         if (result.loggedIn) {
+          await refreshUser();
+          if (!active) return;
           navigate("/register-complete", { replace: true });
         } else if ("needsCitizenForm" in result) {
           navigate("/register-complete", { replace: true });
@@ -49,7 +53,7 @@ export default function Callback() {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [navigate, refreshUser]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-green-50">
