@@ -1,10 +1,11 @@
 import axiosConfig from "./axios.config";
+import { getAppToken } from "./tokenStorage";
 
 const APP_ID = 15;
 
 export async function getUsers(page = 1, limit = 10, searchTerm = '') {
   try {
-    const token = localStorage.getItem('access_token');
+    const token = getAppToken();
     if (!token) throw new Error('Non authentifié');
     const params = { page, limit };
     if (searchTerm) params.search = searchTerm;

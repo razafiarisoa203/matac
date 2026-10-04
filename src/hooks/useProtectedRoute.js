@@ -18,7 +18,7 @@ export const useProtectedRoute = () => {
     const check = async () => {
       if (!getAppToken()) {
         clearAppToken();
-        if (active) navigate("/login", { replace: true });
+        if (active) navigate("/", { replace: true });
         return;
       }
 
@@ -27,7 +27,7 @@ export const useProtectedRoute = () => {
 
       if (!res.ok) {
         clearAppToken();
-        navigate("/login", { replace: true });
+        navigate("/", { replace: true });
       }
       setLoading(false);
     };
