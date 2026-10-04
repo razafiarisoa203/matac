@@ -11,11 +11,20 @@ import InputField from './PermisConst/InputField';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { constructionService } from '../services/api/constructionSercvice';
-import { useFileUpload } from '../hooks/useFileUpload'; // Import du hook
+import { useFileUpload } from '../hooks/useFileUpload';
 import { toast } from 'react-toastify';
 import { alignmentService } from '../services/api/alignmentService';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+
+// === Notifications ===
+import { notificationService } from '../services/api/notificationService';
+import { authService } from '../services/api/authService';
+import {
+  buildConfirmationEmail,
+  buildProcessorMessage,
+  getConstructionReference,
+} from '../utils/constructionNotifications';
 
 const PermisConstruction = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -28,7 +37,6 @@ const PermisConstruction = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [submissionResult, setSubmissionResult] = useState(null);
 
-  // Utilisation du hook pour l'upload de fichiers
   const {
     files,
     uploadedPieceJointes,
@@ -41,7 +49,6 @@ const PermisConstruction = () => {
     clearFiles
   } = useFileUpload();
 
-  // État pour stocker les fichiers par type
   const [uploadedFiles, setUploadedFiles] = useState({
     planTerrain: [],
     droitPropriete: [],
@@ -100,18 +107,14 @@ const PermisConstruction = () => {
   };
 
   const handleStepChange = (stepId) => {
-  // Valider si on peut naviguer vers cette étape
-  // Vous pouvez ajouter une logique de validation ici si nécessaire
-  setCurrentStep(stepId);
-  setCurrentSection(1); // Toujours revenir à la première section de l'étape
-};
+    setCurrentStep(stepId);
+    setCurrentSection(1);
+  };
 
-  // Fonction pour gérer l'upload de fichiers par type
   const handleFileUpload = async (fileType, file) => {
     try {
       const uploadedFile = await uploadFile(file);
       
-      // Stocker le fichier uploadé dans l'état correspondant
       setUploadedFiles(prev => ({
         ...prev,
         [fileType]: [...prev[fileType], {
@@ -128,7 +131,6 @@ const PermisConstruction = () => {
     }
   };
 
-  // Fonction pour supprimer un fichier uploadé
   const handleFileRemove = (fileType, index) => {
     setUploadedFiles(prev => {
       const updatedFiles = [...prev[fileType]];
@@ -137,43 +139,39 @@ const PermisConstruction = () => {
     });
   };
 
-  // Fonction corrigée : utilise getAlignmentByreferenceAlignement
   const handleVerifyAlignementExiste = async (referenceAlignement) => {
-  if (!referenceAlignement) return null;
+    if (!referenceAlignement) return null;
 
-  try {
-    const alignmentData = await alignmentService.getConstructionByReference(referenceAlignement);
-    if (alignmentData && alignmentData.referenceAlignement) {
-      return alignmentData; 
-    } else {
-      toast.error("⚠️ Aucun alignement trouvé pour cette Réference d'alignement.");
+    try {
+      const alignmentData = await alignmentService.getConstructionByReference(referenceAlignement);
+      if (alignmentData && alignmentData.referenceAlignement) {
+        return alignmentData; 
+      } else {
+        toast.error("⚠️ Aucun alignement trouvé pour cette Réference d'alignement.");
+        return null;
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l’alignement :', error);
+      if (error.response?.status === 404) {
+        toast.error('⚠️ Aucun alignement trouvé pour cet reference.');
+      } else {
+        toast.error('❌ Erreur serveur lors de la vérification.');
+      }
       return null;
     }
-  } catch (error) {
-    console.error('Erreur lors de la vérification de l’alignement :', error);
-    if (error.response?.status === 404) {
-      toast.error('⚠️ Aucun alignement trouvé pour cet reference.');
-    } else {
-      toast.error('❌ Erreur serveur lors de la vérification.');
-    }
-    return null; // ✅ retourne null en cas d'erreur
-  }
-};
+  };
 
-  // Fonction pour gérer la sélection de fichiers
   const handleFileSelect = async (fileType, selectedFiles) => {
     for (const file of selectedFiles) {
       try {
         await handleFileUpload(fileType, file);
       } catch (error) {
         console.error(`Erreur lors de l'upload du fichier ${file.name}:`, error);
-        // Vous pouvez ajouter une notification d'erreur ici
       }
     }
   };
 
-
-  const handleVerifyConstructionExiste  = async (referenceAlignement) => {
+  const handleVerifyConstructionExiste = async (referenceAlignement) => {
     if (!referenceAlignement) return null;
     try {
       const constructionData = await constructionService.getConstructionByReferenceAlignement(referenceAlignement);
@@ -182,16 +180,15 @@ const PermisConstruction = () => {
         return constructionData;
       }
     } catch (error) {
-      console.error('Erreur lors de la vérification de la construction')
-      return null; //  retourne null en cas d'erreur
+      console.error('Erreur lors de la vérification de la construction');
+      return null;
     }
-  }
-  // Fonction pour valider les pièces (OPTIONNEL)
+  };
+
   const validatePieces = (pieces) => {
     const errors = {};
     
     pieces.forEach((piece, index) => {
-      // Seulement valider si la pièce a des données
       const hasData = piece.destination || piece.niveau || piece.surface;
       
       if (hasData) {
@@ -207,13 +204,11 @@ const PermisConstruction = () => {
           errors[`pieces.${index}.surface`] = 'La surface est requise';
         }
       }
-      // Si aucun champ n'est rempli, la pièce est ignorée (optionnelle)
     });
     
     return errors;
   };
 
-  // Fonction de validation principale
   const validateCurrentSection = () => {
     const section = getCurrentSection();
     if (!section) return true;
@@ -221,7 +216,6 @@ const PermisConstruction = () => {
     const newErrors = {};
     let valid = true;
 
-    // Valider les champs de formulaire
     if (section.fields) {
       section.fields.forEach(field => {
         if (field.required) {
@@ -234,10 +228,8 @@ const PermisConstruction = () => {
       });
     }
 
-    // Valider les fichiers si section fichiers - OPTIONNEL
     if (section.files) {
       section.files.forEach(file => {
-        // Les fichiers sont optionnels (required: false dans sidebarConfig)
         if (file.required && (!uploadedFiles[file.name] || uploadedFiles[file.name].length === 0)) {
           newErrors[file.name] = `${file.label} est requis`;
           valid = false;
@@ -249,43 +241,86 @@ const PermisConstruction = () => {
     return valid;
   };
 
+  // ====================== NOTIFICATIONS ======================
+  const sendSubmissionNotifications = async (reference) => {
+    const userData = authService.getUserInfo();
+    const id_citizen = userData?.id_citizen || userData?.id || authService.getUserId();
+
+    const applicantEmail = userData?.user_email || formData.emailProprietaire || formData.email;
+    const processorUserId = import.meta.env.ABBR_ADMIN_USER_ID;
+
+    const fullName =
+      formData.nomProprietaire ||
+      `${formData.prenoms || ''} ${formData.nom || ''}`.trim() ||
+      'un citoyen';
+
+    const emailTask = applicantEmail
+      ? notificationService.sendNotif({
+          to: applicantEmail,
+          ...buildConfirmationEmail({ reference }),
+        })
+      : Promise.reject(new Error('Aucune adresse email pour le demandeur'));
+
+    const processorTask = processorUserId
+      ? notificationService.broadcastNotification({
+          userId: processorUserId,
+          authorId: id_citizen,
+          message: buildProcessorMessage(fullName),
+        })
+      : Promise.reject(new Error('ABBR_ADMIN_USER_ID non défini'));
+
+    const [emailResult, processorResult] = await Promise.allSettled([emailTask, processorTask]);
+
+    return {
+      emailSent: emailResult.status === 'fulfilled',
+      processorNotified: processorResult.status === 'fulfilled',
+    };
+  };
+  // ===========================================================
+
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       
-      // Préparer les données complètes pour l'envoi
       const permisData = {
         formData,
         pieces: pieces.filter(piece => 
           piece.destination || piece.niveau || piece.surface
-        ), // Filtrer les pièces vides
-        uploadedFiles: uploadedFiles // Fichiers uploadés par type
+        ),
+        uploadedFiles
       };
 
       console.log('Envoi des données au backend:', permisData);
 
-      // Appel au service backend
       const result = await constructionService.submitPermisConstruction(permisData);
       
       console.log('Réponse du serveur:', result);
+
+      // === ENVOI DES NOTIFICATIONS ===
+      const reference = getConstructionReference(result);
+      const { emailSent } = await sendSubmissionNotifications(reference);
       
-      // Sauvegarde finale avec les informations de soumission
+      // Sauvegarde finale
       const finalData = {
         ...permisData,
         submittedAt: new Date().toISOString(),
         submissionId: result.id || result.data?.id,
-        reference: result.reference || result.data?.reference,
-        serverResponse: result
+        reference: reference || result.reference || result.data?.reference,
+        serverResponse: result,
+        emailSent
       };
 
       localStorage.setItem('permis_construction_data_final', JSON.stringify(finalData));
       localStorage.removeItem('permis_construction_data');
 
-      // Afficher la confirmation
+      const successMessage = emailSent
+        ? 'Dossier soumis avec succès. Un email de confirmation vous a été adressé.'
+        : "Dossier soumis avec succès, mais l'email de confirmation n'a pas pu être envoyé.";
+
       setSubmissionResult({
         success: true,
-        reference: result.reference || `REF-${Date.now()}`,
-        message: result.message || 'Dossier soumis avec succès',
+        reference: reference || `REF-${Date.now()}`,
+        message: successMessage,
         submissionId: result.id || result.data?.id
       });
       setShowConfirmation(true);
@@ -324,7 +359,6 @@ const PermisConstruction = () => {
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
     if (submissionResult?.success) {
-      // Réinitialiser tout
       setFormData({});
       setCompletedSections({});
       setUploadedFiles({
@@ -367,7 +401,6 @@ const PermisConstruction = () => {
       </div>
     );
 
-    // Section avec fichiers (Section 4)
     if (section.files) {
       return (
         <div className="space-y-6">
@@ -380,7 +413,6 @@ const PermisConstruction = () => {
               </label>
               
               <div className="space-y-4">
-                {/* Input file avec gestion d'upload */}
                 <input
                   type="file"
                   onChange={async (e) => {
@@ -388,7 +420,6 @@ const PermisConstruction = () => {
                     if (selectedFiles.length > 0) {
                       await handleFileSelect(file.name, selectedFiles);
                     }
-                    // Reset input
                     e.target.value = '';
                   }}
                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -396,7 +427,6 @@ const PermisConstruction = () => {
                   multiple
                 />
 
-                {/* Liste des fichiers uploadés pour ce type */}
                 {uploadedFiles[file.name]?.length > 0 && (
                   <div className="mt-4">
                     <h4 className="font-medium text-gray-700 mb-2">Fichiers uploadés:</h4>
@@ -432,14 +462,12 @@ const PermisConstruction = () => {
                   </div>
                 )}
 
-                {/* Message si aucun fichier */}
                 {(!uploadedFiles[file.name] || uploadedFiles[file.name].length === 0) && (
                   <p className="text-sm text-gray-500 italic">
                     Aucun fichier uploadé pour le moment
                   </p>
                 )}
 
-                {/* Indicateur de chargement */}
                 {isUploadingFile && (
                   <div className="flex items-center space-x-2 text-blue-600">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -457,7 +485,6 @@ const PermisConstruction = () => {
       );
     }
 
-    // Section dynamique (caractéristiques des pièces)
     if (section.isDynamic) {
       return (
         <div className="space-y-6">
@@ -492,7 +519,6 @@ const PermisConstruction = () => {
       );
     }
 
-    // Section normale avec champs de formulaire → ✅ referenceAlignement traité comme un champ normal
     return (
       <div className="space-y-6">
         {commonHeader}
@@ -553,80 +579,72 @@ const PermisConstruction = () => {
     return total > 0 ? Math.round((done / total) * 100) : 0;
   };
 
-  // handleNext modifié : vérification automatique si dans la section "Référence alignement"
   const handleNext = async () => {
-  if (!validateCurrentSection()) {
-    return;
-  }
-
-  const isInReferenceAlignementSection = currentStep === 1 && currentSection === 2;
-
-  if (isInReferenceAlignementSection) {
-
-    // Bloque si le champ est vide
-    if (!formData.referenceAlignement || formData.referenceAlignement.trim() === "") {
-      setErrors(prev => ({
-        ...prev,
-        referenceAlignement: "Ce champ est obligatoire."
-      }));
+    if (!validateCurrentSection()) {
       return;
     }
 
-    // Vérification API
-    const alignmentData = await handleVerifyAlignementExiste(formData.referenceAlignement);
-    const constructionData = await handleVerifyConstructionExiste(formData.referenceAlignement);
+    const isInReferenceAlignementSection = currentStep === 1 && currentSection === 2;
 
-    if (!alignmentData || constructionData) {
-      setErrors(prev => ({
+    if (isInReferenceAlignementSection) {
+      if (!formData.referenceAlignement || formData.referenceAlignement.trim() === "") {
+        setErrors(prev => ({
+          ...prev,
+          referenceAlignement: "Ce champ est obligatoire."
+        }));
+        return;
+      }
+
+      const alignmentData = await handleVerifyAlignementExiste(formData.referenceAlignement);
+      const constructionData = await handleVerifyConstructionExiste(formData.referenceAlignement);
+
+      if (!alignmentData || constructionData) {
+        setErrors(prev => ({
+          ...prev,
+          referenceAlignement: "La référence d’alignement est invalide ou introuvable."
+        }));
+        return;
+      }
+
+      const {
+        nom_demandaire,
+        prenom_mandataire,
+        cin_passeport_demandaire,
+        adresse_demandaire
+      } = alignmentData;
+
+      const nomComplet = [prenom_mandataire, nom_demandaire]
+        .filter(x => x && x.trim() !== "")
+        .join(" ");
+
+      setFormData(prev => ({
         ...prev,
-        referenceAlignement: "La référence d’alignement est invalide ou introuvable."
+        nomProprietaire: nomComplet || prev.nomProprietaire,
+        cinProprietaire: cin_passeport_demandaire ? String(cin_passeport_demandaire) : prev.cinProprietaire,
+        adresseProprietaire: adresse_demandaire || prev.adresseProprietaire
       }));
-      return;
     }
 
-    // Si valide → remplir les champs
-    const {
-      nom_demandaire,
-      prenom_mandataire,
-      cin_passeport_demandaire,
-      adresse_demandaire
-    } = alignmentData;
-
-    const nomComplet = [prenom_mandataire, nom_demandaire]
-      .filter(x => x && x.trim() !== "")
-      .join(" ");
-
-    setFormData(prev => ({
+    setCompletedSections(prev => ({
       ...prev,
-      nomProprietaire: nomComplet || prev.nomProprietaire,
-      cinProprietaire: cin_passeport_demandaire ? String(cin_passeport_demandaire) : prev.cinProprietaire,
-      adresseProprietaire: adresse_demandaire || prev.adresseProprietaire
+      [`${currentStep}-${currentSection}`]: true
     }));
-  }
 
-  // Marquer la section comme complétée
-  setCompletedSections(prev => ({
-    ...prev,
-    [`${currentStep}-${currentSection}`]: true
-  }));
+    const isLastStep = currentStep === steps.length;
+    const isLastSection = currentSection === (sidebarItems[currentStep]?.length || 1);
 
-  // Logique navigation
-  const isLastStep = currentStep === steps.length;
-  const isLastSection = currentSection === (sidebarItems[currentStep]?.length || 1);
-
-  if (isLastStep && isLastSection) {
-    await handleSubmit();
-  } else {
-    const maxSections = sidebarItems[currentStep]?.length || 0;
-    if (currentSection < maxSections) {
-      setCurrentSection(currentSection + 1);
-    } else if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
-      setCurrentSection(1);
+    if (isLastStep && isLastSection) {
+      await handleSubmit();
+    } else {
+      const maxSections = sidebarItems[currentStep]?.length || 0;
+      if (currentSection < maxSections) {
+        setCurrentSection(currentSection + 1);
+      } else if (currentStep < steps.length) {
+        setCurrentStep(currentStep + 1);
+        setCurrentSection(1);
+      }
     }
-  }
-};
-
+  };
 
   const handlePrevious = () => {
     if (currentSection > 1) {
