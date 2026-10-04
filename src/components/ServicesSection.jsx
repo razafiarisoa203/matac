@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { loginWithYaho } from "../auth/authActions";
+import { useTheme } from "../context/ThemeContext";
 
 const ServicesSection = () => {
   const { t } = useTranslation();
+  const { isDarkMode } = useTheme();
   const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
 
   // Récupérer les services traduits
   const servicesRaw = t('services.servicesList', { returnObjects: true }) || [];
@@ -127,6 +134,101 @@ const ServicesSection = () => {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div
+            id="service-contact-form"
+            className={`mt-20 max-w-5xl mx-auto rounded-3xl border p-8 sm:p-10 lg:p-12 transition-all duration-300 ${
+              isDarkMode
+                ? 'bg-slate-900 border-slate-700 shadow-[0_20px_50px_rgba(15,23,42,0.45)]'
+                : 'bg-gradient-to-br from-white to-green-50 border-green-100 shadow-[0_20px_50px_rgba(38,151,69,0.12)]'
+            }`}
+          >
+            <div className="mb-8 text-center md:text-left">
+              <p className={`text-sm font-semibold uppercase tracking-[0.2em] mb-3 ${isDarkMode ? 'text-green-400' : 'text-[#269745]'}`}>
+                {t('contact.title')}
+              </p>
+              <h3 className={`text-3xl sm:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {t('contact.subtitle')}
+              </h3>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                alert(t('contact.success'));
+                setFormData({ name: "", email: "", message: "" });
+              }}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-200' : 'text-gray-700'}`}>
+                    {t('contact.fullName')}
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder={t('contact.namePlaceholder')}
+                    className={`w-full border rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#269745] shadow-sm ${
+                      isDarkMode
+                        ? 'border-slate-600 bg-slate-800 text-white placeholder:text-slate-400'
+                        : 'border-gray-300 bg-white text-gray-900 placeholder:text-gray-400'
+                    }`}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-200' : 'text-gray-700'}`}>
+                    {t('contact.email')}
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder={t('contact.emailPlaceholder')}
+                    className={`w-full border rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#269745] shadow-sm ${
+                      isDarkMode
+                        ? 'border-slate-600 bg-slate-800 text-white placeholder:text-slate-400'
+                        : 'border-gray-300 bg-white text-gray-900 placeholder:text-gray-400'
+                    }`}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-200' : 'text-gray-700'}`}>
+                  {t('contact.message')}
+                </label>
+                <textarea
+                  name="message"
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder={t('contact.messagePlaceholder')}
+                  rows="7"
+                  className={`w-full border rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#269745] shadow-sm resize-none ${
+                    isDarkMode
+                      ? 'border-slate-600 bg-slate-800 text-white placeholder:text-slate-400'
+                      : 'border-gray-300 bg-white text-gray-900 placeholder:text-gray-400'
+                  }`}
+                  required
+                />
+              </div>
+
+              <div className="flex justify-center md:justify-start">
+                <button
+                  type="submit"
+                  className="w-full md:w-auto bg-[#269745] text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-[#1e7a38] transition-all duration-300 shadow-md hover:shadow-lg"
+                >
+                  {t('contact.submit')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
