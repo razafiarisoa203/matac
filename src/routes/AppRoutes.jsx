@@ -7,7 +7,6 @@ import RegisterComplete from "../pages/Authentification/RegisterComplete";
 
 // Pages principales
 import HomePage from "../pages/HomePage";
-import ContactPage from "../pages/ContactPage";
 import DashboardClient from "../pages/DashboardClient";
 
 // Alignement
@@ -60,8 +59,6 @@ function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/login" element={<Login />} />
         <Route path="/callback" element={<Callback />} />
         <Route
           path="/register-complete"
