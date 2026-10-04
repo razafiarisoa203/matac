@@ -1,27 +1,45 @@
 import axiosConfig from "./axios.config";
+import { territoireService } from "./territoireService";
 
 export const citoyenService = {
-  async checkCIN(cin) {
+async checkCIN(cin) {
     try {
-      const response = await axiosConfig.get(`/servicecitoyen/citizens/${cin}`);
-      // Si on arrive ici, le CIN existe déjà
-      return { exists: true, data: response.data };
+      const response = await axiosConfig.get(
+        `/servicecitoyen/citizens/${cin}`
+      );
+
+      return {
+        exists: true,
+        data: response.data,
+      };
     } catch (error) {
-      // Si erreur 404, le CIN n'existe pas
       if (error.response?.status === 404) {
-        return { exists: false };
+        return {
+          exists: false,
+        };
       }
-      // Pour toute autre erreur, on la lance
+
       throw error;
     }
   },
 
+/**
+   * Récupère les informations complètes d'un citoyen.
+   */
   async getCitizenData(id_cit) {
     try {
-      const response = await axiosConfig.get(`/servicecitoyen/citizens/getCitizenById/${id_cit}`);
+      const response = await axiosConfig.get(
+        `/servicecitoyen/citizens/getCitizenById/${id_cit}`
+      );
+
       return response.data;
     } catch (error) {
-      return error;
+      console.error(
+        "[CitoyenService] Erreur récupération citoyen :",
+        error
+      );
+
+      throw error;
     }
   },
 
@@ -93,7 +111,7 @@ export const citoyenService = {
       }
 
       // Utiliser l'instance axiosConfig configurée qui gère déjà le token et le Content-Type
-      const response = await axiosConfig.post('/citizens', formData);
+      const response = await axiosConfig.post('/servicecitoyen/citizens', formData);
 
       return response.data;
 
@@ -124,26 +142,64 @@ export const citoyenService = {
     }
   },
 
-  // Helpers pour l'UI: retourner des options prêtes à l'emploi pour des <select>
   async getCommunesOptions() {
-    const communes = await this.getCommunes();
-    return communes.map(c => ({
-      value: c.formatted_id || c.commune_id || c.id,
-      label: c.name,
-      formatted_id: c.formatted_id,
-      commune_id: c.commune_id,
-      _raw: c,
+    const communes = await territoireService.getCommunes();
+
+    return communes.map((commune) => ({
+      value:
+        commune.formatted_id ||
+        commune.commune_id ||
+        commune.id,
+
+      label: commune.name,
+
+      formatted_id: commune.formatted_id,
+
+      commune_id: commune.commune_id,
+
+      _raw: commune,
     }));
   },
 
   async getFokotanyOptions(communeFormattedId) {
-    const fokotanys = await this.getFokotanys(communeFormattedId);
-    return fokotanys.map(f => ({
-      value: f.formatted_id || f.fokotany_id || f.id,
-      label: f.name,
-      formatted_id: f.formatted_id,
-      fokotany_id: f.fokotany_id,
-      _raw: f,
+    const fokotanys =
+      await territoireService.getFokotanys(
+        communeFormattedId
+      );
+
+    return fokotanys.map((fokotany) => ({
+      value:
+        fokotany.formatted_id ||
+        fokotany.fokotany_id ||
+        fokotany.id,
+
+      label: fokotany.name,
+
+      formatted_id: fokotany.formatted_id,
+
+      fokotany_id: fokotany.fokotany_id,
+
+      _raw: fokotany,
     }));
   },
+
+  async updateCitizen(idCitizen, formData) {
+    try {
+      const response = await axiosConfig.patch(
+        `/servicecitoyen/citizens/${idCitizen}`,
+        formData
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error(
+        "[CitoyenService] Erreur mise à jour citoyen :",
+        error
+      );
+
+      throw error;
+    }
+  },
+
+
 };

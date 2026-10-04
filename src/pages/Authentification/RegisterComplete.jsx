@@ -1,377 +1,946 @@
-import { useState, useEffect } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Select from "react-select";
-import Header from "../../components/Header";
-import { territoireService } from "../../services/api/territoireService";
-import { completeCitizenRegistration } from "../../auth/ssoFlow";
+import {authService} from "../../services/api/authService";
+import {citoyenService} from "../../services/api/citoyenService";
+import { AuthContext } from "../../context/AuthContext";
+import { getProfileCompletion } from "../../utils/profileUtils";
 import keycloak from "../../auth/keycloak";
-import bgImage from "../../assets/image/construction-bg.jpeg";
+import { handleSsoLogin } from "../../auth/ssoFlow";
 
-const initialForm = {
-  citizen_national_card_number: "",
-  municipality_id: "",
-  fokotany_formatted_id: "",
-  citizen_work: "",
-  citizen_prise_service: "",
-  citizen_adress: "",
-  citizen_national_card_location: "",
-  citizen_national_card_date: "",
-  user_phone: "",
+const hasValue = (value) =>
+  value !== null &&
+  value !== undefined &&
+  String(value).trim() !== "";
+
+const formatDateForInput = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(0, 10);
+  }
+
+  return date.toISOString().slice(0, 10);
 };
 
-export default function RegisterComplete() {
+const RegisterComplete = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState(initialForm);
+  const { refreshUser } = useContext(AuthContext);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const [userProfile, setUserProfile] = useState(null);
+
   const [communes, setCommunes] = useState([]);
   const [fokotanys, setFokotanys] = useState([]);
-  const [isLoading, setIsLoading] = useState({ communes: false, fokotanys: false });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [apiError, setApiError] = useState("");
 
-  useEffect(() => {
-    const loadCommunes = async () => {
-      setIsLoading((p) => ({ ...p, communes: true }));
-      try {
-        const data = await territoireService.getCommunes();
-        setCommunes(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setApiError(err.message || "Impossible de charger les communes.");
-      } finally {
-        setIsLoading((p) => ({ ...p, communes: false }));
-      }
+  const [loadingCommunes, setLoadingCommunes] = useState(false);
+  const [loadingFokotanys, setLoadingFokotanys] = useState(false);
+
+  const [photoFile, setPhotoFile] = useState(null);
+
+  const [formData, setFormData] = useState({
+    citizen_national_card_number: "",
+    municipality_id: "",
+    fokotany_formatted_id: "",
+    citizen_work: "",
+    citizen_prise_service: "",
+
+    citizen_national_card_location: "",
+    citizen_national_card_date: "",
+    citizen_adress: "",
+  });
+
+  /**
+   * --------------------------------------------------------------------------
+   * Identité affichée en lecture seule
+   * --------------------------------------------------------------------------
+   *
+   * Les données peuvent provenir :
+   * - de Keycloak via authService.getUserInfo()
+   * - du profil ServiceAuth
+   *
+   * On ne les envoie PAS dans les champs éditables.
+   */
+  const identity = useMemo(() => {
+    const tokenUser = authService.getUserInfo() || {};
+    const profile = userProfile || {};
+
+    const citizen = profile.citizen || {};
+
+    return {
+      lastName:
+        tokenUser.family_name ||
+        tokenUser.last_name ||
+        profile.user_lastname ||
+        profile.last_name ||
+        citizen.citizen_lastname ||
+        "",
+
+      firstName:
+        tokenUser.given_name ||
+        tokenUser.first_name ||
+        profile.user_firstname ||
+        profile.first_name ||
+        citizen.citizen_name ||
+        "",
+
+      email:
+        tokenUser.email ||
+        profile.user_email ||
+        profile.email ||
+        citizen.citizen_mail ||
+        "",
+
+      phone:
+        tokenUser.phone_number ||
+        tokenUser.phone ||
+        profile.user_phone ||
+        profile.phone ||
+        "",
     };
-    loadCommunes();
-  }, []);
+  }, [userProfile]);
 
-  const handleInputChange = async (e) => {
-    const { name, value } = e.target;
-    setApiError("");
-
-    if (name === "citizen_national_card_number") {
-      const numeric = value.replace(/\D/g, "").slice(0, 12);
-      setFormData((p) => ({ ...p, [name]: numeric }));
-      return;
-    }
-
-    if (name === "user_phone") {
-      const numeric = value.replace(/\D/g, "").slice(0, 10);
-      setFormData((p) => ({ ...p, [name]: numeric }));
-      return;
-    }
-
-    if (name === "municipality_id" && value) {
-      setFormData((p) => ({
-        ...p,
-        municipality_id: value,
-        fokotany_formatted_id: "",
-      }));
-      setFokotanys([]);
-      try {
-        setIsLoading((p) => ({ ...p, fokotanys: true }));
-        const data = await territoireService.getFokotanys(value);
-        setFokotanys(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setApiError(err.message || "Erreur lors du chargement des fokotanys.");
-        setFokotanys([]);
-      } finally {
-        setIsLoading((p) => ({ ...p, fokotanys: false }));
-      }
-      return;
-    }
-
-    setFormData((p) => ({ ...p, [name]: value }));
-  };
-
-  const validate = () => {
-    const errs = {};
-    if (!/^\d{12}$/.test(formData.citizen_national_card_number)) {
-      errs.citizen_national_card_number = "Le numéro CIN doit contenir exactement 12 chiffres.";
-    }
-    if (!formData.municipality_id) errs.municipality_id = "Veuillez sélectionner une commune.";
-    if (!formData.fokotany_formatted_id) errs.fokotany_formatted_id = "Veuillez sélectionner un fokotany.";
-    return errs;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setApiError("");
-
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
-
-    setIsSubmitting(true);
+  /**
+   * --------------------------------------------------------------------------
+   * Chargement du profil actuel
+   * --------------------------------------------------------------------------
+   */
+  const loadProfile = async () => {
     try {
-      if (!keycloak.token) {
-        setApiError("Session expirée. Veuillez vous reconnecter.");
-        setIsSubmitting(false);
+      setLoading(true);
+      setError("");
+
+      const profile = await authService.getUserProfile();
+
+      if (!profile) {
+        throw new Error(
+          "Impossible de récupérer votre profil utilisateur."
+        );
+      }
+
+      setUserProfile(profile);
+
+      /**
+       * Si le profil est déjà complet, cette page n'a normalement
+       * plus aucune raison d'être affichée.
+       */
+      const citizen = profile.citizen;
+      const profileStatus = getProfileCompletion(profile);
+
+      if (profileStatus.complete) {
+        navigate("/dashboard", { replace: true });
         return;
       }
 
-      const payload = {
-        citizen_national_card_number: formData.citizen_national_card_number,
-        fokotany_formatted_id: formData.fokotany_formatted_id,
-        municipality_id: formData.municipality_id,
-        citizen_work: formData.citizen_work || undefined,
-        citizen_prise_service: formData.citizen_prise_service || undefined,
-        citizen_adress: formData.citizen_adress || undefined,
-        citizen_national_card_location:
-          formData.citizen_national_card_location || undefined,
-        citizen_national_card_date:
-          formData.citizen_national_card_date || undefined,
-        user_phone: formData.user_phone || undefined,
-      };
+      /**
+       * Si une partie du profil existe déjà, on la préremplit.
+       */
+      setFormData({
+        citizen_national_card_number:
+          citizen?.citizen_national_card_number ?? "",
 
-      const result = await completeCitizenRegistration(keycloak.token, payload);
-      if (result.loggedIn) {
-        navigate("/dashboard", { replace: true });
-      }
+        municipality_id:
+          profile.municipality_id ?? "",
+
+        fokotany_formatted_id:
+          citizen?.fokotany_formatted_id ?? "",
+
+        citizen_work:
+          citizen?.citizen_work ?? "",
+
+        citizen_prise_service:
+          formatDateForInput(citizen?.citizen_prise_service),
+
+        citizen_national_card_location:
+          citizen?.citizen_national_card_location ?? "",
+
+        citizen_national_card_date:
+          formatDateForInput(citizen?.citizen_national_card_date),
+
+        citizen_adress:
+          citizen?.citizen_adress ?? "",
+      });
     } catch (err) {
-      setApiError(err.message || "Une erreur est survenue lors de l'inscription.");
+      console.error(
+        "[RegisterComplete] Erreur chargement profil:",
+        err
+      );
+
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Impossible de charger votre profil."
+      );
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const inputClass = (name) =>
-    `mt-1 block w-full rounded-lg border ${
-      errors[name] ? "border-red-500" : "border-gray-300"
-    } bg-white text-gray-900 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 p-2.5 text-sm`;
+  /**
+   * --------------------------------------------------------------------------
+   * Chargement des communes
+   * --------------------------------------------------------------------------
+   */
+  const loadCommunes = async () => {
+    try {
+      setLoadingCommunes(true);
 
-  const communeOptions = communes.map((c) => ({
-    value: c.formatted_id || c.commune_id || c.id,
-    label: c.name || c.nom || `Commune ${c.formatted_id || c.id}`,
-  }));
+      const response = await citoyenService.getCommunesOptions();
 
-  const fokotanyOptions = fokotanys.map((f) => ({
-    value: f.formatted_id || f.fokotany_id || f.id,
-    label: f.name || f.nom || `Fokotany ${f.formatted_id || f.id}`,
-  }));
+      setCommunes(Array.isArray(response) ? response : []);
+    } catch (err) {
+      console.error(
+        "[RegisterComplete] Erreur chargement communes:",
+        err
+      );
+
+      setError(
+        "Impossible de charger la liste des communes."
+      );
+    } finally {
+      setLoadingCommunes(false);
+    }
+  };
+
+  /**
+   * --------------------------------------------------------------------------
+   * Chargement des fokontany
+   * --------------------------------------------------------------------------
+   */
+  const loadFokotanys = async (municipalityId) => {
+    if (!municipalityId) {
+      setFokotanys([]);
+      return;
+    }
+
+    try {
+      setLoadingFokotanys(true);
+
+      const response =
+        await citoyenService.getFokotanyOptions(municipalityId);
+
+      setFokotanys(Array.isArray(response) ? response : []);
+    } catch (err) {
+      console.error(
+        "[RegisterComplete] Erreur chargement fokontanys:",
+        err
+      );
+
+      setFokotanys([]);
+
+      setError(
+        "Impossible de charger la liste des fokontanys."
+      );
+    } finally {
+      setLoadingFokotanys(false);
+    }
+  };
+
+  /**
+   * --------------------------------------------------------------------------
+   * Initialisation
+   * --------------------------------------------------------------------------
+   */
+  useEffect(() => {
+    loadProfile();
+    loadCommunes();
+  }, []);
+
+  /**
+   * --------------------------------------------------------------------------
+   * Rechargement des fokontanys quand la commune change
+   * --------------------------------------------------------------------------
+   */
+  useEffect(() => {
+    if (formData.municipality_id) {
+      loadFokotanys(formData.municipality_id);
+    } else {
+      setFokotanys([]);
+    }
+  }, [formData.municipality_id]);
+
+  /**
+   * --------------------------------------------------------------------------
+   * Modification du formulaire
+   * --------------------------------------------------------------------------
+   */
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
+    setError("");
+    setSuccess("");
+
+    /**
+     * Si la commune change, le fokontany sélectionné précédemment
+     * ne doit plus être conservé.
+     */
+    if (name === "municipality_id") {
+      setFormData((previous) => ({
+        ...previous,
+        municipality_id: value,
+        fokotany_formatted_id: "",
+      }));
+    }
+  };
+
+  /**
+   * --------------------------------------------------------------------------
+   * Photo
+   * --------------------------------------------------------------------------
+   */
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0] || null;
+
+    setPhotoFile(file);
+  };
+
+  /**
+   * --------------------------------------------------------------------------
+   * Validation
+   * --------------------------------------------------------------------------
+   */
+  const validateForm = () => {
+    if (!hasValue(formData.citizen_national_card_number)) {
+      return "Le numéro CIN est obligatoire.";
+    }
+
+    if (!hasValue(formData.municipality_id)) {
+      return "La commune est obligatoire.";
+    }
+
+    if (!hasValue(formData.fokotany_formatted_id)) {
+      return "Le fokontany est obligatoire.";
+    }
+
+    if (!hasValue(formData.citizen_work)) {
+      return "La fonction est obligatoire.";
+    }
+
+    if (!hasValue(formData.citizen_national_card_location)) {
+      return "Le lieu de délivrance de la CIN est obligatoire.";
+    }
+
+    if (!hasValue(formData.citizen_national_card_date)) {
+      return "La date de délivrance de la CIN est obligatoire.";
+    }
+
+    if (!hasValue(formData.citizen_adress)) {
+      return "L'adresse est obligatoire.";
+    }
+
+    return null;
+  };
+
+  /**
+   * --------------------------------------------------------------------------
+   * Création du Citizen + association avec l'utilisateur existant
+   * --------------------------------------------------------------------------
+   */
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    setError("");
+    setSuccess("");
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (!userProfile?.user_id) {
+      setError(
+        "Impossible d'identifier votre compte utilisateur."
+      );
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      /**
+       * ----------------------------------------------------------------------
+       * ÉTAPE 1
+       * Créer le Citizen dans ServiceCitoyen
+       * ----------------------------------------------------------------------
+       *
+       * Le backend génère id_citizen.
+       */
+      const citizenPayload = new FormData();
+
+      /**
+       * Identité issue de Keycloak / profil existant.
+       *
+       * Elles sont utilisées pour créer le Citizen mais ne sont pas
+       * modifiables par l'utilisateur dans cette page.
+       */
+      citizenPayload.append(
+        "citizen_name",
+        identity.firstName || ""
+      );
+
+      citizenPayload.append(
+        "citizen_lastname",
+        identity.lastName || ""
+      );
+
+      citizenPayload.append(
+        "citizen_national_card_number",
+        String(formData.citizen_national_card_number).trim()
+      );
+
+      citizenPayload.append(
+        "fokotany_formatted_id",
+        formData.fokotany_formatted_id
+      );
+
+      citizenPayload.append(
+        "citizen_work",
+        formData.citizen_work.trim()
+      );
+
+      if (hasValue(formData.citizen_prise_service)) {
+        citizenPayload.append(
+          "citizen_prise_service",
+          formData.citizen_prise_service
+        );
+      }
+
+      if (hasValue(formData.citizen_national_card_location)) {
+        citizenPayload.append(
+          "citizen_national_card_location",
+          formData.citizen_national_card_location.trim()
+        );
+      }
+
+      if (hasValue(formData.citizen_national_card_date)) {
+        citizenPayload.append(
+          "citizen_national_card_date",
+          formData.citizen_national_card_date
+        );
+      }
+
+      if (hasValue(formData.citizen_adress)) {
+        citizenPayload.append(
+          "citizen_adress",
+          formData.citizen_adress.trim()
+        );
+      }
+
+      if (photoFile) {
+        citizenPayload.append(
+          "citizen_photo",
+          photoFile
+        );
+      }
+
+      const citizenResponse =
+        await citoyenService.createCitizen(citizenPayload);
+
+      /**
+       * Les APIs peuvent retourner :
+       * response.data
+       * response.data.citizen
+       * ou directement le Citizen.
+       */
+      const createdCitizen =
+        citizenResponse?.citizen ||
+        citizenResponse?.data?.citizen ||
+        citizenResponse?.data ||
+        citizenResponse;
+
+      const citizenId =
+        createdCitizen?.id_citizen;
+
+      if (!citizenId) {
+        console.error(
+          "[RegisterComplete] Réponse création citizen:",
+          citizenResponse
+        );
+
+        throw new Error(
+          "Le citoyen a peut-être été créé, mais son identifiant n'a pas été retourné par le service citoyen."
+        );
+      }
+
+      console.log(
+        "[RegisterComplete] Citizen créé:",
+        citizenId
+      );
+
+      /**
+       * ----------------------------------------------------------------------
+       * ÉTAPE 2
+       * Associer le Citizen à l'utilisateur ServiceAuth existant
+       * ----------------------------------------------------------------------
+       */
+      await authService.updateUserById(
+        userProfile.user_id,
+        {
+          municipality_id: formData.municipality_id,
+          id_citizen: citizenId,
+        }
+      );
+
+      /**
+       * ----------------------------------------------------------------------
+       * ÉTAPE 3
+       * Renouveler le JWT applicatif puis recharger le profil
+       * ----------------------------------------------------------------------
+       */
+      if (keycloak.authenticated && keycloak.token) {
+        await keycloak.updateToken(30);
+        const ssoResult = await handleSsoLogin(keycloak.token);
+
+        if (!ssoResult.loggedIn) {
+          throw new Error(
+            "Votre profil est enregistré, mais votre session n'a pas pu être renouvelée."
+          );
+        }
+      }
+
+      const refreshedUser = await refreshUser();
+
+      if (!refreshedUser) {
+        throw new Error(
+          "Votre profil est enregistré, mais votre session n'a pas pu être actualisée."
+        );
+      }
+
+      setUserProfile(refreshedUser);
+
+      /**
+       * ----------------------------------------------------------------------
+       * ÉTAPE 4
+       * Vérifier que le profil est réellement complet
+       * ----------------------------------------------------------------------
+       */
+      const profileStatus = getProfileCompletion(refreshedUser);
+
+      if (!profileStatus.complete) {
+        throw new Error(
+          `Votre profil a été enregistré, mais il reste à compléter : ${profileStatus.missingFields.join(", ")}.`
+        );
+      }
+
+      setSuccess("Votre profil a été complété avec succès.");
+
+      navigate("/dashboard", { replace: true });
+
+    } catch (err) {
+      console.error(
+        "[RegisterComplete] Erreur enregistrement:",
+        err
+      );
+
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Une erreur est survenue lors de l'enregistrement."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * --------------------------------------------------------------------------
+   * Loading
+   * --------------------------------------------------------------------------
+   */
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-current border-t-transparent rounded-full mx-auto mb-4" />
+          <p>Chargement de votre profil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed flex flex-col"
-      style={{
-        backgroundImage: `linear-gradient(rgba(15,23,42,0.7), rgba(15,23,42,0.7)), url(${bgImage})`,
-      }}
-    >
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white">
-        <Header />
-      </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-6 md:p-8">
 
-      <div className="flex-1 flex items-center justify-center mt-40 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="w-full max-w-2xl">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-            <div className="px-8 py-10">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Compléter votre inscription
-                </h1>
-                <p className="text-gray-500 text-sm mt-2">
-                  Pour finaliser votre compte, veuillez renseigner les informations
-                  de votre dossier citoyen.
-                </p>
+        {/* ---------------------------------------------------------------- */}
+        {/* HEADER                                                           */}
+        {/* ---------------------------------------------------------------- */}
+
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Compléter votre profil
+          </h1>
+
+          <p className="mt-2 text-gray-600">
+            Certaines informations sont nécessaires avant
+            d'accéder à votre espace.
+          </p>
+        </div>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* MESSAGES                                                         */}
+        {/* ---------------------------------------------------------------- */}
+
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {success}
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-8"
+        >
+
+          {/* ---------------------------------------------------------------- */}
+          {/* IDENTITÉ                                                         */}
+          {/* ---------------------------------------------------------------- */}
+
+          <section>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Identité
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Ces informations proviennent de votre compte
+                d'authentification et sont en lecture seule.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              {/* Nom */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom
+                </label>
+
+                <input
+                  type="text"
+                  value={identity.lastName}
+                  readOnly
+                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-600 cursor-not-allowed"
+                />
               </div>
 
-              {apiError && (
-                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-                  {apiError}
-                </div>
-              )}
+              {/* Prénom */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prénom
+                </label>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Numéro CIN <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    name="citizen_national_card_number"
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.citizen_national_card_number}
-                    onChange={handleInputChange}
-                    className={inputClass("citizen_national_card_number")}
-                    placeholder="12 chiffres"
-                  />
-                  {errors.citizen_national_card_number && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.citizen_national_card_number}
-                    </p>
-                  )}
-                </div>
+                <input
+                  type="text"
+                  value={identity.firstName}
+                  readOnly
+                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-600 cursor-not-allowed"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Commune <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    name="municipality_id"
-                    value={
-                      communeOptions.find(
-                        (o) => o.value === formData.municipality_id
-                      ) || null
-                    }
-                    onChange={(o) =>
-                      handleInputChange({
-                        target: { name: "municipality_id", value: o?.value || "" },
-                      })
-                    }
-                    options={communeOptions}
-                    isLoading={isLoading.communes}
-                    isDisabled={isLoading.communes}
-                    placeholder="Sélectionnez une commune"
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    filterOption={(option, input) =>
-                      option.label.toLowerCase().startsWith(input.toLowerCase())
-                    }
-                  />
-                  {errors.municipality_id && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.municipality_id}
-                    </p>
-                  )}
-                </div>
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fokotany <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    name="fokotany_formatted_id"
-                    value={
-                      fokotanyOptions.find(
-                        (o) => o.value === formData.fokotany_formatted_id
-                      ) || null
-                    }
-                    onChange={(o) =>
-                      handleInputChange({
-                        target: {
-                          name: "fokotany_formatted_id",
-                          value: o?.value || "",
-                        },
-                      })
-                    }
-                    options={fokotanyOptions}
-                    isLoading={isLoading.fokotanys}
-                    isDisabled={!formData.municipality_id || isLoading.fokotanys}
-                    placeholder={
-                      !formData.municipality_id
-                        ? "Sélectionnez d'abord une commune"
-                        : "Sélectionnez un fokotany"
-                    }
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    filterOption={(option, input) =>
-                      option.label.toLowerCase().startsWith(input.toLowerCase())
-                    }
-                  />
-                  {errors.fokotany_formatted_id && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.fokotany_formatted_id}
-                    </p>
-                  )}
-                </div>
+                <input
+                  type="email"
+                  value={identity.email}
+                  readOnly
+                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-600 cursor-not-allowed"
+                />
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Profession
-                    </label>
-                    <input
-                      name="citizen_work"
-                      value={formData.citizen_work}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_work")}
-                      placeholder="Ex : Ingénieur"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date de prise de service
-                    </label>
-                    <input
-                      name="citizen_prise_service"
-                      type="date"
-                      value={formData.citizen_prise_service}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_prise_service")}
-                    />
-                  </div>
-                </div>
+              {/* Téléphone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Téléphone
+                </label>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adresse
-                  </label>
-                  <textarea
-                    name="citizen_adress"
-                    value={formData.citizen_adress}
-                    onChange={handleInputChange}
-                    rows="2"
-                    className={inputClass("citizen_adress")}
-                    placeholder="Ex : Lot 123, Andohatapenaka"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={identity.phone}
+                  readOnly
+                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-600 cursor-not-allowed"
+                />
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Lieu de délivrance du CIN
-                    </label>
-                    <input
-                      name="citizen_national_card_location"
-                      value={formData.citizen_national_card_location}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_national_card_location")}
-                      placeholder="Ex : Commissariat Central Antanimena"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date de délivrance du CIN
-                    </label>
-                    <input
-                      name="citizen_national_card_date"
-                      type="date"
-                      value={formData.citizen_national_card_date}
-                      onChange={handleInputChange}
-                      className={inputClass("citizen_national_card_date")}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Téléphone
-                  </label>
-                  <input
-                    name="user_phone"
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.user_phone}
-                    onChange={handleInputChange}
-                    className={inputClass("user_phone")}
-                    placeholder="Ex : 0341234567"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full flex justify-center items-center py-2.5 px-4 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Enregistrement..." : "Finaliser l'inscription"}
-                </button>
-              </form>
             </div>
+          </section>
+
+          {/* ---------------------------------------------------------------- */}
+          {/* INFORMATIONS PROFESSIONNELLES ET ADMINISTRATIVES                 */}
+          {/* ---------------------------------------------------------------- */}
+
+          <section>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Informations administratives
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Les champs marqués d'un * sont obligatoires.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              {/* CIN */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Numéro CIN *
+                </label>
+
+                <input
+                  type="number"
+                  name="citizen_national_card_number"
+                  value={
+                    formData.citizen_national_card_number
+                  }
+                  onChange={handleChange}
+                  required
+                  placeholder="Ex : 101211254422"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Commune */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Commune *
+                </label>
+
+                <select
+                  name="municipality_id"
+                  value={formData.municipality_id}
+                  onChange={handleChange}
+                  required
+                  disabled={loadingCommunes}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">
+                    {loadingCommunes
+                      ? "Chargement..."
+                      : "Sélectionner une commune"}
+                  </option>
+
+                  {communes.map((commune) => (
+                    <option
+                      key={
+                        commune.value ||
+                        commune.municipality_id ||
+                        commune.id
+                      }
+                      value={
+                        commune.value ||
+                        commune.municipality_id ||
+                        commune.id
+                      }
+                    >
+                      {commune.label ||
+                        commune.name ||
+                        commune.municipality_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Fokontany */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fokontany *
+                </label>
+
+                <select
+                  name="fokotany_formatted_id"
+                  value={formData.fokotany_formatted_id}
+                  onChange={handleChange}
+                  required
+                  disabled={
+                    !formData.municipality_id ||
+                    loadingFokotanys
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">
+                    {loadingFokotanys
+                      ? "Chargement..."
+                      : !formData.municipality_id
+                      ? "Sélectionner d'abord une commune"
+                      : "Sélectionner un fokontany"}
+                  </option>
+
+                  {fokotanys.map((fokotany) => (
+                    <option
+                      key={
+                        fokotany.value ||
+                        fokotany.fokotany_formatted_id ||
+                        fokotany.id
+                      }
+                      value={
+                        fokotany.value ||
+                        fokotany.fokotany_formatted_id ||
+                        fokotany.id
+                      }
+                    >
+                      {fokotany.label ||
+                        fokotany.name ||
+                        fokotany.fokotany_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Fonction */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fonction *
+                </label>
+
+                <input
+                  type="text"
+                  name="citizen_work"
+                  value={formData.citizen_work}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ex : Développeur"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Prise de service */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date de prise de service *
+                </label>
+
+                <input
+                  type="date"
+                  name="citizen_prise_service"
+                  value={formData.citizen_prise_service}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Lieu CIN */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lieu de délivrance de la CIN
+                </label>
+
+                <input
+                  type="text"
+                  name="citizen_national_card_location"
+                  value={
+                    formData.citizen_national_card_location
+                  }
+                  onChange={handleChange}
+                  required
+                  placeholder="Ex : Isotry"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Date CIN */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date de délivrance de la CIN
+                </label>
+
+                <input
+                  type="date"
+                  name="citizen_national_card_date"
+                  value={
+                    formData.citizen_national_card_date
+                  }
+                  onChange={handleChange}
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Adresse */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Adresse
+                </label>
+
+                <textarea
+                  name="citizen_adress"
+                  value={formData.citizen_adress}
+                  onChange={handleChange}
+                  rows={3}
+                  required
+                  placeholder="Votre adresse"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Photo */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Photo
+                </label>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-white"
+                />
+
+                {photoFile && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    Fichier sélectionné : {photoFile.name}
+                  </p>
+                )}
+              </div>
+
+            </div>
+          </section>
+
+          {/* ---------------------------------------------------------------- */}
+          {/* ACTION                                                           */}
+          {/* ---------------------------------------------------------------- */}
+
+          <div className="flex justify-end pt-4 border-t border-gray-200">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving
+                ? "Enregistrement..."
+                : "Enregistrer et continuer"}
+            </button>
           </div>
-        </div>
+
+        </form>
       </div>
     </div>
   );
-}
+};
+
+export default RegisterComplete;

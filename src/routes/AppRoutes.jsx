@@ -28,6 +28,7 @@ import RoleManagement from "../pages/RoleAppli/Role";
 
 // Route protégée (vérifie le JWT via /serviceauth/auth/verify-token)
 import PrivateRoute from "../components/auth/PrivateRoute";
+import AuthenticatedRoute from "../components/auth/AuthenticatedRoute";
 import ProfileRequiredRoute from "../components/auth/ProfileRequiredRoute";
 import { AuthContext } from "../context/AuthContext";
 import { getProfileCompletion } from "../utils/profileUtils";
@@ -61,7 +62,11 @@ function App() {
         <Route path="/callback" element={<Callback />} />
         <Route
           path="/register-complete"
-          element={<RegisterComplete />}
+          element={
+            <AuthenticatedRoute>
+              <RegisterComplete />
+            </AuthenticatedRoute>
+          }
         />
         <Route path="/permis" element={<PermisConstruction />} />
 

@@ -98,10 +98,247 @@ const AlignmentDetailsPage = () => {
   };
 
   // Fonction pour générer le PDF
-  const generatePDF = () => {
-    console.log("Génération du PDF pour l'alignement:", id);
-    // Implémentation de la génération PDF à faire
-    alert(`Génération du PDF pour l'alignement #${id}`);
+  const generatePDF = async () => {
+    if (!alignment) {
+      alert("Aucune donnée d'alignement disponible pour générer le PDF.");
+      return;
+    }
+
+    try {
+      // Import dynamique : évite de charger jsPDF tant que l'utilisateur
+      // n'a pas demandé la génération du document.
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable")
+      ]);
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const margin = 15;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Couleur principale
+      const green = [101, 163, 13];
+      const dark = [31, 41, 55];
+      const gray = [107, 114, 128];
+
+      const safe = (value) => {
+        if (value === null || value === undefined || value === "") return "N/A";
+        return String(value);
+      };
+
+      const addHeader = () => {
+        doc.setFillColor(...green);
+        doc.rect(0, 0, pageWidth, 28, "F");
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text("DÉTAILS DE L'ALIGNEMENT", margin, 12);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(
+          `Alignement #${safe(alignment.id_align)}`,
+          margin,
+          20
+        );
+
+        doc.setTextColor(...dark);
+      };
+
+      const addFooter = () => {
+        const pageCount = doc.internal.getNumberOfPages();
+
+        for (let page = 1; page <= pageCount; page++) {
+          doc.setPage(page);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+          doc.setTextColor(...gray);
+
+          doc.text(
+            `Alignement #${safe(alignment.id_align)}`,
+            margin,
+            pageHeight - 8
+          );
+
+          doc.text(
+            `Page ${page} / ${pageCount}`,
+            pageWidth - margin,
+            pageHeight - 8,
+            { align: "right" }
+          );
+        }
+      };
+
+      addHeader();
+
+      // Informations générales
+      autoTable(doc, {
+        startY: 35,
+        margin: { left: margin, right: margin },
+        head: [["INFORMATIONS GÉNÉRALES", "VALEUR"]],
+        body: [
+          ["Identifiant", safe(alignment.id_align)],
+          ["Statut", safe(alignment.status || "en_attente")],
+          ["Statut propriétaire", safe(alignment.status_proprietaire)],
+          ["Qualité du demandeur", safe(alignment.qualite_demandeur)],
+          ["Raison sociale", safe(alignment.raison_social)],
+          ["NIF", safe(alignment.nif)],
+          ["Date de création", formatDate(alignment.created_at)],
+          ["Dernière mise à jour", formatDate(alignment.updated_at)],
+          ["ID Mandataire", safe(alignment.id_mandataire)],
+          ["Numéro carte statistique", safe(alignment.num_carte_stat)]
+        ],
+        theme: "grid",
+        headStyles: {
+          fillColor: green,
+          textColor: [255, 255, 255],
+          fontStyle: "bold"
+        },
+        styles: {
+          font: "helvetica",
+          fontSize: 9,
+          cellPadding: 3,
+          overflow: "linebreak"
+        },
+        columnStyles: {
+          0: { cellWidth: 65, fontStyle: "bold" },
+          1: { cellWidth: 115 }
+        }
+      });
+
+      // Demandeur
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 8,
+        margin: { left: margin, right: margin },
+        head: [["INFORMATIONS DU DEMANDEUR", "VALEUR"]],
+        body: [
+          ["Nom", safe(alignment.nom_demandaire)],
+          ["Prénom", safe(alignment.prenom_mandataire)],
+          ["CIN / Passeport", safe(alignment.cin_passeport_demandaire)],
+          ["Âge", safe(alignment.age_demandaire)],
+          ["Nationalité", safe(alignment.nationalite_demandaire)],
+          ["Adresse", safe(alignment.adresse_demandaire)],
+          ["Fonction", safe(alignment.fonction_demandaire)],
+          ["Qualité du demandeur", safe(alignment.qualite_demandeur)]
+        ],
+        theme: "grid",
+        headStyles: {
+          fillColor: green,
+          textColor: [255, 255, 255],
+          fontStyle: "bold"
+        },
+        styles: {
+          font: "helvetica",
+          fontSize: 9,
+          cellPadding: 3,
+          overflow: "linebreak"
+        },
+        columnStyles: {
+          0: { cellWidth: 65, fontStyle: "bold" },
+          1: { cellWidth: 115 }
+        }
+      });
+
+      // Terrain
+      const terrain = alignment.terrain;
+
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 8,
+        margin: { left: margin, right: margin },
+        head: [["INFORMATIONS DU TERRAIN", "VALEUR"]],
+        body: [
+          ["Adresse du terrain", safe(terrain?.adresse)],
+          ["ID Terrain", safe(alignment.id_terrain)],
+          ["Commune", safe(terrain?.commune)],
+          ["Région", safe(terrain?.region)],
+          ["Fokontany", safe(terrain?.fokontany)],
+          [
+            "Superficie",
+            terrain?.superficie
+              ? `${terrain.superficie} m²`
+              : "N/A"
+          ],
+          ["Type de terrain", safe(terrain?.type_terrain)],
+          ["Usage prévu", safe(terrain?.usage)],
+          ["Propriétaire", safe(terrain?.proprietaire)],
+          ["Numéro lot", safe(terrain?.numero_lot)],
+          ["Limites", safe(terrain?.limites)]
+        ],
+        theme: "grid",
+        headStyles: {
+          fillColor: green,
+          textColor: [255, 255, 255],
+          fontStyle: "bold"
+        },
+        styles: {
+          font: "helvetica",
+          fontSize: 9,
+          cellPadding: 3,
+          overflow: "linebreak"
+        },
+        columnStyles: {
+          0: { cellWidth: 65, fontStyle: "bold" },
+          1: { cellWidth: 115 }
+        }
+      });
+
+      // Documents et références
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 8,
+        margin: { left: margin, right: margin },
+        head: [["DOCUMENTS ET RÉFÉRENCES", "VALEUR"]],
+        body: [
+          [
+            "Certificat de situation juridique",
+            safe(alignment.id_cert_sit_jur)
+          ],
+          ["Plan officiel", safe(alignment.id_plan_off)],
+          ["NIF", safe(alignment.nif)],
+          [
+            "Numéro carte statistique",
+            safe(alignment.num_carte_stat)
+          ]
+        ],
+        theme: "grid",
+        headStyles: {
+          fillColor: green,
+          textColor: [255, 255, 255],
+          fontStyle: "bold"
+        },
+        styles: {
+          font: "helvetica",
+          fontSize: 9,
+          cellPadding: 3,
+          overflow: "linebreak"
+        },
+        columnStyles: {
+          0: { cellWidth: 65, fontStyle: "bold" },
+          1: { cellWidth: 115 }
+        }
+      });
+
+      addFooter();
+
+      // Nom de fichier propre et compatible Windows/Linux
+      const fileName = `alignement_${safe(alignment.id_align)
+        .replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+
+      doc.save(fileName);
+
+      console.log("PDF généré avec succès :", fileName);
+    } catch (error) {
+      console.error("Erreur lors de la génération du PDF :", error);
+      alert(
+        "Impossible de générer le PDF. Vérifiez que les dépendances jsPDF et jspdf-autotable sont installées."
+      );
+    }
   };
 
   if (loading) {
