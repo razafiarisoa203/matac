@@ -1,4 +1,4 @@
-import { loginWithYaho, registerWithYaho } from "../auth/authActions";
+ import { loginWithYaho, registerWithYaho } from "../auth/authActions";
 
 const InfoCard = ({ title, icon, items }) => {
   const handleLinkClick = (item) => {

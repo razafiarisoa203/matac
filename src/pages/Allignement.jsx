@@ -104,10 +104,20 @@ function Allignement() {
   const id_citizen = userData?.id_citizen || userData?.id || currentUserId;
 
   const loadUserData = useCallback(async () => {
-    if (isLoadingUserData || userDataLoaded) return;
+    if (
+      isLoadingUserData ||
+      userDataLoaded ||
+      !id_citizen
+    ) {
+      return;
+    }
+
     setIsLoadingUserData(true);
+
     try {
-      const citizenData = await citoyenService.getCitizenData(id_citizen);
+      const citizenData =
+        await citoyenService.getCitizenData(id_citizen);
+
       const formattedData = {
         civilite: 'M',
         nom: citizenData?.citizen_lastname || '',
@@ -128,7 +138,10 @@ function Allignement() {
       setFormData((prev) => ({ ...prev, ...formattedData }));
       setUserDataLoaded(true);
     } catch (error) {
-      console.error('Erreur lors du chargement des données citoyen:', error);
+      console.error(
+        "Erreur lors du chargement des données citoyen :",
+        error
+      );
 
       const fallbackData = {
         civilite: 'M',
@@ -162,7 +175,17 @@ function Allignement() {
     if (shouldAutoFill) {
       loadUserData();
     }
-  }, [statutProprietaire, qualiteDemandeur, userDataLoaded, isLoadingUserData, loadUserData]);
+  }, [
+    statutProprietaire,
+    qualiteDemandeur,
+    userDataLoaded,
+    isLoadingUserData,
+    loadUserData,
+  ]);
+
+  // ============================================================
+  // VALIDATION DU FORMULAIRE
+  // ============================================================
 
   const validatePersonalForm = useCallback(() => {
     if (statutProprietaire === 'particulier') {
@@ -183,22 +206,52 @@ function Allignement() {
         formData.nomRepresentant && formData.prenomsRepresentant && formData.cinPasseportRepresentant
       );
     }
+
+    if (statutProprietaire === "personne_morale") {
+      return (
+        formData.raisonSociale &&
+        formData.carteStatistique &&
+        formData.civiliteRepresentant &&
+        formData.nomRepresentant &&
+        formData.prenomsRepresentant &&
+        formData.cinPasseportRepresentant
+      );
+    }
+
     return false;
-  }, [statutProprietaire, qualiteDemandeur, formData]);
+  }, [
+    statutProprietaire,
+    qualiteDemandeur,
+    formData,
+  ]);
+
+  // ============================================================
+  // NAVIGATION
+  // ============================================================
 
   const handleNext = () => {
     switch (currentStep) {
       case 1:
-        if (selectedRegion && selectedCommune) setCurrentStep(currentStep + 1);
+        if (
+          selectedRegion &&
+          selectedCommune
+        ) {
+          setCurrentStep(currentStep + 1);
+        }
         break;
+
       case 2:
-        if (validatePersonalForm()) setCurrentStep(currentStep + 1);
+        if (validatePersonalForm()) {
+          setCurrentStep(currentStep + 1);
+        }
         break;
+
       case 3:
       case 4:
       case 5:
         setCurrentStep(currentStep + 1);
         break;
+
       default:
         break;
     }
@@ -208,14 +261,29 @@ function Allignement() {
     setCurrentStep(stepNumber);
   };
 
+  // ============================================================
+  // UPLOAD FICHIER
+  // ============================================================
+
   const handleFileUpload = async (file) => {
     try {
       const result = await uploadFile(file);
       setSubmitMessage('Fichier uploadé avec succès!');
       setTimeout(() => setSubmitMessage(''), 3000);
       return result;
+
     } catch (error) {
-      setSubmitMessage(`Erreur lors de l'upload du fichier: ${error.message}`);
+      console.error(
+        "Erreur lors de l'upload :",
+        error
+      );
+
+      setSubmitMessage(
+        `Erreur lors de l'upload du fichier : ${
+          error.message
+        }`
+      );
+
       throw error;
     }
   };
@@ -326,19 +394,77 @@ function Allignement() {
       );
       alert('Soumission réussie! Vous allez être redirigé vers la liste des alignements.');
 
-      setTimeout(() => {
+      console.log(
+        "Alignement créé :",
+        alignmentResult
+      );
+
+      if (!alignmentResult) {
+        throw new Error(
+          "Impossible de créer l'alignement."
+        );
+      }
+
+      // ========================================================
+      // 9. SWEETALERT SUCCÈS
+      // ========================================================
+
+      setSubmitMessage("");
+
+      Swal.fire({
+        icon: "success",
+        title: "Soumission réussie",
+        text: "Votre dossier a été créé avec succès.",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#2563eb",
+
+        width: "360px",
+        padding: "1.2rem",
+
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      }).then(() => {
         setCurrentStep(1);
+
         clearFiles();
         setSubmitMessage('');
         navigate('/dashboard');
       }, 3000);
     } catch (error) {
-      console.error(error.message);
-      setSubmitMessage(`Erreur : ${error.response?.data?.message || error.message}`);
+
+      // ========================================================
+      // ERREUR DE SOUMISSION
+      // ========================================================
+
+      console.error(
+        "Erreur lors de la soumission :",
+        error
+      );
+
+      setSubmitMessage("");
+
+      Swal.fire({
+        icon: "error",
+        title: "Soumission échouée",
+        text: "Impossible de soumettre votre dossier. Veuillez réessayer.",
+        confirmButtonText: "Fermer",
+        confirmButtonColor: "#dc2626",
+
+        width: "360px",
+        padding: "1.2rem",
+
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+      });
+
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // ============================================================
+  // RESET DES DONNÉES
+  // ============================================================
 
   const resetFormData = () => {
     const shouldPreserveData = statutProprietaire === 'particulier' && qualiteDemandeur === 'proprietaire';
@@ -352,9 +478,14 @@ function Allignement() {
         nationalite_demandaire: '', age_demandaire: '',
         id_mandataire: authService.getUserId() || id_citizen,
       });
+
       setUserDataLoaded(false);
     }
   };
+
+  // ============================================================
+  // ÉTAPES
+  // ============================================================
 
   const steps = [
     { number: 1, title: t('alignment.choix_implantation'), active: true },
@@ -364,80 +495,206 @@ function Allignement() {
     { number: 5, title: t('alignment.documents_administratifs'), active: false },
   ];
 
+  // ============================================================
+  // AFFICHAGE
+  // ============================================================
+
   return (
     <div className="min-h-screen">
+
       <div className="max-w-6xl mx-auto p-6">
+
         <div className="bg-white rounded-lg shadow-sm">
+
+          {/* ==================================================
+              BOUTON RETOUR
+          ================================================== */}
+
           <button
             onClick={() => navigate('/dashboard')}
             className="bg-gray-300 absolute top-5 left-5 p-2 rounded-md hover:bg-gray-400 transition"
+            title="Retour à la liste des alignements"
           >
             <ArrowLeft className="text-gray-800 w-5 h-5" />
           </button>
+
+          {/* ==================================================
+              TITRE
+          ================================================== */}
+
           <div className="text-center py-8 border-transparent">
             <h2 className="text-2xl font-semibold text-gray-800">
               {t('alignment.soumettre_dossier')}
             </h2>
+
           </div>
+
+          {/* ==================================================
+              CONTENU
+          ================================================== */}
+
           <div className="flex">
-            <Sidebar steps={steps} currentStep={currentStep} handleStepClick={handleStepClick} />
+
+            {/* =================================================
+                SIDEBAR
+            ================================================= */}
+
+            <Sidebar
+              steps={steps}
+              currentStep={currentStep}
+              handleStepClick={handleStepClick}
+            />
+
+            {/* =================================================
+                FORMULAIRE
+            ================================================= */}
+
             <div className="flex-1 p-9">
+
               <div className="max-w-md">
-                <MessageDisplay submitMessage={submitMessage} />
+
+                {/* MESSAGE */}
+                <MessageDisplay
+                  submitMessage={submitMessage}
+                />
+
+                {/* =================================================
+                    ÉTAPE 1
+                ================================================= */}
+
                 {currentStep === 1 && (
                   <Step1Implantation
                     regions={regions}
                     communes={communes}
-                    selectedRegion={selectedRegion}
-                    selectedCommune={selectedCommune}
-                    setSelectedRegion={setSelectedRegion}
-                    setSelectedCommune={setSelectedCommune}
+                    selectedRegion={
+                      selectedRegion
+                    }
+                    selectedCommune={
+                      selectedCommune
+                    }
+                    setSelectedRegion={
+                      setSelectedRegion
+                    }
+                    setSelectedCommune={
+                      setSelectedCommune
+                    }
                   />
                 )}
+
+                {/* =================================================
+                    ÉTAPE 2
+                ================================================= */}
+
                 {currentStep === 2 && (
                   <Step2Demandeur
-                    statutProprietaire={statutProprietaire}
-                    setStatutProprietaire={setStatutProprietaire}
-                    qualiteDemandeur={qualiteDemandeur}
-                    setQualiteDemandeur={setQualiteDemandeur}
+                    statutProprietaire={
+                      statutProprietaire
+                    }
+                    setStatutProprietaire={
+                      setStatutProprietaire
+                    }
+                    qualiteDemandeur={
+                      qualiteDemandeur
+                    }
+                    setQualiteDemandeur={
+                      setQualiteDemandeur
+                    }
                     formData={formData}
-                    handleInputChange={handleInputChange}
-                    isLoadingUserData={isLoadingUserData}
-                    userDataLoaded={userDataLoaded}
-                    resetFormData={resetFormData}
-                    loadUserData={loadUserData}
+                    handleInputChange={
+                      handleInputChange
+                    }
+                    isLoadingUserData={
+                      isLoadingUserData
+                    }
+                    userDataLoaded={
+                      userDataLoaded
+                    }
+                    resetFormData={
+                      resetFormData
+                    }
+                    loadUserData={
+                      loadUserData
+                    }
                   />
                 )}
+
+                {/* =================================================
+                    ÉTAPE 3
+                ================================================= */}
+
                 {currentStep === 3 && (
-                  <Step3Proprietaire formData={formData} handleInputChange={handleInputChange} />
+                  <Step3Proprietaire
+                    formData={formData}
+                    handleInputChange={
+                      handleInputChange
+                    }
+                  />
                 )}
+
+                {/* =================================================
+                    ÉTAPE 4
+                ================================================= */}
+
                 {currentStep === 4 && (
                   <Step4Terrain
-                    statutTerrain={statutTerrain}
-                    setStatutTerrain={setStatutTerrain}
+                    statutTerrain={
+                      statutTerrain
+                    }
+                    setStatutTerrain={
+                      setStatutTerrain
+                    }
                     formData={formData}
                     setFormData={setFormData}
-                    handleInputChange={handleInputChange}
+                    handleInputChange={
+                      handleInputChange
+                    }
                   />
                 )}
+
+                {/* =================================================
+                    ÉTAPE 5
+                ================================================= */}
+
                 {currentStep === 5 && (
                   <Step6Documents
                     files={files}
-                    isUploadingFile={isUploadingFile}
-                    fileInputRef={fileInputRef}
-                    handleFileUpload={handleFileUpload}
+                    isUploadingFile={
+                      isUploadingFile
+                    }
+                    fileInputRef={
+                      fileInputRef
+                    }
+                    handleFileUpload={
+                      handleFileUpload
+                    }
                     setFiles={setFiles}
                   />
                 )}
+
+                {/* =================================================
+                    BOUTONS DE NAVIGATION
+                ================================================= */}
+
                 <NavigationButtons
                   currentStep={currentStep}
-                  setCurrentStep={setCurrentStep}
+                  setCurrentStep={
+                    setCurrentStep
+                  }
                   handleNext={handleNext}
-                  handleSubmit={handleSubmit}
-                  isSubmitting={isSubmitting}
-                  selectedRegion={selectedRegion}
-                  selectedCommune={selectedCommune}
+                  handleSubmit={
+                    handleSubmit
+                  }
+                  isSubmitting={
+                    isSubmitting
+                  }
+                  selectedRegion={
+                    selectedRegion
+                  }
+                  selectedCommune={
+                    selectedCommune
+                  }
                 />
+
               </div>
             </div>
           </div>
