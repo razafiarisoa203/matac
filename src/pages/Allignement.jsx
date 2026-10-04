@@ -1,154 +1,107 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useFormData } from "../hooks/useFormData";
-import { useFileUpload } from "../hooks/useFileUpload";
-import { alignmentService } from "../services/api/alignmentService";
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-import Sidebar from "../components/alignements/Sidebar";
-import Step1Implantation from "../components/alignements/Step1Implantation";
-import Step2Demandeur from "../components/alignements/Step2Demandeur";
-import Step3Proprietaire from "../components/alignements/Step3Proprietaire";
-import Step4Terrain from "../components/alignements/Step4Terrain";
-import Step6Documents from "../components/alignements/Step6Documents";
-import NavigationButtons from "../components/alignements/NavigationButtons";
-import MessageDisplay from "../components/alignements/MessageDisplay";
+import { useFormData } from '../hooks/useFormData';
+import { useFileUpload } from '../hooks/useFileUpload';
+import { alignmentService } from '../services/api/alignmentService';
+import { citoyenService } from '../services/api/citoyenService';
+import { authService } from '../services/api/authService';
+import { notificationService } from '../services/api/notificationService';
+import {
+  buildConfirmationEmail,
+  buildProcessorMessage,
+  getAlignmentReference,
+} from '../utils/alignmentNotifications';
 
-import { citoyenService } from "../services/api/citoyenService";
-import { ArrowLeft } from "lucide-react";
-import { authService } from "../services/api/authService";
-import { useTranslation } from "react-i18next";
-import Swal from "sweetalert2";
+import Sidebar from '../components/alignements/Sidebar';
+import Step1Implantation from '../components/alignements/Step1Implantation';
+import Step2Demandeur from '../components/alignements/Step2Demandeur';
+import Step3Proprietaire from '../components/alignements/Step3Proprietaire';
+import Step4Terrain from '../components/alignements/Step4Terrain';
+import Step6Documents from '../components/alignements/Step6Documents';
+import NavigationButtons from '../components/alignements/NavigationButtons';
+import MessageDisplay from '../components/alignements/MessageDisplay';
+
+const INITIAL_FORM_DATA = {
+  id_mandataire: authService.getUserId() || null,
+  status_proprietaire: null,
+  qualite_demandeur: null,
+  nif: null,
+  id_cert_sit_jur: null,
+  id_plan_off: null,
+  id_terrain: null,
+  num_titre: '',
+  indice: '',
+  nom_proprietaire: '',
+  adresse: '',
+  superficie: '',
+  num_parcelle: '',
+  section_dite: '',
+  canton: '',
+  num_karatany: '',
+  fokotany: '',
+  longitude: '',
+  latitude: '',
+  statut_terrain: 1,
+  civilite: '',
+  nom: '',
+  prenoms: '',
+  cinPasseport: '',
+  fonction: '',
+  nationalite: '',
+  raisonSociale: '',
+  carteStatistique: '',
+  civiliteRepresentant: '',
+  nomRepresentant: '',
+  prenomsRepresentant: '',
+  adresseRepresentant: '',
+  cinPasseportRepresentant: '',
+  adresse_proprietaire: '',
+  contact_proprietaire: '',
+  email_proprietaire: '',
+  age: '',
+  xv_laborde: '',
+  yv_laborde: '',
+  yv_laborde_cadastre: '',
+  civilite2: '',
+  nom2: '',
+  prenoms2: '',
+  cinPasseport2: '',
+  fonction2: '',
+  nationalite2: '',
+  age2: '',
+  nom_demandaire: '',
+  prenom_mandataire: '',
+  cin_passeport_demandaire: '',
+  fonction_demandaire: '',
+  nationalite_demandaire: '',
+  age_demandaire: '',
+};
 
 function Allignement() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
-  // ============================================================
-  // FICHIERS
-  // ============================================================
-
-  const {
-    files,
-    isUploadingFile,
-    fileInputRef,
-    uploadFile,
-    clearFiles,
-    setFiles,
-  } = useFileUpload();
-
-  // ============================================================
-  // ÉTATS
-  // ============================================================
-
-  const [statutTerrain, setStatutTerrain] = useState("titre");
-
+  const { files, isUploadingFile, fileInputRef, uploadFile, clearFiles, setFiles } = useFileUpload();
+  const [statutTerrain, setStatutTerrain] = useState('titre');
   const [currentStep, setCurrentStep] = useState(1);
+  const [statutProprietaire, setStatutProprietaire] = useState('particulier');
+  const [qualiteDemandeur, setQualiteDemandeur] = useState('proprietaire');
+  const { formData, setFormData, handleInputChange, updateFormData } = useFormData(INITIAL_FORM_DATA);
+  const [regions] = useState([]);
+  const [communes] = useState([]);
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedCommune, setSelectedCommune] = useState('');
+  const [isLoadingUserData, setIsLoadingUserData] = useState(false);
+  const [userDataLoaded, setUserDataLoaded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
-  const [statutProprietaire, setStatutProprietaire] =
-    useState("particulier");
-
-  const [qualiteDemandeur, setQualiteDemandeur] =
-    useState("proprietaire");
-
-  const [regions, setRegions] = useState([]);
-  const [communes, setCommunes] = useState([]);
-
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [selectedCommune, setSelectedCommune] = useState("");
-
-  const [isLoadingUserData, setIsLoadingUserData] =
-    useState(false);
-
-  const [userDataLoaded, setUserDataLoaded] =
-    useState(false);
-
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
-
-  const [submitMessage, setSubmitMessage] =
-    useState("");
-
-  // ============================================================
-  // FORMULAIRE
-  // ============================================================
-
-  const {
-    formData,
-    setFormData,
-    handleInputChange,
-    updateFormData,
-  } = useFormData({
-    id_mandataire: null,
-    status_proprietaire: null,
-    qualite_demandeur: null,
-    nif: null,
-    id_cert_sit_jur: null,
-    id_plan_off: null,
-    id_terrain: null,
-
-    num_titre: "",
-    indice: "",
-
-    nom_proprietaire: "",
-    adresse: "",
-    superficie: "",
-    num_parcelle: "",
-    section_dite: "",
-    canton: "",
-
-    num_karatany: "",
-    fokotany: "",
-
-    longitude: "",
-    latitude: "",
-
-    statut_terrain: 1,
-
-    civilite: "",
-    nom: "",
-    prenoms: "",
-    cinPasseport: "",
-    fonction: "",
-    nationalite: "",
-
-    raisonSociale: "",
-    carteStatistique: "",
-
-    civiliteRepresentant: "",
-    nomRepresentant: "",
-    prenomsRepresentant: "",
-    adresseRepresentant: "",
-    cinPasseportRepresentant: "",
-
-    adresse_proprietaire: "",
-    contact_proprietaire: "",
-    email_proprietaire: "",
-
-    age: "",
-
-    xv_laborde: "",
-    yv_laborde: "",
-    yv_laborde_cadastre: "",
-
-    civilite2: "",
-    nom2: "",
-    prenoms2: "",
-    cinPasseport2: "",
-    fonction2: "",
-    nationalite2: "",
-    age2: "",
-  });
-
-  // ============================================================
-  // INFORMATIONS UTILISATEUR
-  // ============================================================
-
+  // Identification de l'utilisateur connecté
+  const currentUserId = authService.getUserId();
   const userData = authService.getUserInfo();
-  const id_citizen = userData?.id_citizen;
-
-  // ============================================================
-  // CHARGEMENT DES INFORMATIONS CITOYEN
-  // ============================================================
+  const id_citizen = userData?.id_citizen || userData?.id || currentUserId;
 
   const loadUserData = useCallback(async () => {
     if (
@@ -166,59 +119,24 @@ function Allignement() {
         await citoyenService.getCitizenData(id_citizen);
 
       const formattedData = {
-        civilite: "M",
-
-        nom:
-          citizenData?.citizen_lastname || "",
-
-        prenoms:
-          citizenData?.citizen_name || "",
-
-        cinPasseport: String(
-          citizenData?.citizen_national_card_number || ""
-        ),
-
-        fonction:
-          citizenData?.citizen_work ||
-          "Particulier",
-
-        nationalite: "Malagasy",
-
-        adresse:
-          citizenData?.citizen_adress || "",
-
-        email:
-          citizenData?.user_email || "",
-
-        telephone: "",
-
-        adresse_proprietaire:
-          citizenData?.citizen_adress || "",
-
-        contact_proprietaire:
-          userData?.user_phone || "",
-
-        email_proprietaire:
-          userData?.user_email || "",
-
-        age: "",
-
-        nom_demandaire: "",
-        prenom_mandataire: "",
-        cin_passeport_demandaire: "",
-        adresse_demandaire: "",
-        fonction_demandaire: "",
-        age_demandaire: "",
-        nationalite_demandaire: "",
+        civilite: 'M',
+        nom: citizenData?.citizen_lastname || '',
+        prenoms: citizenData?.citizen_name || '',
+        cinPasseport: String(citizenData?.citizen_national_card_number || ''),
+        fonction: citizenData?.citizen_work || 'Particulier',
+        nationalite: 'Malagasy',
+        adresse: citizenData?.citizen_adress || '',
+        email: citizenData?.user_email || '',
+        telephone: '',
+        adresse_proprietaire: citizenData?.citizen_adress || '',
+        contact_proprietaire: userData?.user_phone || '',
+        email_proprietaire: userData?.user_email || '',
+        age: '',
+        id_mandataire: currentUserId || id_citizen,
       };
 
-      setFormData((prev) => ({
-        ...prev,
-        ...formattedData,
-      }));
-
+      setFormData((prev) => ({ ...prev, ...formattedData }));
       setUserDataLoaded(true);
-
     } catch (error) {
       console.error(
         "Erreur lors du chargement des données citoyen :",
@@ -226,50 +144,34 @@ function Allignement() {
       );
 
       const fallbackData = {
-        civilite: "M",
-        nom: "",
-        prenoms: "",
-        cinPasseport: "",
-        fonction: "Particulier",
-        nationalite: "Malagasy",
-        adresse: "",
-        telephone: "",
-        adresse_proprietaire: "",
-        contact_proprietaire: "",
-        email_proprietaire: "",
-        age: "",
+        civilite: 'M',
+        nom: '',
+        prenoms: '',
+        cinPasseport: '',
+        fonction: 'Particulier',
+        nationalite: 'Malagasy',
+        adresse: '',
+        telephone: '',
+        adresse_proprietaire: '',
+        contact_proprietaire: '',
+        email_proprietaire: '',
+        age: '',
+        id_mandataire: currentUserId || id_citizen,
       };
 
-      setFormData((prev) => ({
-        ...prev,
-        ...fallbackData,
-      }));
-
+      setFormData((prev) => ({ ...prev, ...fallbackData }));
       setUserDataLoaded(true);
-
     } finally {
       setIsLoadingUserData(false);
     }
-  }, [
-    isLoadingUserData,
-    userDataLoaded,
-    id_citizen,
-    setFormData,
-    userData?.user_phone,
-    userData?.user_email,
-  ]);
-
-  // ============================================================
-  // CHARGEMENT AUTOMATIQUE DES DONNÉES
-  // ============================================================
+  }, [isLoadingUserData, userDataLoaded, id_citizen, currentUserId, userData?.user_phone, userData?.user_email, setFormData]);
 
   useEffect(() => {
     const shouldAutoFill =
-      statutProprietaire === "particulier" &&
-      qualiteDemandeur === "proprietaire" &&
+      statutProprietaire === 'particulier' &&
+      qualiteDemandeur === 'proprietaire' &&
       !userDataLoaded &&
       !isLoadingUserData;
-
     if (shouldAutoFill) {
       loadUserData();
     }
@@ -286,31 +188,23 @@ function Allignement() {
   // ============================================================
 
   const validatePersonalForm = useCallback(() => {
-    if (statutProprietaire === "particulier") {
-      if (qualiteDemandeur === "proprietaire") {
+    if (statutProprietaire === 'particulier') {
+      if (qualiteDemandeur === 'proprietaire') {
+        return formData.civilite && formData.nom && formData.prenoms && formData.cinPasseport && formData.nationalite;
+      } else if (qualiteDemandeur === 'mandataire') {
         return (
-          formData.civilite &&
-          formData.nom &&
-          formData.prenoms &&
-          formData.cinPasseport &&
-          formData.nationalite
+          formData.civilite && formData.nom && formData.prenoms && formData.cinPasseport && formData.nationalite &&
+          (formData.civilite2 || true) &&
+          (formData.nom_demandaire || formData.nom2) &&
+          (formData.prenom_mandataire || formData.prenoms2) &&
+          (formData.cin_passeport_demandaire || formData.cinPasseport2)
         );
       }
-
-      if (qualiteDemandeur === "mandataire") {
-        return (
-          formData.civilite &&
-          formData.nom &&
-          formData.prenoms &&
-          formData.cinPasseport &&
-          formData.nationalite &&
-          formData.civilite2 &&
-          formData.nom2 &&
-          formData.prenoms2 &&
-          formData.cinPasseport2 &&
-          formData.nationalite2
-        );
-      }
+    } else if (statutProprietaire === 'personne_morale' || statutProprietaire === 'personne-morale') {
+      return (
+        formData.raisonSociale && formData.carteStatistique && formData.civiliteRepresentant &&
+        formData.nomRepresentant && formData.prenomsRepresentant && formData.cinPasseportRepresentant
+      );
     }
 
     if (statutProprietaire === "personne_morale") {
@@ -363,10 +257,6 @@ function Allignement() {
     }
   };
 
-  // ============================================================
-  // CLIC SUR UNE ÉTAPE
-  // ============================================================
-
   const handleStepClick = (stepNumber) => {
     setCurrentStep(stepNumber);
   };
@@ -378,20 +268,8 @@ function Allignement() {
   const handleFileUpload = async (file) => {
     try {
       const result = await uploadFile(file);
-
-      console.log(
-        "Fichier uploadé :",
-        result
-      );
-
-      setSubmitMessage(
-        "Fichier uploadé avec succès !"
-      );
-
-      setTimeout(() => {
-        setSubmitMessage("");
-      }, 3000);
-
+      setSubmitMessage('Fichier uploadé avec succès!');
+      setTimeout(() => setSubmitMessage(''), 3000);
       return result;
 
     } catch (error) {
@@ -410,229 +288,111 @@ function Allignement() {
     }
   };
 
-  // ============================================================
-  // SOUMISSION DU DOSSIER
-  // ============================================================
+  const sendSubmissionNotifications = async (reference) => {
+    const applicantEmail = userData?.user_email || formData.email_proprietaire;
+    const processorUserId = import.meta.env.ABBR_ADMIN_USER_ID;
+    const fullName = `${formData.prenoms || ''} ${formData.nom || ''}`.trim() || 'un citoyen';
+
+    const emailTask = applicantEmail
+      ? notificationService.sendNotif({
+          to: applicantEmail,
+          ...buildConfirmationEmail({ reference }),
+        })
+      : Promise.reject(new Error('Aucune adresse email pour le demandeur'));
+
+    const processorTask = processorUserId
+      ? notificationService.broadcastNotification({
+          userId: processorUserId,
+          authorId: id_citizen,
+          message: buildProcessorMessage(fullName),
+        })
+      : Promise.reject(new Error('ABBR_ADMIN_USER_ID non défini'));
+
+    const [emailResult, processorResult] = await Promise.allSettled([emailTask, processorTask]);
+
+    return {
+      emailSent: emailResult.status === 'fulfilled',
+      processorNotified: processorResult.status === 'fulfilled',
+    };
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    setSubmitMessage("");
+    setSubmitMessage('');
 
     try {
-      // ========================================================
-      // 1. DONNÉES DU TERRAIN
-      // ========================================================
-
       const baseTerrainData = {
-        adresse:
-          formData.adresse ||
-          "Adresse par défaut",
-
-        superficie:
-          parseFloat(formData.superficie) || 0,
-
-        longitude:
-          formData.longitude
-            ? parseFloat(formData.longitude)
-            : 0,
-
-        latitude:
-          formData.latitude
-            ? parseFloat(formData.latitude)
-            : 0,
-
-        statut_terrain:
-          statutTerrain,
+        adresse: formData.adresse || 'Adresse par défaut',
+        superficie: parseFloat(formData.superficie) || 0,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : 0,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : 0,
+        statut_terrain: statutTerrain,
       };
 
-      let terrainData = {
-        ...baseTerrainData,
-      };
+      const terrainData = { ...baseTerrainData };
 
-      // ========================================================
-      // 2. TERRAIN AVEC TITRE
-      // ========================================================
-
-      if (statutTerrain === "titre") {
-        terrainData.num_titre =
-          formData.num_titre ||
-          `TITRE-${Date.now()}`;
-
-        terrainData.nom_proprietaire =
-          formData.nom_proprietaire ||
-          "Propriétaire";
-
-        terrainData.num_parcelle =
-          formData.num_parcelle ||
-          `PARC-${Date.now()}`;
-
-        terrainData.section_dite =
-          formData.section_dite ||
-          "Section";
-
-        terrainData.canton =
-          formData.canton ||
-          "Canton";
-
-        terrainData.indice =
-          formData.indice || "";
+      if (statutTerrain === 'titre') {
+        terrainData.num_titre = formData.num_titre || 'TITRE-' + Date.now();
+        terrainData.nom_proprietaire = formData.nom_proprietaire || 'Propriétaire';
+        terrainData.num_parcelle = formData.num_parcelle || 'PARC-' + Date.now();
+        terrainData.section_dite = formData.section_dite || 'Section';
+        terrainData.canton = formData.canton || 'Canton';
+        terrainData.indice = formData.indice || '';
+      } else if (statutTerrain === 'cadastre') {
+        terrainData.num_titre = formData.num_titre || 'CADASTRE-' + Date.now();
+        terrainData.nom_proprietaire = formData.nom_proprietaire || 'Propriétaire cadastre';
+        terrainData.num_parcelle = formData.num_parcelle || 'PARC-' + Date.now();
+        terrainData.section_dite = formData.section_dite || 'Section cadastre';
+        terrainData.canton = formData.canton || 'Canton';
+      } else if (statutTerrain === 'certificat-foncier') {
+        terrainData.num_titre = formData.num_titre || 'CERT-FONCIER-' + Date.now();
+        terrainData.nom_proprietaire = formData.nom_proprietaire || 'Propriétaire certificat foncier';
+        terrainData.num_parcelle = formData.num_parcelle || 'CF-' + Date.now();
+        terrainData.section_dite = formData.section_dite || 'Section CF';
+        terrainData.canton = formData.canton || 'Canton';
+        terrainData.num_karatany = formData.num_karatany || '';
+        terrainData.fokotany = formData.fokotany || '';
       }
 
-      // ========================================================
-      // 3. TERRAIN CADASTRE
-      // ========================================================
-
-      else if (
-        statutTerrain === "cadastre"
-      ) {
-        terrainData.num_titre =
-          formData.num_titre ||
-          `CADASTRE-${Date.now()}`;
-
-        terrainData.nom_proprietaire =
-          formData.nom_proprietaire ||
-          "Propriétaire cadastre";
-
-        terrainData.num_parcelle =
-          formData.num_parcelle ||
-          `PARC-${Date.now()}`;
-
-        terrainData.section_dite =
-          formData.section_dite ||
-          "Section cadastre";
-
-        terrainData.canton =
-          formData.canton ||
-          "Canton";
-      }
-
-      // ========================================================
-      // 4. CERTIFICAT FONCIER
-      // ========================================================
-
-      else if (
-        statutTerrain ===
-        "certificat-foncier"
-      ) {
-        terrainData.num_titre =
-          formData.num_titre ||
-          `CERT-FONCIER-${Date.now()}`;
-
-        terrainData.nom_proprietaire =
-          formData.nom_proprietaire ||
-          "Propriétaire certificat foncier";
-
-        terrainData.num_parcelle =
-          formData.num_parcelle ||
-          `CF-${Date.now()}`;
-
-        terrainData.section_dite =
-          formData.section_dite ||
-          "Section CF";
-
-        terrainData.canton =
-          formData.canton ||
-          "Canton";
-
-        terrainData.num_karatany =
-          formData.num_karatany || "";
-
-        terrainData.fokotany =
-          formData.fokotany || "";
-      }
-
-      console.log(
-        "Données terrain :",
-        terrainData
-      );
-
-      // ========================================================
-      // 5. CRÉATION DU TERRAIN
-      // ========================================================
-
-      const terrainResult =
-        await alignmentService.createTerrain(
-          terrainData
-        );
-
-      console.log(
-        "Terrain créé :",
-        terrainResult
-      );
+      const terrainResult = await alignmentService.createTerrain(terrainData);
 
       if (!terrainResult) {
-        throw new Error(
-          "Impossible de créer le terrain."
-        );
+        console.error('Erreur : terrain non créé ou id_terrain manquant', terrainResult);
+        setSubmitMessage('Erreur interne : impossible de créer le terrain.');
+        return;
       }
 
-      // ========================================================
-      // 6. RÉCUPÉRATION DES FICHIERS
-      // ========================================================
+      const certFile = files.find((f) => f.type === 'certificat');
+      const planFile = files.find((f) => f.type === 'plan');
 
-      const certFile = files.find(
-        (file) =>
-          file.type === "certificat"
-      );
-
-      const planFile = files.find(
-        (file) =>
-          file.type === "plan"
-      );
-
-      // ========================================================
-      // 7. DONNÉES DE L'ALIGNEMENT
-      // ========================================================
+      // ID de l'utilisateur connecté enregistré dans id_mandataire
+      const activeUserId = authService.getUserId() || id_citizen;
 
       const alignmentData = {
-        id_mandataire:
-          id_citizen || " ",
-
-        status_proprietaire:
-          statutProprietaire || " ",
-
-        qualite_demandeur:
-          qualiteDemandeur || " ",
-
-        nif:
-          "000000000000",
-
-        id_cert_sit_jur:
-          certFile
-            ? certFile.name
-            : null,
-
-        id_plan_off:
-          planFile
-            ? planFile.name
-            : null,
-
-        id_terrain:
-          formData.id_terrain,
-
-        nom_demandaire:
-          formData.nom || " ",
-
-        prenom_mandataire:
-          formData.prenoms || " ",
-
-        cin_passeport_demandaire:
-          formData.cinPasseport || " ",
+        id_mandataire: activeUserId,
+        status_proprietaire: statutProprietaire || 'particulier',
+        qualite_demandeur: qualiteDemandeur || 'proprietaire',
+        nif: formData.nif || '000000000000',
+        id_cert_sit_jur: certFile ? certFile.name : null,
+        id_plan_off: planFile ? planFile.name : null,
+        id_terrain: terrainResult?.id_terrain ?? terrainResult?.data?.id_terrain ?? formData.id_terrain,
+        nom_demandaire: qualiteDemandeur === 'mandataire' ? (formData.nom_demandaire || formData.nom2 || ' ') : (formData.nom || ' '),
+        prenom_mandataire: qualiteDemandeur === 'mandataire' ? (formData.prenom_mandataire || formData.prenoms2 || ' ') : (formData.prenoms || ' '),
+        cin_passeport_demandaire: qualiteDemandeur === 'mandataire' ? (formData.cin_passeport_demandaire || formData.cinPasseport2 || ' ') : (formData.cinPasseport || ' '),
       };
 
-      console.log(
-        "Données alignement :",
-        alignmentData
+      const alignmentResult = await alignmentService.createAlignment(alignmentData);
+
+      const { emailSent } = await sendSubmissionNotifications(
+        getAlignmentReference(alignmentResult)
       );
 
-      // ========================================================
-      // 8. CRÉATION DE L'ALIGNEMENT
-      // ========================================================
-
-      const alignmentResult =
-        await alignmentService.createAlignment(
-          alignmentData
-        );
+      setSubmitMessage(
+        emailSent
+          ? 'Votre demande a bien été envoyée. Un email de confirmation vous a été adressé.'
+          : "Votre demande a bien été envoyée, mais l'email de confirmation n'a pas pu être envoyé."
+      );
+      alert('Soumission réussie! Vous allez être redirigé vers la liste des alignements.');
 
       console.log(
         "Alignement créé :",
@@ -667,12 +427,9 @@ function Allignement() {
         setCurrentStep(1);
 
         clearFiles();
-
-        setSubmitMessage("");
-
-        navigate("/alignement-list");
-      });
-
+        setSubmitMessage('');
+        navigate('/dashboard');
+      }, 3000);
     } catch (error) {
 
       // ========================================================
@@ -710,38 +467,16 @@ function Allignement() {
   // ============================================================
 
   const resetFormData = () => {
-    const shouldPreserveData =
-      statutProprietaire === "particulier" &&
-      qualiteDemandeur === "proprietaire";
-
+    const shouldPreserveData = statutProprietaire === 'particulier' && qualiteDemandeur === 'proprietaire';
     if (!shouldPreserveData) {
       updateFormData({
-        civilite: "",
-        nom: "",
-        prenoms: "",
-        cinPasseport: "",
-        fonction: "",
-        nationalite: "",
-
-        raisonSociale: "",
-        carteStatistique: "",
-        nif: "",
-
-        civiliteRepresentant: "",
-        nomRepresentant: "",
-        prenomsRepresentant: "",
-        adresseRepresentant: "",
-        cinPasseportRepresentant: "",
-
-        civilite2: "",
-        nom2: "",
-        prenoms2: "",
-        cinPasseport2: "",
-        fonction2: "",
-        nationalite2: "",
-
-        age: "",
-        age2: "",
+        civilite: '', nom: '', prenoms: '', cinPasseport: '', fonction: '', nationalite: '',
+        raisonSociale: '', carteStatistique: '', nif: '', civiliteRepresentant: '', nomRepresentant: '',
+        prenomsRepresentant: '', adresseRepresentant: '', cinPasseportRepresentant: '',
+        civilite2: '', nom2: '', prenoms2: '', cinPasseport2: '', fonction2: '', nationalite2: '', age: '', age2: '',
+        nom_demandaire: '', prenom_mandataire: '', cin_passeport_demandaire: '', fonction_demandaire: '',
+        nationalite_demandaire: '', age_demandaire: '',
+        id_mandataire: authService.getUserId() || id_citizen,
       });
 
       setUserDataLoaded(false);
@@ -753,41 +488,11 @@ function Allignement() {
   // ============================================================
 
   const steps = [
-    {
-      number: 1,
-      title: t(
-        "alignment.choix_implantation"
-      ),
-      active: true,
-    },
-    {
-      number: 2,
-      title: t(
-        "alignment.renseignement_demandeur"
-      ),
-      active: false,
-    },
-    {
-      number: 3,
-      title: t(
-        "alignment.coordonnees_proprietaire"
-      ),
-      active: false,
-    },
-    {
-      number: 4,
-      title: t(
-        "alignment.identite_terrain"
-      ),
-      active: false,
-    },
-    {
-      number: 5,
-      title: t(
-        "alignment.documents_administratifs"
-      ),
-      active: false,
-    },
+    { number: 1, title: t('alignment.choix_implantation'), active: true },
+    { number: 2, title: t('alignment.renseignement_demandeur'), active: false },
+    { number: 3, title: t('alignment.coordonnees_proprietaire'), active: false },
+    { number: 4, title: t('alignment.identite_terrain'), active: false },
+    { number: 5, title: t('alignment.documents_administratifs'), active: false },
   ];
 
   // ============================================================
@@ -806,10 +511,7 @@ function Allignement() {
           ================================================== */}
 
           <button
-            type="button"
-            onClick={() =>
-              navigate("/alignement-list")
-            }
+            onClick={() => navigate('/dashboard')}
             className="bg-gray-300 absolute top-5 left-5 p-2 rounded-md hover:bg-gray-400 transition"
             title="Retour à la liste des alignements"
           >
@@ -821,11 +523,8 @@ function Allignement() {
           ================================================== */}
 
           <div className="text-center py-8 border-transparent">
-
-            <h2 className="text-2xl font-light text-gray-800 font-semibold">
-              {t(
-                "alignment.soumettre_dossier"
-              )}
+            <h2 className="text-2xl font-semibold text-gray-800">
+              {t('alignment.soumettre_dossier')}
             </h2>
 
           </div>

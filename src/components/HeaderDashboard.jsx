@@ -1,113 +1,183 @@
 // HeaderDashboard.jsx
-import React, { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Menu, Globe, Sun, Moon, Mail, Phone, X } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { ArrowLeft, Menu, Globe, Sun, Moon, Mail, Phone, X, Check, CheckCheck } from "lucide-react";
 import { LuBellRing } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { citoyenService } from "../services/api/citoyenService";
 import { authService } from "../services/api/authService";
+import { notificationService } from "../services/api/notificationService";
+import { useNotificationSocket } from "../hooks/useNotificationSocket";
 
 export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClick }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  // 🔹 États d'affichage des menus déroulants
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  // 🔹 Données applicatives
+  const [notifications, setNotifications] = useState([]);
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("darkMode") === "true";
+    const saved = localStorage.getItem("darkMode");
+    if (saved !== null) return saved === "true";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
+
   const [citizenData, setCitizenData] = useState({
     nom: "",
     email: "",
     telephone: "",
   });
+
   const profileRef = useRef(null);
   const languageRef = useRef(null);
+  const notificationRef = useRef(null);
 
-  const userData = authService.getUserInfo();
-  const id_citizen = userData?.id_citizen || userData?.citizen_id || null;
+  // 🔹 Extraction sécurisée des infos utilisateur
+  const userData = authService.getUserInfo() || {};
+  const id_citizen = userData?.id_citizen || userData?.citizen_id || userData?.id || null;
   const fallbackName =
     userData?.user_pseudo ||
     userData?.username ||
     [userData?.citizen_name, userData?.citizen_lastname].filter(Boolean).join(" ");
 
-  // 🔹 Gestion du thème sombre
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    localStorage.setItem("darkMode", newDarkMode);
-    if (newDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+  // 🔹 WebSocket des notifications en temps réel
+  const { isConnected, realtimeNotification } = useNotificationSocket(id_citizen);
+
+  // Ajout des nouvelles notifications en temps réel
+  useEffect(() => {
+    if (realtimeNotification) {
+      setNotifications((prev) => [realtimeNotification, ...prev]);
+    }
+  }, [realtimeNotification]);
+
+  // Chargement des notifications via REST API
+  useEffect(() => {
+    let isMounted = true;
+    const fetchNotifications = async () => {
+      if (!id_citizen) return;
+      try {
+        const data = await notificationService.getNotificationsByUser(id_citizen);
+        if (isMounted && Array.isArray(data)) {
+          setNotifications(data);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+    return () => {
+      isMounted = false;
+    };
+  }, [id_citizen]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // 🔹 Actions sur les notifications
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationService.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (error) {
+      console.error("Erreur lors du marquage comme lu:", error);
     }
   };
 
-  // 🔹 Gestion du changement de langue
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
-    setIsLanguageOpen(false);
+  const handleMarkAllRead = async () => {
+    if (!id_citizen) return;
+    try {
+      await notificationService.markAllAsReadByUser(id_citizen);
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (error) {
+      console.error("Erreur lors du marquage de toutes les notifications comme lues:", error);
+    }
   };
 
-  // 🔹 Navigation vers la page d'accueil
-  const handleGoHome = () => {
-    navigate("/");
+  // 🔹 Suppression d'une notification à l'aide du bouton X
+  const handleDeleteNotification = async (id, e) => {
+    e.stopPropagation();
+    try {
+      if (notificationService.deleteNotification) {
+        await notificationService.deleteNotification(id);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la notification:", error);
+    } finally {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }
   };
 
-  // 🔹 Initialisation du thème
+  // 🔹 Gestion du Thème Sombre / Clair
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => !prev);
+  };
+
   useEffect(() => {
+    localStorage.setItem("darkMode", darkMode);
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, []);
+  }, [darkMode]);
 
-  // 🔹 Écouteur des changements de langue
+  // 🔹 Gestion de la langue
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+    setIsLanguageOpen(false);
+  };
+
   useEffect(() => {
     const handleLanguageChange = (lng) => setCurrentLanguage(lng);
     i18n.on("languageChanged", handleLanguageChange);
     return () => i18n.off("languageChanged", handleLanguageChange);
   }, [i18n]);
 
-  // 🔹 Charger les données citoyen
+  // 🔹 Chargement des données citoyen
   useEffect(() => {
+    let isMounted = true;
     const fetchCitizenData = async () => {
+      const email = userData?.user_email || userData?.email || "";
+      const telephone = userData?.user_phone || userData?.phone_number || "";
+
+      if (!id_citizen) {
+        if (isMounted) {
+          setCitizenData({ nom: fallbackName || "Utilisateur", email, telephone });
+        }
+        return;
+      }
+
       try {
-        if (id_citizen) {
-          const data = await citoyenService.getCitizenData(id_citizen);
-          const formattedData = {
-            nom:
-              `${data?.citizen_lastname || ""} ${data?.citizen_name || ""}`.trim() ||
-              fallbackName ||
-              "Utilisateur",
-            email: userData?.user_email || userData?.email || "",
-            telephone: userData?.user_phone || userData?.phone_number || "",
-          };
-          setCitizenData(formattedData);
-        } else {
-          setCitizenData({
-            nom: fallbackName || "Utilisateur",
-            email: userData?.user_email || userData?.email || "",
-            telephone: userData?.user_phone || userData?.phone_number || "",
-          });
+        const data = await citoyenService.getCitizenData(id_citizen);
+        if (isMounted) {
+          const formattedNom =
+            `${data?.citizen_lastname || ""} ${data?.citizen_name || ""}`.trim() ||
+            fallbackName ||
+            "Utilisateur";
+          setCitizenData({ nom: formattedNom, email, telephone });
         }
       } catch (error) {
         console.error("Erreur lors du chargement des données citoyen:", error);
+        if (isMounted) {
+          setCitizenData({ nom: fallbackName || "Utilisateur", email, telephone });
+        }
       }
     };
 
     fetchCitizenData();
-  }, [
-    id_citizen,
-    fallbackName,
-    userData?.user_email,
-    userData?.email,
-    userData?.user_phone,
-    userData?.phone_number,
-  ]);
+    return () => {
+      isMounted = false;
+    };
+  }, [id_citizen, fallbackName, userData?.user_email, userData?.email, userData?.user_phone, userData?.phone_number]);
 
-  // 🔹 Fermer les menus si clic en dehors
+  // 🔹 Fermeture des popups lors d'un clic extérieur
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -116,18 +186,35 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
       if (languageRef.current && !languageRef.current.contains(event.target)) {
         setIsLanguageOpen(false);
       }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🔹 Gestion du clic sur le profil
-  const handleProfileClick = () => {
+  // 🔹 Basculer l'affichage exclusif des popups
+  const toggleProfileMenu = () => {
     setIsProfileFormOpen((prev) => !prev);
+    setIsLanguageOpen(false);
+    setIsNotificationsOpen(false);
     if (onProfileClick) onProfileClick();
   };
 
-  // 🔹 Générer les initiales
+  const toggleNotificationsMenu = () => {
+    setIsNotificationsOpen((prev) => !prev);
+    setIsProfileFormOpen(false);
+    setIsLanguageOpen(false);
+  };
+
+  const toggleLanguageMenu = () => {
+    setIsLanguageOpen((prev) => !prev);
+    setIsProfileFormOpen(false);
+    setIsNotificationsOpen(false);
+  };
+
+  // 🔹 Génération des initiales du profil
   const getInitials = (name) => {
     if (!name) return "U";
     const words = name.trim().split(/\s+/).filter(Boolean);
@@ -138,7 +225,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
 
   return (
     <header className="fixed top-0 left-0 w-full bg-green-50/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-green-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 flex items-center justify-between px-4 h-16 z-50 shadow-sm dark:shadow-black/30 transition-colors duration-300">
-      {/* Left */}
+      {/* Gauche : Navigation */}
       <div className="flex items-center space-x-3">
         {isMobile ? (
           <button
@@ -150,7 +237,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
           </button>
         ) : (
           <button
-            onClick={handleGoHome}
+            onClick={() => navigate("/")}
             className="p-2 rounded-full hover:bg-green-200/80 dark:hover:bg-gray-700 transition-colors"
             aria-label="Retour à l'accueil"
           >
@@ -159,12 +246,12 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
         )}
       </div>
 
-      {/* Right */}
+      {/* Droite : Actions utilisateur */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Bouton profil */}
+        {/* Profile Dropdown */}
         <div className="relative" ref={profileRef}>
           <button
-            onClick={handleProfileClick}
+            onClick={toggleProfileMenu}
             className="flex items-center gap-2.5 rounded-full bg-green-100/80 dark:bg-gray-800 hover:bg-green-200/80 dark:hover:bg-gray-700 transition-all duration-200 border border-green-200/60 dark:border-gray-600 pl-1.5 pr-3 py-1.5 group"
           >
             <div className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 text-white text-sm font-semibold shadow-sm ring-2 ring-white/30 dark:ring-gray-900/50 group-hover:scale-105 transition-transform">
@@ -180,10 +267,8 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
             </div>
           </button>
 
-          {/* Dropdown profil */}
           {isProfileFormOpen && (
             <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-black/50 border border-gray-200/80 dark:border-gray-700 overflow-hidden animate-in fade-in zoom-in-95 duration-150 z-50">
-              {/* Header du dropdown */}
               <div className="bg-gradient-to-r from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white text-lg font-bold ring-2 ring-white/40">
@@ -198,7 +283,6 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
                 </div>
               </div>
 
-              {/* Infos */}
               <div className="px-4 py-3 space-y-2.5">
                 <div className="flex items-center gap-3 text-sm">
                   <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-gray-700/60 flex items-center justify-center shrink-0">
@@ -225,7 +309,6 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="border-t border-gray-100 dark:border-gray-700 px-3 py-3">
                 <button
                   onClick={() => setIsProfileFormOpen(false)}
@@ -239,15 +322,104 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
           )}
         </div>
 
-        {/* Notifications */}
-        <button
-          className="p-2.5 text-gray-700 dark:text-gray-200 hover:bg-green-200/70 dark:hover:bg-gray-700 rounded-full transition-colors relative"
-          aria-label="Notifications"
-        >
-          <LuBellRing className="w-5 h-5" />
-        </button>
+        {/* Notifications Dropdown */}
+        <div className="relative" ref={notificationRef}>
+          <button
+            onClick={toggleNotificationsMenu}
+            className="p-2.5 text-gray-700 dark:text-gray-200 hover:bg-green-200/70 dark:hover:bg-gray-700 rounded-full transition-colors relative"
+            aria-label="Notifications"
+          >
+            <LuBellRing className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center animate-pulse">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
 
-        {/* Thème */}
+          {isNotificationsOpen && (
+            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-black/50 border border-gray-200/80 dark:border-gray-700 overflow-hidden z-50">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                    Notifications
+                  </h3>
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                    title={isConnected ? "En direct (WebSocket connecté)" : "Déconnecté"}
+                  />
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline font-medium"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    Tout marquer comme lu
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700/50">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Aucune notification
+                  </div>
+                ) : (
+                  notifications.map((notif, index) => (
+                    <div
+                      key={notif.id || `notif-${index}`}
+                      className={`p-3.5 text-left transition-colors flex items-start gap-2 ${
+                        notif.isRead
+                          ? "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                          : "bg-green-50/60 dark:bg-gray-700/40 text-gray-900 dark:text-gray-100 font-medium"
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm leading-snug break-words">
+                          {notif.message}
+                        </p>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 block mt-1">
+                          {notif.createdAt
+                            ? new Date(notif.createdAt).toLocaleString("fr-FR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit",
+                              })
+                            : ""}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 self-start">
+                        {!notif.isRead && (
+                          <button
+                            onClick={() => handleMarkAsRead(notif.id)}
+                            title="Marquer comme lu"
+                            className="p-1 hover:bg-green-200/50 dark:hover:bg-gray-600 rounded-full text-green-600 dark:text-green-400 transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => handleDeleteNotification(notif.id, e)}
+                          title="Supprimer la notification"
+                          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-full text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Toggle Dark Mode */}
         <button
           onClick={toggleDarkMode}
           className="p-2.5 text-gray-700 dark:text-gray-200 hover:bg-green-200/70 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -256,19 +428,19 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
           {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
-        {/* Langue */}
+        {/* Language Dropdown */}
         <div className="relative" ref={languageRef}>
           <button
-            onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+            onClick={toggleLanguageMenu}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-800 dark:text-white bg-green-100/80 dark:bg-gray-800 hover:bg-green-200/80 dark:hover:bg-gray-700 rounded-full transition-colors border border-green-200/60 dark:border-gray-600"
           >
             <Globe className="w-4 h-4" />
             <span>
-              {i18n.language === "fr"
+              {currentLanguage === "fr"
                 ? "FR"
-                : i18n.language === "mg"
+                : currentLanguage === "mg"
                 ? "MG"
-                : i18n.language.split("-")[0].toUpperCase()}
+                : currentLanguage.split("-")[0].toUpperCase()}
             </span>
           </button>
 
@@ -277,7 +449,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
               <button
                 onClick={() => changeLanguage("fr")}
                 className={`block w-full px-4 py-2.5 text-sm text-left transition-colors ${
-                  i18n.language === "fr"
+                  currentLanguage === "fr"
                     ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
@@ -287,7 +459,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
               <button
                 onClick={() => changeLanguage("mg")}
                 className={`block w-full px-4 py-2.5 text-sm text-left transition-colors ${
-                  i18n.language === "mg"
+                  currentLanguage === "mg"
                     ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}

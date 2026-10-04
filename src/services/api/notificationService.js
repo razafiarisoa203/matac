@@ -1,91 +1,106 @@
-import axiosConfig from "./axios.config";
+// src/services/api/notificationService.js
+import axiosConfig from './axios.config';
+
+const BASE_URL = '/servicenotification';
+
+const logError = (message, error) => {
+  console.error(message, error?.response?.data || error?.message);
+};
 
 export const notificationService = {
-  //Envoi de notification à l'admin
- /*async sendNotif({ to, subject, body, filePath = "" }) {
-    try {
-      const response = await axios.post(
-        '/servicenotification/email/send',
-        { to, subject, body, filePath }
-      );
-      console.log('Notification envoyée avec succès :', response.data);
-      return response.data;
-    } catch (error) {
-      console.error(
-        "Erreur lors de l'envoi de la notification :",
-        error.response?.data || error.message
-      );
-      throw error;
-    }
-  },*/
-
-
-
   async getAllNotifications() {
     try {
-      const response = await axiosConfig.get('/servicenotification/notifications');
-      console.log('All notifications retrieved:', response.data);
+      const response = await axiosConfig.get(`${BASE_URL}/notifications`);
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des notifications:', error.response?.data || error.message);
+      logError('Erreur lors de la récupération des notifications:', error);
+      throw error;
+    }
+  },
+
+  // 🔹 Récupérer les notifications d'un utilisateur
+  async getNotificationsByUser(userId) {
+    try {
+      const response = await axiosConfig.get(`${BASE_URL}/notifications/${userId}`);
+      return response.data;
+    } catch (error) {
+      logError('Erreur lors de la récupération des notifications utilisateur:', error);
+      throw error;
+    }
+  },
+
+  // 🔹 Récupérer les notifications non lues d'un utilisateur
+  async getUnreadNotificationsByUser(userId) {
+    try {
+      const response = await axiosConfig.get(`${BASE_URL}/notifications/${userId}/unread`);
+      return response.data;
+    } catch (error) {
+      logError('Erreur lors de la récupération des notifications non lues:', error);
       throw error;
     }
   },
 
   async markAsRead(notificationId) {
     try {
-      const response = await axiosConfig.patch(`/servicenotification/notifications/${notificationId}/read`);
-      console.log('Notification marked as read:', response.data);
+      const response = await axiosConfig.post(
+        `${BASE_URL}/notifications/${notificationId}/mark-as-read`
+      );
       return response.data;
     } catch (error) {
-      console.error('Erreur lors du marquage comme lu:', error.response?.data || error.message);
+      logError('Erreur lors du marquage comme lu:', error);
+      throw error;
+    }
+  },
+
+  // 🔹 Tout marquer comme lu pour un utilisateur
+  async markAllAsReadByUser(userId) {
+    try {
+      const response = await axiosConfig.post(
+        `${BASE_URL}/notifications/mark-all-read/${userId}`
+      );
+      return response.data;
+    } catch (error) {
+      logError('Erreur lors du marquage global comme lu:', error);
       throw error;
     }
   },
 
   async deleteNotification(notificationId) {
     try {
-      const response = await axiosConfig.delete(`/servicenotification/notifications/${notificationId}`);
-      console.log('Notification deleted successfully:', response.data);
+      const response = await axiosConfig.delete(`${BASE_URL}/notifications/${notificationId}`);
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la suppression de la notification:', error.response?.data || error.message);
+      logError('Erreur lors de la suppression de la notification:', error);
       throw error;
     }
   },
 
   async broadcastNotification(notificationData) {
     try {
-      const response = await axiosConfig.post('/servicenotification/notifications/broadcast', notificationData);
-      console.log('Broadcast notification posted successfully:', response.data);
+      const response = await axiosConfig.post(
+        `${BASE_URL}/notifications/broadcast`,
+        notificationData
+      );
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de la création de la notification de diffusion:', error.response?.data || error.message);
+      logError('Erreur lors de la création de la notification:', error);
       throw error;
     }
   },
 
-  //envoi notification envoyer admin
-  async sendNotif({ to, subject, body, filePath = "" }) {
+  async sendNotif({ to, subject, body, fromName = 'MATAC2.0', fromEmail = 'no-reply@gmail.com' }) {
     try {
-      const response = await axiosConfig.post(`/servicenotification/email/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ to, subject, body, filePath }),
+      const response = await axiosConfig.post(`${BASE_URL}/email/send`, {
+        to,
+        subject,
+        body,
+        fromName,
+        fromEmail,
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur lors de l'envoi de la notification: ${errorText}`);
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
-      console.error("Erreur lors de notifier l'admin:", error);
+      logError("Erreur lors de l'envoi de l'email:", error);
       throw error;
     }
-  }
-
+  },
 };

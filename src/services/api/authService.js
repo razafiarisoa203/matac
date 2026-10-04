@@ -8,6 +8,34 @@ const USER_PROFILE_KEY = "user_profile";
 
 const isSecure = () => window.location.protocol === "https:";
 
+// Lit le token brut (sans le décoder, sans vérifier l'expiration)
+const getRawToken = () =>
+  sessionStorage.getItem("app_jwt") ||
+  localStorage.getItem(AUTH_TOKEN_KEY) ||
+  Cookies.get(AUTH_TOKEN_KEY) ||
+  null;
+
+// Nettoyage local uniquement : aucun appel réseau, aucun appel à getToken().
+// C'est ce qui évite la boucle infinie getToken -> logout -> getToken.
+const clearSession = () => {
+  if (typeof document !== "undefined") {
+    // Supprimer tous les cookies (même hors js-cookie)
+    document.cookie.split(";").forEach((c) => {
+      const eqPos = c.indexOf("=");
+      const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    });
+  }
+
+  // Supprimer tous les cookies js-cookie (sécurité, redondance)
+  Object.keys(Cookies.get()).forEach((cookieName) =>
+    Cookies.remove(cookieName, { path: "/" })
+  );
+
+  if (typeof localStorage !== "undefined") localStorage.clear();
+  if (typeof sessionStorage !== "undefined") sessionStorage.clear();
+};
+
 export const authService = {
   setToken: (token) => {
     try {
@@ -29,22 +57,24 @@ export const authService = {
   },
 
   getToken: () => {
-    const token =
-      sessionStorage.getItem("app_jwt") ||
-      localStorage.getItem(AUTH_TOKEN_KEY) ||
-      Cookies.get(AUTH_TOKEN_KEY);
+    const token = getRawToken();
     if (!token) return null;
+
     try {
       const decodedToken = jwtDecode(token);
       const currentTime = Date.now() / 1000;
+
       if (decodedToken.exp < currentTime) {
-        authService.logout();
+        // Token expiré : on ne l'utilise pas, mais on NE vide PAS la session,
+        // sinon on perd aussi le profil (id_citizen) stocké dans sessionStorage.
+        console.warn("Token expiré : non utilisé (session conservée).");
         return null;
       }
+
       return token;
     } catch (error) {
       console.error("Error decoding token:", error);
-      authService.logout();
+      clearSession();
       return null;
     }
   },
@@ -114,7 +144,7 @@ export const authService = {
       const response = await axiosConfig.get("/serviceauth/auth/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
-        }, 
+        },
       });
       const user = response.data?.user || response.data?.data || response.data;
 
@@ -158,7 +188,7 @@ export const authService = {
     user_password,
   }) => {
     const token = authService.getToken();
-    if (!token) throw new Error("Token found");
+    if (!token) throw new Error("Token not found");
     try {
       const payload = {
         ...(user_pseudo && { user_pseudo }),
@@ -184,36 +214,21 @@ export const authService = {
 
   logout: async () => {
     try {
-      const token = authService.getToken();
+      // Token brut : on n'utilise pas getToken() pour éviter toute boucle
+      const token = getRawToken();
       if (token) {
-        await axiosConfig.post("/serviceauth/auth/logout", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // 2e argument = corps de la requête, 3e = config (headers)
+        await axiosConfig.post(
+          "/serviceauth/auth/logout",
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       }
     } catch (error) {
-      // Log but don't block logout
+      // On log mais on ne bloque pas la déconnexion
       console.error("Error logging out:", error);
     } finally {
-      // Supprimer tous les cookies
-      if (typeof document !== "undefined") {
-        // Supprimer tous les cookies (même hors js-cookie)
-        document.cookie.split(";").forEach((c) => {
-          const eqPos = c.indexOf("=");
-          const name = eqPos > -1 ? c.substr(0, eqPos) : c;
-          document.cookie =
-            name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-        });
-      }
-      // Supprimer tous les cookies js-cookie (sécurité, redondance)
-      Object.keys(Cookies.get()).forEach((cookieName) =>
-        Cookies.remove(cookieName, { path: "/" })
-      );
-
-      // Supprimer tout le localStorage et sessionStorage
-      if (typeof localStorage !== "undefined") localStorage.clear();
-      if (typeof sessionStorage !== "undefined") sessionStorage.clear();
+      clearSession();
     }
     return true;
   },
@@ -389,25 +404,25 @@ export const authService = {
   },
 
   updateUserById: async (userId, payload) => {
-  const token = authService.getToken();
+    const token = authService.getToken();
 
-  const response = await axiosConfig.put(
-    `/serviceauth/users/${userId}`,
-    payload,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+    const response = await axiosConfig.put(
+      `/serviceauth/users/${userId}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-  return response.data;
-},
+    return response.data;
+  },
 
   forgotPassword: async (email) => {
     try {
-      // Call the auth endpoint to register the forgot password request
-      // This endpoint already sends the email automatically if the email exists
+      // Appelle l'endpoint d'authentification pour enregistrer la demande.
+      // Cet endpoint envoie déjà l'email automatiquement si l'adresse existe.
       const response = await axiosConfig.post(
         "/serviceauth/auth/forgot-password",
         {
@@ -415,7 +430,7 @@ export const authService = {
         }
       );
 
-      // The API response should indicate if email was sent
+      // La réponse de l'API indique si l'email a été envoyé
       return { success: true, emailSent: response.data?.emailSent || true };
     } catch (error) {
       console.error("Error in forgot password process:", error);
