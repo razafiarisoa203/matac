@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import ServicesSection from "../components/ServicesSection";
+import { useTranslation } from "react-i18next";
 import ObjectifsSection from "../components/ObjectifsSection";
 import ActesUrbanisme from "../components/ActesUrbanisme";
 import Indicateurs from "../components/Indicateurs";
@@ -9,6 +9,7 @@ import Header from "../components/Header";
 import MainContent from "../components/MainContent";
 
 const HomePage = () => {
+  const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState("accueil");
 
   useEffect(() => {
@@ -89,7 +90,64 @@ const HomePage = () => {
         </section>
         <section id="services">
           <div className="my-16"></div>
-          <ServicesSection />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div
+              id="service-contact-form"
+              className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-8 shadow-lg transition-colors duration-300 dark:border-slate-700 dark:bg-slate-900 dark:shadow-slate-950/50"
+            >
+              <div className="mb-6 text-center">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#269745] mb-3">
+                  {t('contact.title')}
+                </p>
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{t('contact.subtitle')}</h3>
+              </div>
+
+              <form className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
+                      {t('contact.fullName')}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={t('contact.namePlaceholder')}
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#269745] dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
+                      {t('contact.email')}
+                    </label>
+                    <input
+                      type="email"
+                      placeholder={t('contact.emailPlaceholder')}
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#269745] dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-200">
+                    {t('contact.message')}
+                  </label>
+                  <textarea
+                    rows="6"
+                    placeholder={t('contact.messagePlaceholder')}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#269745] dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div className="flex justify-center">
+                  <button
+                    type="submit"
+                    className="w-full md:w-auto bg-[#269745] text-white font-semibold px-8 py-3 rounded-xl hover:bg-[#1e7a38] transition-colors duration-300"
+                  >
+                    {t('contact.submit')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </section>
       </main>
       <Footer />

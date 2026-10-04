@@ -12,9 +12,6 @@ const Indicateurs = () => {
       case "cartographie":
         window.location.href = "/cartographie";
         break;
-      case "documentation":
-        window.open("https://drive.google.com/drive/folders/1bKptZohd8jIlqH7VFimq3oNvQozxc_2u");
-        break;
       default:
         break;
     }
@@ -112,8 +109,7 @@ const Indicateurs = () => {
 
           {/* DOCUMENTATION */}
           <div
-            className="bg-white rounded-lg shadow-md p-6 border border-gray-200 w-80 transition-all duration-300 hover:shadow-xl hover:border-[#269745] hover:-translate-y-1 cursor-pointer"
-            onClick={() => handleClick("documentation")}
+            className="bg-white rounded-lg shadow-md p-6 border border-gray-200 w-80 transition-all duration-300 hover:shadow-xl hover:border-[#269745] hover:-translate-y-1"
           >
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">

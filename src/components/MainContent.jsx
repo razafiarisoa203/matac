@@ -1,8 +1,51 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { loginWithYaho, registerWithYaho } from "../auth/authActions";
+import { useNavigate } from "react-router-dom";
+
+const AnimatedCounter = ({ end, suffix = "", duration = 1800 }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
+
+    let start = 0;
+    const stepTime = Math.max(16, duration / end);
+
+    const timer = setInterval(() => {
+      start += 1;
+      setCount(start);
+
+      if (start >= end) {
+        clearInterval(timer);
+      }
+    }, stepTime);
+
+    return () => clearInterval(timer);
+  }, [end, duration]);
+
+  return <span>{count}{suffix}</span>;
+};
 
 const MainContent = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleContactClick = () => {
+    const contactSection =
+      document.getElementById("service-contact-form") || document.getElementById("services");
+
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.pushState(null, "", `#${contactSection.id}`);
+      return;
+    }
+
+    navigate("/contact");
+  };
+
   return (
     <>
       {/* Contenu principal avec padding-top réduit */}
@@ -26,17 +69,19 @@ const MainContent = () => {
 
           {/* Boutons  */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12">
-            <button
+            <a
+              href="https://drive.google.com/drive/folders/1bKptZohd8jIlqH7VFimq3oNvQozxc_2u"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-colors duration-300 w-full sm:w-auto text-sm sm:text-base"
               style={{ backgroundColor: "#269745" }}
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#1e7a38")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#269745")}
-              onClick={loginWithYaho}
             >
               {t('home.login')}
-            </button>
+            </a>
             <button
-              onClick={registerWithYaho}
+              onClick={handleContactClick}
               className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 border-2 border-[#269745] bg-white text-[#269745] hover:bg-[#269745] hover:text-white w-full sm:w-auto text-sm sm:text-base"
             >
               {t('home.register')}
@@ -50,7 +95,7 @@ const MainContent = () => {
                 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2"
                 style={{ color: "#269745" }}
               >
-                +150
+                <AnimatedCounter end={0} suffix="" />
               </div>
               <div className="text-xs sm:text-sm text-[#131313] opacity-75">
                 {t('stats.satisfiedClients')}
@@ -61,7 +106,7 @@ const MainContent = () => {
                 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2"
                 style={{ color: "#269745" }}
               >
-                +400
+                <AnimatedCounter end={0} suffix="" />
               </div>
               <div className="text-xs sm:text-sm text-[#131313] opacity-75">
                 {t('stats.projectsCompleted')}
@@ -72,7 +117,7 @@ const MainContent = () => {
                 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2"
                 style={{ color: "#269745" }}
               >
-                5 ans
+                <AnimatedCounter end={0} suffix="" />
               </div>
               <div className="text-xs sm:text-sm text-[#131313] opacity-75">
                 {t('stats.experienceYears')}
