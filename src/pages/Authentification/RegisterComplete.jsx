@@ -323,22 +323,6 @@ const RegisterComplete = () => {
       return "Le fokontany est obligatoire.";
     }
 
-    if (!hasValue(formData.citizen_work)) {
-      return "La fonction est obligatoire.";
-    }
-
-    if (!hasValue(formData.citizen_national_card_location)) {
-      return "Le lieu de délivrance de la CIN est obligatoire.";
-    }
-
-    if (!hasValue(formData.citizen_national_card_date)) {
-      return "La date de délivrance de la CIN est obligatoire.";
-    }
-
-    if (!hasValue(formData.citizen_adress)) {
-      return "L'adresse est obligatoire.";
-    }
-
     return null;
   };
 
@@ -815,7 +799,7 @@ const RegisterComplete = () => {
               {/* Fonction */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fonction *
+                  Fonction
                 </label>
 
                 <input
@@ -823,7 +807,6 @@ const RegisterComplete = () => {
                   name="citizen_work"
                   value={formData.citizen_work}
                   onChange={handleChange}
-                  required
                   placeholder="Ex : Développeur"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -832,7 +815,7 @@ const RegisterComplete = () => {
               {/* Prise de service */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Date de prise de service *
+                  Date de prise de service
                 </label>
 
                 <input
@@ -857,7 +840,6 @@ const RegisterComplete = () => {
                     formData.citizen_national_card_location
                   }
                   onChange={handleChange}
-                  required
                   placeholder="Ex : Isotry"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -876,7 +858,6 @@ const RegisterComplete = () => {
                     formData.citizen_national_card_date
                   }
                   onChange={handleChange}
-                  required
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -892,7 +873,6 @@ const RegisterComplete = () => {
                   value={formData.citizen_adress}
                   onChange={handleChange}
                   rows={3}
-                  required
                   placeholder="Votre adresse"
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
