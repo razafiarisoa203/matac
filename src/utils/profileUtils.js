@@ -6,11 +6,19 @@ const hasValue = (value) =>
 const REQUIRED_CITIZEN_FIELDS = [
   "citizen_national_card_number",
   "fokotany_formatted_id",
+  // "citizen_work",
+  // "citizen_national_card_location",
+  // "citizen_national_card_date",
+  // "citizen_adress",
 ];
 
 export const getProfileCompletion = (profile) => {
   const citizen = profile?.citizen;
   const missingFields = [];
+
+  // if (!hasValue(profile?.id_citizen)) {
+  //   missingFields.push("id_citizen");
+  // }
 
   if (!hasValue(profile?.municipality_id)) {
     missingFields.push("municipality_id");
