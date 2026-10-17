@@ -6,6 +6,7 @@ import SearchBar from '../components/SearchBar';
 import { constructionService } from '../services/api/constructionSercvice';
 import { Eye, FileText, Download, AlertCircle, Building, ChevronRight, Plus } from 'lucide-react';
 import { Link } from "react-router-dom";
+import { authService } from '../services/api/authService';
 
 // Mapping des valeurs techniques (base de données) vers les libellés affichés
 const STATUS_MAPPING = {
@@ -33,29 +34,55 @@ const ConstructionListPage = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const navigate = useNavigate();
 
-  const userData = JSON.parse(localStorage.getItem('user'));
-  const id_citizen = userData?.id_citizen;
-  const idMandataire = id_citizen;
+    // Plus de localStorage.getItem('user') — profil via authService / sessionStorage
+  const resolveMandataireId = () => {
+    try {
+      const fromAuth = authService.getUserInfo() || {};
+      const fromProfile = JSON.parse(sessionStorage.getItem("user_profile") || "{}");
+
+      return (
+        fromAuth.id_citizen ||
+        fromAuth.citizen_id ||
+        fromAuth.citizen?.id_citizen ||
+        fromProfile.id_citizen ||
+        fromProfile.citizen?.id_citizen ||
+        null
+      );
+    } catch {
+      return null;
+    }
+  };
 
   // Responsive sidebar
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     handleResize();
-    return () => window.removeEventListener('resize', handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const toggleSidebar = () => {
-    if (isMobile) setIsSidebarOpen(prev => !prev);
+    if (isMobile) setIsSidebarOpen((prev) => !prev);
   };
 
   // Récupération des constructions
   const fetchConstructions = async () => {
     try {
       setLoading(true);
-      const constructions = await constructionService.getConstructionMandataire(idMandataire);
-      setConstructions(constructions);
-      console.log("Constructions récupérées :", constructions);
+      setError("");
+
+      const idMandataire = resolveMandataireId();
+      console.log("[ConstructionList] id_mandataire =", idMandataire);
+
+      if (!idMandataire) {
+        setConstructions([]);
+        setError("Utilisateur non identifié. Reconnectez-vous.");
+        return;
+      }
+
+      const list = await constructionService.getConstructionMandataire(idMandataire);
+      setConstructions(Array.isArray(list) ? list : []);
+      console.log("Constructions récupérées :", list);
     } catch (err) {
       console.error("Erreur:", err);
       setError("Impossible de charger les permis de construction.");

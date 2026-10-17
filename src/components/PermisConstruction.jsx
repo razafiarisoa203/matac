@@ -16,6 +16,7 @@ import { toast } from 'react-toastify';
 import { alignmentService } from '../services/api/alignmentService';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import Swal from "sweetalert2";
 
 // === Notifications ===
 import { notificationService } from '../services/api/notificationService';
@@ -25,8 +26,10 @@ import {
   buildProcessorMessage,
   getConstructionReference,
 } from '../utils/constructionNotifications';
+import { notifyServiceTechniqueOnSubmission } from "../services/api/communeNotificationService";
 
 const PermisConstruction = () => {
+  const navigate = useNavigate(); // Initialisation de la navigation
   const [currentStep, setCurrentStep] = useState(1);
   const [currentSection, setCurrentSection] = useState(1);
   const [formData, setFormData] = useState({});
@@ -173,40 +176,23 @@ const PermisConstruction = () => {
 
   const handleVerifyConstructionExiste = async (referenceAlignement) => {
     if (!referenceAlignement) return null;
+
     try {
-      const constructionData = await constructionService.getConstructionByReferenceAlignement(referenceAlignement);
-      if (constructionData && constructionData.referenceAlignement) {
-        toast.warning("⚠️ Vous avez déjà une construction associé à cet alignement .");
-        return constructionData;
-      }
+      const constructionData =
+        await constructionService.getConstructionByReferenceAlignement(
+          referenceAlignement
+        );
+
+      if (!constructionData) return null;
+
+      toast.warning(
+        "⚠️ Vous avez déjà une construction associée à cet alignement."
+      );
+      return constructionData;
     } catch (error) {
-      console.error('Erreur lors de la vérification de la construction');
+      console.error("Erreur lors de la vérification de la construction:", error);
       return null;
     }
-  };
-
-  const validatePieces = (pieces) => {
-    const errors = {};
-    
-    pieces.forEach((piece, index) => {
-      const hasData = piece.destination || piece.niveau || piece.surface;
-      
-      if (hasData) {
-        if (!piece.destination || piece.destination.trim() === '') {
-          errors[`pieces.${index}.destination`] = 'La destination est requise';
-        }
-        
-        if (!piece.niveau || piece.niveau === '') {
-          errors[`pieces.${index}.niveau`] = 'Le niveau est requis';
-        }
-        
-        if (!piece.surface || piece.surface === '') {
-          errors[`pieces.${index}.surface`] = 'La surface est requise';
-        }
-      }
-    });
-    
-    return errors;
   };
 
   const validateCurrentSection = () => {
@@ -241,42 +227,45 @@ const PermisConstruction = () => {
     return valid;
   };
 
-  // ====================== NOTIFICATIONS ======================
   const sendSubmissionNotifications = async (reference) => {
     const userData = authService.getUserInfo();
-    const id_citizen = userData?.id_citizen || userData?.id || authService.getUserId();
+    const id_citizen =
+      userData?.id_citizen || userData?.id || authService.getUserId();
 
-    const applicantEmail = userData?.user_email || formData.emailProprietaire || formData.email;
-    const processorUserId = import.meta.env.ABBR_ADMIN_USER_ID;
+    const applicantEmail =
+      userData?.user_email || formData.emailProprietaire || formData.email;
 
     const fullName =
       formData.nomProprietaire ||
-      `${formData.prenoms || ''} ${formData.nom || ''}`.trim() ||
-      'un citoyen';
+      `${formData.prenoms || ""} ${formData.nom || ""}`.trim() ||
+      "un citoyen";
 
     const emailTask = applicantEmail
       ? notificationService.sendNotif({
           to: applicantEmail,
           ...buildConfirmationEmail({ reference }),
         })
-      : Promise.reject(new Error('Aucune adresse email pour le demandeur'));
+      : Promise.reject(new Error("Aucune adresse email pour le demandeur"));
 
-    const processorTask = processorUserId
-      ? notificationService.broadcastNotification({
-          userId: processorUserId,
-          authorId: id_citizen,
-          message: buildProcessorMessage(fullName),
-        })
-      : Promise.reject(new Error('ABBR_ADMIN_USER_ID non défini'));
+    const processorTask = notifyServiceTechniqueOnSubmission({
+      message: buildProcessorMessage(fullName, reference),
+      domain: "construction",
+      dossierId: reference,
+      authorId: id_citizen,
+    });
 
-    const [emailResult, processorResult] = await Promise.allSettled([emailTask, processorTask]);
+    const [emailResult, processorResult] = await Promise.allSettled([
+      emailTask,
+      processorTask,
+    ]);
 
     return {
-      emailSent: emailResult.status === 'fulfilled',
-      processorNotified: processorResult.status === 'fulfilled',
+      emailSent: emailResult.status === "fulfilled",
+      processorNotified:
+        processorResult.status === "fulfilled" &&
+        (processorResult.value?.notified || 0) > 0,
     };
   };
-  // ===========================================================
 
   const handleSubmit = async () => {
     try {
@@ -296,11 +285,9 @@ const PermisConstruction = () => {
       
       console.log('Réponse du serveur:', result);
 
-      // === ENVOI DES NOTIFICATIONS ===
       const reference = getConstructionReference(result);
       const { emailSent } = await sendSubmissionNotifications(reference);
       
-      // Sauvegarde finale
       const finalData = {
         ...permisData,
         submittedAt: new Date().toISOString(),
@@ -357,8 +344,11 @@ const PermisConstruction = () => {
   };
 
   const handleConfirmationClose = () => {
+    const wasSuccess = submissionResult?.success;
+
     setShowConfirmation(false);
-    if (submissionResult?.success) {
+
+    if (wasSuccess) {
       setFormData({});
       setCompletedSections({});
       setUploadedFiles({
@@ -366,12 +356,16 @@ const PermisConstruction = () => {
         droitPropriete: [],
         planLimiteTerrain: [],
         planMasse: [],
-        planFacade: []
+        planFacade: [],
       });
       setPieces([]);
       setCurrentStep(1);
       setCurrentSection(1);
       setErrors({});
+      setSubmissionResult(null);
+
+      // Redirection vers la liste des permis
+      navigate("/permis-list");
     }
   };
 
@@ -443,9 +437,6 @@ const PermisConstruction = () => {
                                 {uploadedFile.size ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB` : 'Taille inconnue'} • 
                                 {uploadedFile.uploaded ? ' Uploadé' : ' En attente'}
                               </p>
-                              {uploadedFile.filename && (
-                                <p className="text-xs text-gray-400">Serveur: {uploadedFile.filename}</p>
-                              )}
                             </div>
                           </div>
                           <button
@@ -461,24 +452,7 @@ const PermisConstruction = () => {
                     </div>
                   </div>
                 )}
-
-                {(!uploadedFiles[file.name] || uploadedFiles[file.name].length === 0) && (
-                  <p className="text-sm text-gray-500 italic">
-                    Aucun fichier uploadé pour le moment
-                  </p>
-                )}
-
-                {isUploadingFile && (
-                  <div className="flex items-center space-x-2 text-blue-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span>Upload en cours...</span>
-                  </div>
-                )}
               </div>
-
-              {errors[file.name] && (
-                <p className="text-red-500 text-sm mt-2">{errors[file.name]}</p>
-              )}
             </div>
           ))}
         </div>
@@ -511,9 +485,6 @@ const PermisConstruction = () => {
                 </label>
               ))}
             </div>
-            {errors.pieceSousSol && (
-              <p className="text-red-500 text-sm mt-1">{errors.pieceSousSol}</p>
-            )}
           </div>
         </div>
       );
@@ -546,9 +517,6 @@ const PermisConstruction = () => {
                       </label>
                     ))}
                   </div>
-                  {errors[field.name] && (
-                    <p className="text-red-500 text-sm mt-2">{errors[field.name]}</p>
-                  )}
                 </div>
               );
             }

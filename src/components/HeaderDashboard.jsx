@@ -1,6 +1,17 @@
 // HeaderDashboard.jsx
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { ArrowLeft, Menu, Globe, Sun, Moon, Mail, Phone, X, Check, CheckCheck } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  ArrowLeft,
+  Menu,
+  Globe,
+  Sun,
+  Moon,
+  Mail,
+  Phone,
+  X,
+  Check,
+  CheckCheck,
+} from "lucide-react";
 import { LuBellRing } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -9,17 +20,18 @@ import { authService } from "../services/api/authService";
 import { notificationService } from "../services/api/notificationService";
 import { useNotificationSocket } from "../hooks/useNotificationSocket";
 
-export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClick }) {
+export default function HeaderDashboard({
+  toggleSidebar,
+  isMobile,
+  onProfileClick,
+}) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  // 🔹 États d'affichage des menus déroulants
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-  // 🔹 Données applicatives
-  const [notifications, setNotifications] = useState([]);
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("darkMode");
@@ -37,70 +49,51 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
   const languageRef = useRef(null);
   const notificationRef = useRef(null);
 
-  // 🔹 Extraction sécurisée des infos utilisateur
   const userData = authService.getUserInfo() || {};
-  const id_citizen = userData?.id_citizen || userData?.citizen_id || userData?.id || null;
+  const id_citizen =
+    userData?.id_citizen ||
+    userData?.citizen_id ||
+    userData?.id ||
+    null;
   const fallbackName =
     userData?.user_pseudo ||
     userData?.username ||
-    [userData?.citizen_name, userData?.citizen_lastname].filter(Boolean).join(" ");
+    [userData?.citizen_name, userData?.citizen_lastname]
+      .filter(Boolean)
+      .join(" ");
 
-  // 🔹 WebSocket des notifications en temps réel
-  const { isConnected, realtimeNotification } = useNotificationSocket(id_citizen);
+  // ✅ Polling auto toutes les 8 secondes (plus de refresh manuel)
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    refetch,
+  } = useNotificationSocket(id_citizen, 8000);
 
-  // Ajout des nouvelles notifications en temps réel
-  useEffect(() => {
-    if (realtimeNotification) {
-      setNotifications((prev) => [realtimeNotification, ...prev]);
-    }
-  }, [realtimeNotification]);
+  // Toujours "connecté" côté polling REST
+  const isConnected = Boolean(id_citizen);
 
-  // Chargement des notifications via REST API
-  useEffect(() => {
-    let isMounted = true;
-    const fetchNotifications = async () => {
-      if (!id_citizen) return;
-      try {
-        const data = await notificationService.getNotificationsByUser(id_citizen);
-        if (isMounted && Array.isArray(data)) {
-          setNotifications(data);
-        }
-      } catch (error) {
-        console.error("Erreur lors de la récupération des notifications:", error);
-      }
-    };
-
-    fetchNotifications();
-    return () => {
-      isMounted = false;
-    };
-  }, [id_citizen]);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  // 🔹 Actions sur les notifications
+  // 🔹 Actions notifications
   const handleMarkAsRead = async (id) => {
     try {
-      await notificationService.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
+      await markAsRead(id);
     } catch (error) {
       console.error("Erreur lors du marquage comme lu:", error);
     }
   };
 
   const handleMarkAllRead = async () => {
-    if (!id_citizen) return;
     try {
-      await notificationService.markAllAsReadByUser(id_citizen);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      await markAllAsRead();
     } catch (error) {
-      console.error("Erreur lors du marquage de toutes les notifications comme lues:", error);
+      console.error(
+        "Erreur lors du marquage de toutes les notifications comme lues:",
+        error
+      );
     }
   };
 
-  // 🔹 Suppression d'une notification à l'aide du bouton X
   const handleDeleteNotification = async (id, e) => {
     e.stopPropagation();
     try {
@@ -110,11 +103,11 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     } catch (error) {
       console.error("Erreur lors de la suppression de la notification:", error);
     } finally {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      refetch?.();
     }
   };
 
-  // 🔹 Gestion du Thème Sombre / Clair
+  // 🔹 Thème
   const toggleDarkMode = () => {
     setDarkMode((prev) => !prev);
   };
@@ -128,7 +121,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     }
   }, [darkMode]);
 
-  // 🔹 Gestion de la langue
+  // 🔹 Langue
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
     setIsLanguageOpen(false);
@@ -140,7 +133,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     return () => i18n.off("languageChanged", handleLanguageChange);
   }, [i18n]);
 
-  // 🔹 Chargement des données citoyen
+  // 🔹 Données citoyen
   useEffect(() => {
     let isMounted = true;
     const fetchCitizenData = async () => {
@@ -149,7 +142,11 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
 
       if (!id_citizen) {
         if (isMounted) {
-          setCitizenData({ nom: fallbackName || "Utilisateur", email, telephone });
+          setCitizenData({
+            nom: fallbackName || "Utilisateur",
+            email,
+            telephone,
+          });
         }
         return;
       }
@@ -166,7 +163,11 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
       } catch (error) {
         console.error("Erreur lors du chargement des données citoyen:", error);
         if (isMounted) {
-          setCitizenData({ nom: fallbackName || "Utilisateur", email, telephone });
+          setCitizenData({
+            nom: fallbackName || "Utilisateur",
+            email,
+            telephone,
+          });
         }
       }
     };
@@ -175,9 +176,16 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     return () => {
       isMounted = false;
     };
-  }, [id_citizen, fallbackName, userData?.user_email, userData?.email, userData?.user_phone, userData?.phone_number]);
+  }, [
+    id_citizen,
+    fallbackName,
+    userData?.user_email,
+    userData?.email,
+    userData?.user_phone,
+    userData?.phone_number,
+  ]);
 
-  // 🔹 Fermeture des popups lors d'un clic extérieur
+  // 🔹 Clic extérieur
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -186,7 +194,10 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
       if (languageRef.current && !languageRef.current.contains(event.target)) {
         setIsLanguageOpen(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setIsNotificationsOpen(false);
       }
     };
@@ -194,7 +205,6 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🔹 Basculer l'affichage exclusif des popups
   const toggleProfileMenu = () => {
     setIsProfileFormOpen((prev) => !prev);
     setIsLanguageOpen(false);
@@ -206,6 +216,8 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     setIsNotificationsOpen((prev) => !prev);
     setIsProfileFormOpen(false);
     setIsLanguageOpen(false);
+    // Rafraîchir dès l'ouverture du menu
+    if (!isNotificationsOpen) refetch?.();
   };
 
   const toggleLanguageMenu = () => {
@@ -214,7 +226,6 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
     setIsNotificationsOpen(false);
   };
 
-  // 🔹 Génération des initiales du profil
   const getInitials = (name) => {
     if (!name) return "U";
     const words = name.trim().split(/\s+/).filter(Boolean);
@@ -223,9 +234,35 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
       : name.slice(0, 2).toUpperCase();
   };
 
+  /** Affiche createdAt API sans conversion de fuseau */
+  const formatNotifDate = (dateString) => {
+    if (!dateString) return "";
+
+    const s = String(dateString).trim();
+    const match = s.match(
+      /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/
+    );
+
+    if (match) {
+      const [, , month, day, hour, minute] = match;
+      return `${day}/${month} ${hour}:${minute}`;
+    }
+
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString("fr-FR", {
+      timeZone: "UTC",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
   return (
     <header className="fixed top-0 left-0 w-full bg-green-50/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-green-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 flex items-center justify-between px-4 h-16 z-50 shadow-sm dark:shadow-black/30 transition-colors duration-300">
-      {/* Gauche : Navigation */}
+      {/* Gauche */}
       <div className="flex items-center space-x-3">
         {isMobile ? (
           <button
@@ -246,9 +283,9 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
         )}
       </div>
 
-      {/* Droite : Actions utilisateur */}
+      {/* Droite */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Profile Dropdown */}
+        {/* Profile */}
         <div className="relative" ref={profileRef}>
           <button
             onClick={toggleProfileMenu}
@@ -289,7 +326,9 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
                     <Mail className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Email
+                    </p>
                     <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
                       {citizenData.email || "—"}
                     </p>
@@ -301,7 +340,9 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
                     <Phone className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Téléphone</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Téléphone
+                    </p>
                     <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
                       {citizenData.telephone || "—"}
                     </p>
@@ -322,7 +363,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
           )}
         </div>
 
-        {/* Notifications Dropdown */}
+        {/* Notifications */}
         <div className="relative" ref={notificationRef}>
           <button
             onClick={toggleNotificationsMenu}
@@ -348,7 +389,11 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
                     className={`w-2 h-2 rounded-full ${
                       isConnected ? "bg-green-500" : "bg-red-500"
                     }`}
-                    title={isConnected ? "En direct (WebSocket connecté)" : "Déconnecté"}
+                    title={
+                      isConnected
+                        ? "Mise à jour auto active"
+                        : "Utilisateur non identifié"
+                    }
                   />
                 </div>
                 {unreadCount > 0 && (
@@ -383,12 +428,7 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
                         </p>
                         <span className="text-[11px] text-gray-400 dark:text-gray-500 block mt-1">
                           {notif.createdAt
-                            ? new Date(notif.createdAt).toLocaleString("fr-FR", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                day: "2-digit",
-                                month: "2-digit",
-                              })
+                            ? formatNotifDate(notif.createdAt)
                             : ""}
                         </span>
                       </div>
@@ -404,7 +444,9 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
                           </button>
                         )}
                         <button
-                          onClick={(e) => handleDeleteNotification(notif.id, e)}
+                          onClick={(e) =>
+                            handleDeleteNotification(notif.id, e)
+                          }
                           title="Supprimer la notification"
                           className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-full text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         >
@@ -419,16 +461,22 @@ export default function HeaderDashboard({ toggleSidebar, isMobile, onProfileClic
           )}
         </div>
 
-        {/* Toggle Dark Mode */}
+        {/* Dark mode */}
         <button
           onClick={toggleDarkMode}
           className="p-2.5 text-gray-700 dark:text-gray-200 hover:bg-green-200/70 dark:hover:bg-gray-700 rounded-full transition-colors"
-          aria-label={darkMode ? "Désactiver le mode sombre" : "Activer le mode sombre"}
+          aria-label={
+            darkMode ? "Désactiver le mode sombre" : "Activer le mode sombre"
+          }
         >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          {darkMode ? (
+            <Sun className="w-5 h-5" />
+          ) : (
+            <Moon className="w-5 h-5" />
+          )}
         </button>
 
-        {/* Language Dropdown */}
+        {/* Langue */}
         <div className="relative" ref={languageRef}>
           <button
             onClick={toggleLanguageMenu}
