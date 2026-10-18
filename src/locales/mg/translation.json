@@ -90,7 +90,6 @@
     "submit": "Alefaso ny hafatra",
     "success": "Voaray ny hafatrao. Hamerina hifandray aminay very vetivety izahay."
   },
-  
   "objectives": {
     "title": "TANJONA",
     "objectivesList": [
@@ -144,7 +143,7 @@
         "description": "Mba hahafahanao manara-maso ny fangatahanao dia mahazo fampandrenesana mailaka ianao, manome tolotra vaovao izay manampy anao tsara kokoa.",
         "icon": "/Follow.png",
         "color": "bg-[#269745]"
-      }, 
+      },
       {
         "title": "FINTANTANANA AN-TSERASERA NY ANTONTAN-TARATASY",
         "description": "Voatahiry sy antoka ny fikarakarana sy ny fanarahana ataon'ny fitantanana ny rafitrao.",
@@ -363,12 +362,11 @@
     "location": "Toerana",
     "description": "Famaritana",
     "attachments": "Raki-tsoratra",
-    "boutton":"Hiverina",
-    "suivant":"Manaraka",
-    "soumi":"Handefa",
-    "soumission":"Fandefasana",
-    "information":"FAMPAHAFANTARANA ANKAPOBENY",
-
+    "boutton": "Hiverina",
+    "suivant": "Manaraka",
+    "soumi": "Handefa",
+    "soumission": "Fandefasana",
+    "information": "FAMPAHAFANTARANA ANKAPOBENY",
     "erreur_chargement_regions": "Misy diso ny fifidianana faritra",
     "erreur_chargement_communes": "Misy diso ny fifidianana ny kaominina",
     "choix_implantation": "Safidy momban'ny fametrahana",
@@ -376,11 +374,10 @@
     "selectionnez_region": "Hisafidy ny Faritra",
     "specifiez_commune": "Farito ny Kaominina",
     "selectionnez_commune": "Hisafidy ny Kaominina",
-
     "chargement_info": "Mametraka ny fampahalalana momba ny mpampiasa…",
     "info_chargees": "✓ Fampahalalana momba ny mpampiasa efa voapetraka ho azy",
     "civilite": "Anaram-pitondrana *",
-     "monsieur": "Andriamatoa",
+    "monsieur": "Andriamatoa",
     "madame": "Ramatoa",
     "mademoiselle": "Ramatoa kely",
     "champ_requis": "Tsy maintsy fenoina ity saha ity",
@@ -400,14 +397,12 @@
     "nom_representant": "Anaran'ny solontena *",
     "prenoms_representant": "Fanampin'anaran'ny solontena *",
     "adresse_representant": "Adiresin'ny solon-tena *",
-   
     "cin_passeport_representant": "Karatra maha-olona na Pasipaoro an'ny solon-tena *",
     "statut_proprietaire": "Farito ny sata misy amin'ny tompony *",
     "particulier": "Olona tsotra",
     "personne_morale_2": "Orinasa / Olona ara-dalàna",
     "qualite_demandeur": "Farito ny kalitaon'ny mpangataka ",
     "non_disponible": "(tsy misy)",
-
     "entrez_prenoms": "Ampidiro ny fanampin'ny anarana",
     "numero_cin_ou_passeport": "Laharana CIN na Pasipaoro",
     "entrez_fonction": "Ampidiro ny asanao (tsy voatery)",
@@ -416,24 +411,18 @@
     "entrez_les_prenoms": "Ampidiro ny anaran’ny faharoa",
     "entrez_age": "Ampidiro ny taonanao",
     "entrez_nif": "Ampidiro ny Laharana famantarana ara-panjakana",
-  
-
-        
     "entrez_raison_sociale": "Ampidiro ny anaran’ny orinasa",
     "entrez_numero_carte_statistique": "Ampidiro ny laharan’ny kara statistika",
     "numero_carte_statistique": "Laharana kara statistika",
     "entrez_nom_representant": "Ampidiro ny anaran’ny solontena",
     "entrez_prenoms_representant": "Ampidiro ny fanampin'ny anaran’ny solontena",
     "entrez_adresse_representant": "Ampidiro ny adiresin’ny solontena",
-     "entrez_cin_passeport_representant": "Ampidiro ny laharan'ny CIN na Pasipaoro an'ny solontena",
-       "renseignement": "Fampahalalana momba ny mpangataka",
-       "proprietaire": "Tompony",
-
+    "entrez_cin_passeport_representant": "Ampidiro ny laharan'ny CIN na Pasipaoro an'ny solontena",
+    "renseignement": "Fampahalalana momba ny mpangataka",
+    "proprietaire": "Tompony",
     "coordonnees": "Mombamomba ny tompony",
     "contact": " Laharan-tarobian'ny tompony *",
     "email": "Adiresy mailaka *",
-
-
     "titre": "Titra",
     "cadastre": "Kadasitra",
     "certificat_foncier": "Taratasy fanamarinan-tany",
@@ -449,46 +438,57 @@
     "num_karatany": "Laharana Karatany (tsy voatery)",
     "fokotany": "Fokontany (tsy voatery)",
     "identite_terrain": "Mombamomba ny tany",
-   "longitude": "Longitida",
+    "longitude": "Longitida",
     "latitude": "Latitida",
     "verifier_step5": "Hamarino ny Dingana faha-5 Feno ho azy",
     "id_terrain": "Mari-pamantarana[id] Tany (tsy voatery)",
     "informations_alignement": "Mombamomba ny Fandrindrana",
-
-   "id_mandataire": "Mari-pamantarana[id] mpisolotena",
+    "id_mandataire": "Mari-pamantarana[id] mpisolotena",
     "status_proprietaire": "Sata ny tompony",
     "qualte_demandeur": "Toetra ny mpangataka",
     "id_cert_sit_jur": "Taratasy manaporofo ny sata ara-dalàna",
     "id_plan_off": "Drafitra ofisialy",
-
-     
     "documents_administratifs": "Taratasy ara-panjakana",
     "piece_justifiant_droit_propriete": "Antontan-taratasy manaporofo ny zon'ny fananana",
     "ajouter_fichier": "Ampidiro ny antotataratasy",
     "aucun_fichier_selectionne": "Tsy misy rakitra voafidy",
-     "chargement": "Miandry...",
-
+    "chargement": "Miandry...",
     "retour": "Miverina any amin'ny Tabilao fanaraha-maso",
     "soumettre_dossier": "MANDROTSAKA ANTOTA TARATASY FANAMPIHARANA",
-  
     "renseignement_demandeur": "Fanazavana momba ny mpangataka",
     "coordonnees_proprietaire": "Mombamomba ny tompony",
-    
     "informations_alignment": "Mahakasika ny fanamarihana",
-     "adresse": "Adiresy",
-
-  "verifier_terrain": "Hamarino ny tany",
-   "plan_officiel": "Drafitra ofisialy",
-   "certificat_situation_juridique": "Taratasy manaporofo ny sata ara-dalàna"
-    
-       
-
-
+    "adresse": "Adiresy",
+    "verifier_terrain": "Hamarino ny tany",
+    "plan_officiel": "Drafitra ofisialy",
+    "certificat_situation_juridique": "Taratasy manaporofo ny sata ara-dalàna"
+  },
+  "portal": {
+    "overview": "Fampahafantarana ny vavahady",
+    "help": "Fanampiana",
+    "helpMessage": "Tongasoa eto amin'ny vavahady MATAC. Misafidiana fiteny na midira amin'ny kaontinao mba hanohizana.",
+    "sideDescription": "Natao ho an’ny ministera misahana ny fandrindrana ny tanàn-dehibe, ny kaominina malagasy, ny sampan-draharaha teknika isam-paritra, ny solontena ary ny mpampiasa.",
+    "statistics": "Tarehimarika momba ny rafitra",
+    "communes": "Kaominina",
+    "permits": "Fahazoan-dalana nomena",
+    "tagline": "Serivisy ho an'ny daholobe, amin'ny fomba tsotra.",
+    "title1": "Faritra voalamina kokoa.",
+    "title2": "Dingana mazava kokoa.",
+    "f1Title": "Fitantanana ny fahazoan-dalana",
+    "f1Text": "Natao ho an’ny ministera misahana ny fandrindrana ny tanàn-dehibe sy ny kaominina malagasy mba hanangonana ny fangatahana momba ny fanorenana.",
+    "f1Tag1": "Fahombiazana",
+    "f1Tag2": "Mangarahara",
+    "f2Title": "Kadasitra sy ny faritra",
+    "f2Text": "Midira amin’ny sampan-draharaha teknika isam-paritra sy ny fitaovana SIG mba hahafantarana tsara ny fampiasana ny tany.",
+    "f2Tag1": "SIG",
+    "f2Tag2": "Fahamarinan-toerana",
+    "partners": "Mpiara-miombon'antoka ara-panjakana",
+    "p1": "Fandaminana",
+    "p2": "Trano fonenana",
+    "p3": "Jeografia",
+    "p4": "Fahefana nasionaly",
+    "p5": "Kaominina",
+    "register": "Hisoratra anarana",
+    "login": "Hiditra"
   }
-   
-
-   
-  
-
-  }
-
+}
