@@ -1,59 +1,28 @@
-import { Menu, User, X, ChevronDown } from "lucide-react";
-
-// Header Component
 import MDAT from "../assets/logo/MDAT.jpeg";
 import OATF from "../assets/logo/OATF.jpg";
 import pnudlogo from "../assets/logo/pnudlogo.png";
 import REPUBLIQUE from "../assets/logo/REPUBLIQUE.png";
-import uf from "../assets/logo/logoUF.webp"
+import uf from "../assets/logo/logoUF.webp";
+
 const Header = () => {
   return (
-    <header className="w-full bg-white shadow-sm z-50">
-      {/* Bandeau supérieur avec logo + texte vert */}
-      <div className="w-full flex items-center justify-between bg-white">
-        {/* Logos à gauche */}
-        <div className="flex justify-around px-4 w-[30%]">
-          <div className="w-12 h-20 flex items-center justify-center">
-            <img
-              src={MDAT}
-              alt="MDAT logo "
-              className="w-12 h-12 object-cover"
-            />
-          </div>
-          <div className="w-12 h-20 flex items-center justify-center">
-            <img
-              src={REPUBLIQUE}
-              alt="Republique logo"
-              className="w-12 h-12 object-cover"
-            />
-          </div>
-          <div className="w-12 h-20 flex items-center justify-center">
-            <img
-              src={uf}
-              alt="logo uf"
-              className="w-12 h-12 object-cover"
-            />
-          </div>
-          <div className="w-12 h-20 flex items-center justify-center">
-            <img
-              src={OATF}
-              alt="OATF"
-              className="w-12 h-20 scale-65 object-cover"
-            />
-          </div>
-          <div className="w-12 h-20 flex items-center justify-center">
-            <img
-              src={pnudlogo}
-              alt="PNUD logo"
-              className="w-12 h-20 scale-75 object-cover"
-            />
-          </div>
-        </div>
+    <header className="flex h-20 w-full">
+      {/* Bande blanche : logos */}
+      <div className="flex w-1/2 items-center justify-around bg-white px-4 md:px-12">
+        <img src={MDAT} alt="MDAT logo" className="h-12 w-12 object-contain" />
+        <img src={REPUBLIQUE} alt="République logo" className="h-12 w-12 object-contain" />
+        <img src={uf} alt="Logo UF" className="h-12 w-12 object-contain" />
+        <img src={OATF} alt="OATF" className="h-12 w-12 object-contain" />
+        <img src={pnudlogo} alt="PNUD logo" className="h-12 w-12 object-contain" />
+      </div>
 
-        {/* Bande verte à droite avec nouveau code couleur */}
-        <div className="flex-1 text-right py-4 px-6">
-          <h3 className="text-3xl font-bold text-[#269745] mb-1">MATAC</h3>
-        </div>
+      {/* Bande verte : titre */}
+      <div className="flex w-1/2 items-center bg-[#269745] px-4 text-white md:px-12">
+        <p className="text-sm leading-snug sm:text-base md:text-xl">
+          Ministère en charge de l'Aménagement du Territoire
+          <br />
+          Autorisation de Construire
+        </p>
       </div>
     </header>
   );

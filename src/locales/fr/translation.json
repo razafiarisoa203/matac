@@ -30,7 +30,7 @@
   },
   "navigation": {
     "home": "Accueil",
-   "urbanismActs": "Actes d'urbanisme",
+    "urbanismActs": "Actes d'urbanisme",
     "objectives": "Objectifs",
     "services": "Services",
     "permits": "Permis",
@@ -365,12 +365,11 @@
     "location": "Localisation",
     "description": "Description",
     "attachments": "Pièces jointes",
-
-    "boutton":"Précédent",
-    "suivant":"Suivant",
-    "soumi":"Soumettre",
-    "soumission":"Soumission",
-    "information":"INFORMATION GENERALE",
+    "boutton": "Précédent",
+    "suivant": "Suivant",
+    "soumi": "Soumettre",
+    "soumission": "Soumission",
+    "information": "INFORMATION GENERALE",
     "erreur_chargement_regions": "Erreur lors du chargement des régions",
     "erreur_chargement_communes": "Erreur lors du chargement des communes",
     "choix_implantation": "Choix d'implantation",
@@ -378,11 +377,10 @@
     "selectionnez_region": "Sélectionnez la Région",
     "specifiez_commune": "Spécifiez la Commune",
     "selectionnez_commune": "Sélectionnez la commune",
-
     "chargement_info": "Chargement des informations utilisateur...",
     "info_chargees": "✓ Informations utilisateur chargées automatiquement",
     "civilite": "Civilité *",
-     "monsieur": "Monsieur",
+    "monsieur": "Monsieur",
     "madame": "Madame",
     "mademoiselle": "Mademoiselle",
     "champ_requis": "Ce champ est requis",
@@ -421,16 +419,13 @@
     "entrez_numero_carte_statistique": "Entrez le numéro de carte statistique",
     "numero_carte_statistique": "Numéro de carte statistique",
     "entrez_nom_representant": "Entrez le nom du représentant",
-     "entrez_prenoms_representant": "Entrez les prénoms du représentant",
+    "entrez_prenoms_representant": "Entrez les prénoms du représentant",
     "entrez_adresse_representant": "Entrez l'adresse du représentant",
-   "entrez_cin_passeport_representant": "Entrez le Numéro de CIN ou Passeport du représentant",
-   "renseignement": "Renseignement du demandeur",
-
-
+    "entrez_cin_passeport_representant": "Entrez le Numéro de CIN ou Passeport du représentant",
+    "renseignement": "Renseignement du demandeur",
     "coordonnees": "Coordonnées du propriétaire",
     "contact": "Contact du propriétaire *",
     "email": "Adresse électronique *",
-
     "titre": "Titre",
     "cadastre": "Cadastre",
     "certificat_foncier": "Certificat foncier",
@@ -440,48 +435,63 @@
     "num_parcelle": "Num parcelle ",
     "section_dite": "Section dite ",
     "canton": "Canton ",
-   
     "superficie": "Superficie ",
     "xv_laborde": "Xv Laborde ",
     "yv_laborde": "Yv Laborde ",
     "num_karatany": "Nomerao Karatany (optionnel)",
     "fokotany": "Fokotany (optionnel)",
-    
-   "longitude": "Longitude",
+    "longitude": "Longitude",
     "latitude": "Latitude",
-     "verifier_step5": "Vérifier Step 5 et autofill",
-     "id_terrain": "ID Terrain (optionnel)",
-     "informations_alignement": "Informations Alignement",
-
-   "id_mandataire": "ID Mandataire",
+    "verifier_step5": "Vérifier Step 5 et autofill",
+    "id_terrain": "ID Terrain (optionnel)",
+    "informations_alignement": "Informations Alignement",
+    "id_mandataire": "ID Mandataire",
     "status_proprietaire": "Statut du propriétaire",
     "qualte_demandeur": "Qualité du demandeur",
-   
     "id_cert_sit_jur": "Certificat de situation juridique",
     "id_plan_off": "Plan officiel",
-   
     "piece_justifiant_droit_propriete": "Pièce justifiant le droit de propriété",
     "ajouter_fichier": "Ajouter un fichier",
     "aucun_fichier_selectionne": "Aucun fichier sélectionné",
-     "chargement": "chargement...",
-
-        "retour": "Retour au dashboard",
+    "chargement": "chargement...",
+    "retour": "Retour au dashboard",
     "soumettre_dossier": "SOUMETTRE UN DOSSIER D'ALIGNEMENT",
-   
     "renseignement_demandeur": "Renseignement du Demandeur",
     "coordonnees_proprietaire": "Coordonnées du propriétaire",
     "identite_terrain": "Identité du Terrain",
     "informations_alignment": "Informations Alignement",
     "documents_administratifs": "Documents administratifs",
-   "adresse": "Adresse",
-   "verifier_terrain": "Vérifier le terrain",
-   "plan_officiel": "Plan officiel",
+    "adresse": "Adresse",
+    "verifier_terrain": "Vérifier le terrain",
+    "plan_officiel": "Plan officiel",
     "certificat_situation_juridique": "Certificat de situation juridique"
-
-
-   
-
-      
-  
+  },
+  "portal": {
+    "overview": "Présentation du portail",
+    "help": "Aide",
+    "helpMessage": "Bienvenue sur le portail MATAC. Choisissez une langue ou connectez-vous pour continuer.",
+    "sideDescription": "Destiné aux ministères en charge de l’urbanisme, aux communes malgaches, aux services techniques régionaux, aux représentants et aux utilisateurs.",
+    "statistics": "Métriques du système",
+    "communes": "Communes",
+    "permits": "Permis délivrés",
+    "tagline": "Le service public, simplement.",
+    "title1": "Un territoire mieux organisé.",
+    "title2": "Des démarches plus claires.",
+    "f1Title": "Gestion des Autorisations",
+    "f1Text": "Destiné aux ministères en charge de l'urbanisme et aux communes malgaches pour centraliser les demandes d'alignement et de construction.",
+    "f1Tag1": "Efficacité",
+    "f1Tag2": "Transparence",
+    "f2Title": "Cadastre & Territoire",
+    "f2Text": "Accédez aux services techniques régionaux et aux outils SIG pour une vision précise de l'occupation des sols.",
+    "f2Tag1": "SIG",
+    "f2Tag2": "Précision",
+    "partners": "Nos partenaires institutionnels",
+    "p1": "Planification",
+    "p2": "Logement",
+    "p3": "Inst. Géo",
+    "p4": "Autorité Nat.",
+    "p5": "Municipalités",
+    "register": "Inscription",
+    "login": "Se connecter"
   }
 }
