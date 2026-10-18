@@ -47,5 +47,7 @@ export const buildConfirmationEmail = ({ reference, date = formatToday() }) => {
 };
 
 // Message pour la notification interne (admin)
-export const buildProcessorMessage = (fullName) =>
-  `Nouvelle demande de permis de construction de ${fullName}`;
+export const buildProcessorMessage = (fullName, reference = null) => {
+  const ref = reference ? ` (N°${reference})` : "";
+  return `Nouvelle demande de permis de construction de ${fullName}${ref}. À traiter par le Service Technique.`;
+};

@@ -49,5 +49,7 @@ export const buildConfirmationEmail = ({ reference, date = formatToday() }) => {
   };
 };
 
-export const buildProcessorMessage = (fullName) =>
-  `Nouvelle demande d'alignement de ${fullName}`;
+export const buildProcessorMessage = (fullName, reference = null) => {
+  const ref = reference ? ` (N°${reference})` : "";
+  return `Nouvelle demande d'alignement de ${fullName}${ref}. À traiter par le Service Technique.`;
+};

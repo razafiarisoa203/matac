@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
+import Swal from "sweetalert2";
 import { useFormData } from '../hooks/useFormData';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { alignmentService } from '../services/api/alignmentService';
@@ -23,6 +23,7 @@ import Step4Terrain from '../components/alignements/Step4Terrain';
 import Step6Documents from '../components/alignements/Step6Documents';
 import NavigationButtons from '../components/alignements/NavigationButtons';
 import MessageDisplay from '../components/alignements/MessageDisplay';
+import { notifyServiceTechniqueOnSubmission } from "../services/api/communeNotificationService";
 
 const INITIAL_FORM_DATA = {
   id_mandataire: authService.getUserId() || null,
@@ -288,34 +289,38 @@ function Allignement() {
     }
   };
 
-  const sendSubmissionNotifications = async (reference) => {
+   const sendSubmissionNotifications = async (reference) => {
     const applicantEmail = userData?.user_email || formData.email_proprietaire;
-    const processorUserId = import.meta.env.ABBR_ADMIN_USER_ID;
-    const fullName = `${formData.prenoms || ''} ${formData.nom || ''}`.trim() || 'un citoyen';
+    const fullName =
+      `${formData.prenoms || ""} ${formData.nom || ""}`.trim() || "un citoyen";
 
     const emailTask = applicantEmail
       ? notificationService.sendNotif({
           to: applicantEmail,
           ...buildConfirmationEmail({ reference }),
         })
-      : Promise.reject(new Error('Aucune adresse email pour le demandeur'));
+      : Promise.reject(new Error("Aucune adresse email pour le demandeur"));
 
-    const processorTask = processorUserId
-      ? notificationService.broadcastNotification({
-          userId: processorUserId,
-          authorId: id_citizen,
-          message: buildProcessorMessage(fullName),
-        })
-      : Promise.reject(new Error('ABBR_ADMIN_USER_ID non défini'));
+    // Notifie TOUS les Service Technique de la commune (plus un seul admin)
+    const processorTask = notifyServiceTechniqueOnSubmission({
+      message: buildProcessorMessage(fullName, reference),
+      domain: "alignement",
+      dossierId: reference,
+      authorId: id_citizen,
+    });
 
-    const [emailResult, processorResult] = await Promise.allSettled([emailTask, processorTask]);
+    const [emailResult, processorResult] = await Promise.allSettled([
+      emailTask,
+      processorTask,
+    ]);
 
     return {
-      emailSent: emailResult.status === 'fulfilled',
-      processorNotified: processorResult.status === 'fulfilled',
+      emailSent: emailResult.status === "fulfilled",
+      processorNotified:
+        processorResult.status === "fulfilled" &&
+        (processorResult.value?.notified || 0) > 0,
     };
   };
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmitMessage('');
@@ -387,12 +392,8 @@ function Allignement() {
         getAlignmentReference(alignmentResult)
       );
 
-      setSubmitMessage(
-        emailSent
-          ? 'Votre demande a bien été envoyée. Un email de confirmation vous a été adressé.'
-          : "Votre demande a bien été envoyée, mais l'email de confirmation n'a pas pu être envoyé."
-      );
-      alert('Soumission réussie! Vous allez être redirigé vers la liste des alignements.');
+      // Pas d'alert() navigateur, pas de message en haut de page
+      setSubmitMessage("");
 
       console.log(
         "Alignement créé :",
@@ -428,7 +429,7 @@ function Allignement() {
 
         clearFiles();
         setSubmitMessage('');
-        navigate('/dashboard');
+        navigate('/alignement-list');
       }, 3000);
     } catch (error) {
 
