@@ -5,18 +5,18 @@ import { loginWithYaho, registerWithYaho } from "../auth/authActions";
 import { AuthContext } from "../context/AuthContext";
 import { Building2, Map, Moon, Sun, Languages, CircleHelp, ArrowRight } from "lucide-react";
 
-import mdat from "../assets/logo/MDAT.jpeg";
+import mdat from "../assets/logo/MDAT.webp";
 import logoUF from "../assets/logo/logoUF.webp";
-import oatf from "../assets/logo/OATF.jpg";
-import pnud from "../assets/logo/pnudlogo.png";
-import republique from "../assets/logo/REPUBLIQUE.png";
+import oatf from "../assets/logo/OATF.webp";
+import pnud from "../assets/logo/pnudlogo.webp";
+import republique from "../assets/logo/REPUBLIQUE.webp";
 
 const GREEN = "#269745";
 
 const FONT = { fontFamily: "'Space Grotesk', system-ui, sans-serif" };
 
 // Image de fond du panneau gauche (dans /public) : adaptez le nom du fichier
-const BG_IMAGE = "/batiment.jpg"
+const BG_IMAGE = "/batiment.webp"
 
 // Chiffres statiques : à remplacer par l'API si besoin
 const METRICS = [
@@ -130,7 +130,7 @@ const MainContent = () => {
 
   return (
     <div
-      style={FONT}
+      
       className="flex min-h-screen flex-col bg-white text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-white lg:flex-row"
     >
       {/* Panneau gauche */}
